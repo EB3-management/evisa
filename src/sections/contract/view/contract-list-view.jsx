@@ -13,13 +13,9 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { addContract } from "src/api/document";
-import { useGetVacancy } from "src/api/vacancy";
 import { Iconify } from "src/components/iconify";
 import { DashboardContent } from "src/layouts/dashboard";
-import { fDateTime } from "src/utils/format-time";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AddDocumentDialog } from "src/sections/document/dialog/add-document";
 import { toast } from "sonner";
 import { paths } from "src/routes/paths";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";

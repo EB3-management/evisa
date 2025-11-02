@@ -22,6 +22,7 @@ const VacancyDetailPage = lazy(() =>
 const VacancyPage = lazy(() => import("src/pages/dashboard/vacancy/list"));
 
 const PlanPage = lazy(() => import("src/pages/dashboard/plan/list"));
+const PlanDetailPage = lazy(() => import("src/pages/dashboard/plan/detail"));
 const FinancePage = lazy(() => import("src/pages/dashboard/plan/finance"));
 const ProgressPage = lazy(() => import("src/pages/dashboard/progress/list"));
 
@@ -86,6 +87,10 @@ export const dashboardRoutes = [
       {
         path: "plan",
         element: <PlanPage />,
+      },
+      {
+        path: "plan-detail",
+        children: [{ path: ":id", element: <PlanDetailPage /> }],
       },
       {
         path: "finance",

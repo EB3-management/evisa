@@ -25,6 +25,7 @@ export const endpoints = {
     list: "contracts",
     show: "employee-contract/show",
     upload: "employee-contract/upload",
+    sign: (id) => `contracts/sign/${id}`,
   },
 
   profile: {

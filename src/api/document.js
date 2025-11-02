@@ -101,6 +101,19 @@ export const fetchContract = async (filters) => {
   }
 };
 
+export const signContract = async (id, data) => {
+  try {
+    const response = await poster(endpoints.contract.sign(id),data);
+
+    return response;
+  } catch (error) {
+    console.error(error);
+
+    throw error;
+  }
+};
+
+
 export const addContract = async (data) => {
   try {
     const response = await poster(endpoints.contract.upload, data);

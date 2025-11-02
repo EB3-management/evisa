@@ -9,14 +9,12 @@ import {
 function* fetchFinancePlanSaga() {
   try {
     const response = yield call(fetchFinancePlan);
-    
+
     // fetchFinancePlan returns response.data which is the array
     // So we can use it directly
-    console.log("Finance Plan Saga Response:", response);
-    
+
     yield put(fetchFinancePlanSuccess(response || []));
   } catch (error) {
-    console.error("Finance Plan Saga Error:", error);
     yield put(fetchFinancePlanFailure());
   }
 }

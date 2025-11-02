@@ -30,7 +30,8 @@ import { toast } from "sonner";
 
 export function PlanItem({ job, selectedVacancyId, sx, ...other }) {
   const router = useRouter();
-  console.log("this is sele", selectedVacancyId);
+  console.log("this is sele", job.id);
+
   const renderHeader = () => (
     <Box
       sx={{
@@ -258,6 +259,7 @@ export function PlanItem({ job, selectedVacancyId, sx, ...other }) {
           fontWeight: 600,
           py: 1.5,
           boxShadow: "0 4px 12px rgba(43, 165, 151, 0.24)",
+
           "&:hover": {
             bgcolor: "#1D7E73",
             boxShadow: "0 8px 24px rgba(43, 165, 151, 0.32)",

@@ -50,9 +50,6 @@ export function PaymentListView() {
   // FIXED: plan slice stores data under 'financePlan', not 'plan'
   const { financePlan: plan = [], isLoading } = useAppSelector(selectPlanState);
 
-  console.log("Payment View - Plan Data:", plan);
-  console.log("Payment View - Is Loading:", isLoading);
-
   useEffect(() => {
     dispatch(fetchFinancePlanRequest());
   }, [dispatch]);
@@ -67,9 +64,6 @@ export function PaymentListView() {
   // const { state: currentFilters, setState: updateFilters } = filters;
 
   const dataFiltered = plan;
-  
-  console.log("Payment View - dataFiltered length:", dataFiltered.length);
-  console.log("Payment View - dataFiltered:", dataFiltered);
 
   const notFound = !dataFiltered.length && !isLoading;
 
