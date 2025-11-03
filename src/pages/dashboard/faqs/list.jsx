@@ -1,11 +1,11 @@
 import { Helmet } from "react-helmet-async";
 
 import { CONFIG } from "src/global-config";
-import { CreditLogView } from "src/sections/credit-logs/credit-logs";
+import { FaqsView } from "src/sections/faqs/view/faqs-view";
 
 // ----------------------------------------------------------------------
 
-const metadata = { title: `Credit logs - ${CONFIG.appName}` };
+const metadata = { title: `FAQS - ${CONFIG.appName}` };
 
 export default function Page() {
   return (
@@ -14,7 +14,7 @@ export default function Page() {
         <title> {metadata.title}</title>
       </Helmet>
 
-      <CreditLogView />
+      <FaqsView />
     </>
   );
 }

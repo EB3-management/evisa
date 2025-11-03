@@ -18,81 +18,95 @@ import {
 import { Iconify } from "src/components/iconify";
 import { fDate } from "src/utils/format-time";
 import { fCurrency } from "src/utils/format-number";
-import { useGetAssignPlanShow } from "src/api/plan";
-import { Markdown } from "src/components/markdown";
 
 export function PlanDetail({ id }) {
-  const { planShow, planShowLoading, planShowError } = useGetAssignPlanShow(id);
+  const [planData, setPlanData] = useState(null);
 
-  console.log("Plan Show Data:", planShow); // Debug log
+  // Mock data - replace with actual API call
+  useEffect(() => {
+    // Simulating API response
+    const mockData = {
+      id: 17,
+      employee_id: 1,
+      finance_plan_id: 2,
+      total_fee: "9000.00",
+      paid_amount: "9000.00",
+      due_amount: "0.00",
+      created_at: "2025-11-02T11:14:07.000000Z",
+      status: "completed",
+      vacancy_id: 2,
+      finance_plan: {
+        id: 2,
+        visa_type: "EB-3",
+        plan_name: "Updated EB-3 Standard Plan",
+        description:
+          "Updated version — includes additional document support and flexible payment terms.",
+        total_fee: "9000.00",
+        installment_count: 3,
+        installment_schedule: {
+          installments: [
+            {
+              installment_no: 1,
+              amount: 3000.0,
+              due_after_days: 0,
+              description: "Initial payment at process start",
+            },
+            {
+              installment_no: 2,
+              amount: 3000.0,
+              due_after_days: 60,
+              description: "Second installment after 2 months",
+            },
+            {
+              installment_no: 3,
+              amount: 3000.0,
+              due_after_days: 120,
+              description: "Final installment before visa submission",
+            },
+          ],
+        },
+        currency: "USD",
+        status: "active",
+        created_by: 1,
+        created_at: "2025-10-17T06:03:21.000000Z",
+      },
+      payments: [
+        {
+          id: 3,
+          employee_id: 1,
+          amount: "4500.00",
+          method: "Cash",
+          date: "2025-11-02",
+          note: "First Installment",
+          created_at: "2025-11-02T11:13:15.000000Z",
+          status: "partial",
+        },
+        {
+          id: 4,
+          employee_id: 1,
+          amount: "4500.00",
+          method: "Bank",
+          date: "2025-11-02",
+          note: "Second Installment",
+          created_at: "2025-11-02T11:14:06.000000Z",
+          status: "partial",
+        },
+      ],
+    };
+    setPlanData(mockData);
+  }, [id]);
 
-  if (planShowLoading) {
+  if (!planData) {
     return (
-      <Box
-        sx={{
-          p: 3,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 300,
-        }}
-      >
-        <Typography>Loading plan details...</Typography>
+      <Box sx={{ p: 3 }}>
+        <Typography>Loading...</Typography>
       </Box>
     );
   }
 
-  if (planShowError) {
-    return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography color="error">Failed to load plan details</Typography>
-      </Box>
-    );
-  }
-
-  // Handle API response structure - data might be wrapped in 'data' property
-  const planData = planShow;
-
-  if (!planData || Object.keys(planData).length === 0) {
-    return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography color="error">No plan details found</Typography>
-      </Box>
-    );
-  }
-
-  const {
-    finance_plan,
-    payments = [],
-    total_fee,
-    paid_amount,
-    due_amount,
-    status,
-  } = planData;
-
-  // Check if finance_plan exists
-  if (!finance_plan) {
-    return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography color="error">Finance plan data not found</Typography>
-      </Box>
-    );
-  }
-
-  // Parse installment_schedule if it's a JSON string
-  let installments = [];
-  try {
-    if (finance_plan?.installment_schedule) {
-      const schedule =
-        typeof finance_plan.installment_schedule === "string"
-          ? JSON.parse(finance_plan.installment_schedule)
-          : finance_plan.installment_schedule;
-      installments = schedule?.installments || [];
-    }
-  } catch (error) {
-    console.error("Error parsing installment_schedule:", error);
-    installments = [];
-  }
+  const { finance_plan, payments, total_fee, paid_amount, due_amount, status } =
+    planData;
+  const installments = finance_plan.installment_schedule?.installments || [];
 
   // Calculate totals
   const subtotal = parseFloat(total_fee);
@@ -118,12 +132,10 @@ export function PlanDetail({ id }) {
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Card
         sx={{
-          p: { xs: 2.5, sm: 3, md: 5 },
+          p: { xs: 2, sm: 3, md: 5 },
           borderRadius: 3,
           boxShadow: (theme) =>
-            theme.palette.mode === "light"
-              ? "0 12px 24px -4px rgba(145, 158, 171, 0.12)"
-              : "0 12px 24px -4px rgba(0, 0, 0, 0.24)",
+            `0 12px 24px -4px ${theme.palette.mode === "light" ? "rgba(145, 158, 171, 0.12)" : "rgba(0, 0, 0, 0.24)"}`,
         }}
       >
         <Stack spacing={{ xs: 3, md: 4 }}>
@@ -133,6 +145,12 @@ export function PlanDetail({ id }) {
             justifyContent="space-between"
             alignItems={{ xs: "flex-start", sm: "center" }}
             spacing={2}
+            sx={{
+              p: { xs: 2, sm: 3 },
+              borderRadius: 2,
+              background: (theme) =>
+                `linear-gradient(135deg, ${theme.palette.primary.lighter} 0%, ${theme.palette.primary.light}20 100%)`,
+            }}
           >
             <Box sx={{ flex: 1 }}>
               <Typography
@@ -168,10 +186,10 @@ export function PlanDetail({ id }) {
 
           <Divider sx={{ borderStyle: "dashed" }} />
 
-          {/* Invoice Details Grid - Enhanced Cards */}
-          <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
+          {/* Invoice Details Grid */}
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* Plan From */}
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 variant="outlined"
                 sx={{
@@ -186,7 +204,7 @@ export function PlanDetail({ id }) {
                   },
                 }}
               >
-                <Stack spacing={1.5}>
+                <Stack spacing={1}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Iconify
                       icon="solar:document-text-bold-duotone"
@@ -200,12 +218,11 @@ export function PlanDetail({ id }) {
                       Plan from
                     </Typography>
                   </Stack>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     {finance_plan.visa_type} Visa Program
                   </Typography>
-                  <Divider sx={{ my: 0.5 }} />
                   <Typography variant="caption" color="text.secondary">
-                    Visa Type: {finance_plan.visa_type}
+                    Plan ID: #{finance_plan.id}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Currency: {finance_plan.currency}
@@ -215,7 +232,7 @@ export function PlanDetail({ id }) {
             </Grid>
 
             {/* Plan To */}
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 variant="outlined"
                 sx={{
@@ -225,12 +242,12 @@ export function PlanDetail({ id }) {
                   transition: "all 0.3s",
                   "&:hover": {
                     boxShadow: 4,
-                    borderColor: "info.main",
+                    borderColor: "primary.main",
                     transform: "translateY(-4px)",
                   },
                 }}
               >
-                <Stack spacing={1.5}>
+                <Stack spacing={1}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Iconify
                       icon="solar:user-bold-duotone"
@@ -244,22 +261,21 @@ export function PlanDetail({ id }) {
                       Plan to
                     </Typography>
                   </Stack>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     Employee
                   </Typography>
-                  <Divider sx={{ my: 0.5 }} />
                   <Typography variant="caption" color="text.secondary">
-                    Employee ID: #{planShow?.employee_id}
+                    Employee ID: #{planData.employee_id}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Vacancy ID: #{planShow?.vacancy_id}
+                    Vacancy ID: #{planData.vacancy_id}
                   </Typography>
                 </Stack>
               </Card>
             </Grid>
 
-            {/* Installments */}
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            {/* Date Created */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 variant="outlined"
                 sx={{
@@ -269,12 +285,49 @@ export function PlanDetail({ id }) {
                   transition: "all 0.3s",
                   "&:hover": {
                     boxShadow: 4,
-                    borderColor: "warning.main",
+                    borderColor: "primary.main",
                     transform: "translateY(-4px)",
                   },
                 }}
               >
-                <Stack spacing={1.5}>
+                <Stack spacing={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Iconify
+                      icon="solar:calendar-bold-duotone"
+                      width={24}
+                      sx={{ color: "success.main" }}
+                    />
+                    <Typography
+                      variant="overline"
+                      sx={{ color: "text.secondary", fontWeight: 600 }}
+                    >
+                      Date create
+                    </Typography>
+                  </Stack>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    {fDate(planData.created_at)}
+                  </Typography>
+                </Stack>
+              </Card>
+            </Grid>
+
+            {/* Installments */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Card
+                variant="outlined"
+                sx={{
+                  p: 2.5,
+                  height: "100%",
+                  borderRadius: 2,
+                  transition: "all 0.3s",
+                  "&:hover": {
+                    boxShadow: 4,
+                    borderColor: "primary.main",
+                    transform: "translateY(-4px)",
+                  },
+                }}
+              >
+                <Stack spacing={1}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Iconify
                       icon="solar:bill-list-bold-duotone"
@@ -288,117 +341,8 @@ export function PlanDetail({ id }) {
                       Installments
                     </Typography>
                   </Stack>
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {finance_plan.installment_count}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Total installments
-                  </Typography>
-                </Stack>
-              </Card>
-            </Grid>
-
-            {/* Paid Amount */}
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <Card
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  height: "100%",
-                  borderRadius: 2,
-                  borderLeft: 4,
-                  borderLeftColor: "success.main",
-                  transition: "all 0.3s",
-                  "&:hover": {
-                    boxShadow: 4,
-                    transform: "translateY(-4px)",
-                  },
-                }}
-              >
-                <Stack spacing={1.5}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Iconify
-                      icon="solar:wallet-money-bold-duotone"
-                      width={24}
-                      sx={{ color: "success.main" }}
-                    />
-                    <Typography
-                      variant="overline"
-                      sx={{ color: "text.secondary", fontWeight: 600 }}
-                    >
-                      Paid Amount
-                    </Typography>
-                  </Stack>
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 700, color: "success.main" }}
-                  >
-                    {fCurrency(parseFloat(paid_amount))}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Total amount paid
-                  </Typography>
-                </Stack>
-              </Card>
-            </Grid>
-
-            {/* Due Amount */}
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <Card
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  height: "100%",
-                  borderRadius: 2,
-                  borderLeft: 4,
-                  borderLeftColor:
-                    parseFloat(due_amount) > 0 ? "error.main" : "success.main",
-                  transition: "all 0.3s",
-                  "&:hover": {
-                    boxShadow: 4,
-                    transform: "translateY(-4px)",
-                  },
-                }}
-              >
-                <Stack spacing={1.5}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Iconify
-                      icon={
-                        parseFloat(due_amount) > 0
-                          ? "solar:danger-bold-duotone"
-                          : "solar:check-circle-bold-duotone"
-                      }
-                      width={24}
-                      sx={{
-                        color:
-                          parseFloat(due_amount) > 0
-                            ? "error.main"
-                            : "success.main",
-                      }}
-                    />
-                    <Typography
-                      variant="overline"
-                      sx={{ color: "text.secondary", fontWeight: 600 }}
-                    >
-                      Due Amount
-                    </Typography>
-                  </Stack>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 700,
-                      color:
-                        parseFloat(due_amount) > 0
-                          ? "error.main"
-                          : "success.main",
-                    }}
-                  >
-                    {fCurrency(parseFloat(due_amount))}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {parseFloat(due_amount) > 0
-                      ? "Remaining balance"
-                      : "Fully paid"}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    {finance_plan.installment_count} installments
                   </Typography>
                 </Stack>
               </Card>
@@ -413,7 +357,7 @@ export function PlanDetail({ id }) {
               direction="row"
               spacing={1}
               alignItems="center"
-              sx={{ mb: 3 }}
+              sx={{ mb: 2 }}
             >
               <Iconify
                 icon="solar:bill-check-bold-duotone"
@@ -425,7 +369,6 @@ export function PlanDetail({ id }) {
               </Typography>
             </Stack>
 
-            {/* Desktop Table View */}
             <Box sx={{ display: { xs: "none", md: "block" } }}>
               <TableContainer
                 component={Paper}
@@ -491,10 +434,7 @@ export function PlanDetail({ id }) {
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 700 }}
-                          >
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                             {fCurrency(installment.amount)}
                           </Typography>
                         </TableCell>
@@ -512,7 +452,7 @@ export function PlanDetail({ id }) {
                   key={index}
                   variant="outlined"
                   sx={{
-                    p: 2.5,
+                    p: 2,
                     borderRadius: 2,
                     borderLeft: 4,
                     borderLeftColor: "primary.main",
@@ -533,13 +473,13 @@ export function PlanDetail({ id }) {
                         {fCurrency(installment.amount)}
                       </Typography>
                     </Stack>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="subtitle2">
                       Installment #{installment.installment_no}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {installment.description}
                     </Typography>
-                    <Divider />
+                    <Divider sx={{ my: 0.5 }} />
                     <Stack
                       direction="row"
                       justifyContent="space-between"
@@ -622,7 +562,15 @@ export function PlanDetail({ id }) {
 
                 <Divider sx={{ borderStyle: "dashed" }} />
 
-                <Stack direction="row" justifyContent="space-between">
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    bgcolor: "primary.lighter",
+                  }}
+                >
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     Total
                   </Typography>
@@ -698,10 +646,7 @@ export function PlanDetail({ id }) {
                             }}
                           >
                             <TableCell>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600 }}
-                              >
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                 {fDate(payment.date)}
                               </Typography>
                             </TableCell>
@@ -726,12 +671,9 @@ export function PlanDetail({ id }) {
                               </Stack>
                             </TableCell>
                             <TableCell>
-                              {/* <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                dangerouslySetInnerHTML={{ __html: payment.note }}
-                              /> */}
-                              <Markdown children={payment.note} />
+                              <Typography variant="body2" color="text.secondary">
+                                {payment.note}
+                              </Typography>
                             </TableCell>
                             <TableCell align="right">
                               <Typography
@@ -746,10 +688,7 @@ export function PlanDetail({ id }) {
                                 label={payment.status}
                                 size="small"
                                 color={getStatusColor(payment.status)}
-                                sx={{
-                                  textTransform: "capitalize",
-                                  fontWeight: 600,
-                                }}
+                                sx={{ textTransform: "capitalize", fontWeight: 600 }}
                               />
                             </TableCell>
                           </TableRow>
@@ -766,7 +705,7 @@ export function PlanDetail({ id }) {
                       key={payment.id}
                       variant="outlined"
                       sx={{
-                        p: 2.5,
+                        p: 2,
                         borderRadius: 2,
                         borderLeft: 4,
                         borderLeftColor: "success.main",
@@ -791,7 +730,11 @@ export function PlanDetail({ id }) {
                             {fCurrency(parseFloat(payment.amount))}
                           </Typography>
                         </Stack>
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                        >
                           <Iconify
                             icon={
                               payment.method === "Cash"
@@ -801,20 +744,13 @@ export function PlanDetail({ id }) {
                             width={24}
                             sx={{ color: "primary.main" }}
                           />
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 600 }}
-                          >
+                          <Typography variant="subtitle2">
                             {payment.method}
                           </Typography>
                         </Stack>
-                        {/* <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          dangerouslySetInnerHTML={{ __html: payment.note }}
-                        /> */}
-
-                        <Markdown children={payment.note} />
+                        <Typography variant="body2" color="text.secondary">
+                          {payment.note}
+                        </Typography>
                         <Divider />
                         <Typography variant="caption" color="text.secondary">
                           {fDate(payment.date)}

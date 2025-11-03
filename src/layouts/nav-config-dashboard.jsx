@@ -88,9 +88,8 @@ export const navData = [
       },
       {
         title: "Faqs",
-        path: paths.dashboard.creditLogs.root,
+        path: paths.dashboard.faqs.root,
         icon: ICONS.logs,
-        disabled: true,
       },
     ],
   },

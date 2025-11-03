@@ -5,7 +5,17 @@ import { useBoolean } from "minimal-shared/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { LoadingButton } from "@mui/lab";
-import { Box, Link, Alert, IconButton, InputAdornment } from "@mui/material";
+import {
+  Box,
+  Link,
+  Alert,
+  IconButton,
+  InputAdornment,
+  Typography,
+  Stack,
+  Divider,
+  Card,
+} from "@mui/material";
 
 import { paths } from "src/routes/paths";
 import { RouterLink } from "src/routes/components";
@@ -91,20 +101,51 @@ export function SignInView() {
   });
 
   const renderForm = () => (
-    <Box sx={{ gap: 3, display: "flex", flexDirection: "column" }}>
+    <Stack spacing={3}>
+      {/* Email Field */}
       <Field.Text
         name="email"
         label="Email address"
-        slotProps={{ inputLabel: { shrink: true } }}
+        placeholder="Enter your email"
+        slotProps={{
+          inputLabel: { shrink: true },
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify
+                  icon="solar:letter-bold-duotone"
+                  width={24}
+                  sx={{ color: "text.disabled" }}
+                />
+              </InputAdornment>
+            ),
+          },
+        }}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            borderRadius: 2,
+          },
+        }}
       />
 
+      {/* Password Field */}
       <Field.Text
         name="password"
         label="Password"
+        placeholder="Enter your password"
         type={showPassword.value ? "text" : "password"}
         slotProps={{
           inputLabel: { shrink: true },
           input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify
+                  icon="solar:lock-password-bold-duotone"
+                  width={24}
+                  sx={{ color: "text.disabled" }}
+                />
+              </InputAdornment>
+            ),
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={showPassword.onToggle} edge="end">
@@ -120,8 +161,14 @@ export function SignInView() {
             ),
           },
         }}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            borderRadius: 2,
+          },
+        }}
       />
 
+      {/* Sign In Button */}
       <LoadingButton
         fullWidth
         color="primary"
@@ -130,10 +177,23 @@ export function SignInView() {
         variant="contained"
         loading={isSubmitting}
         loadingIndicator="Sign in..."
+        sx={{
+          py: 1.5,
+          borderRadius: 2,
+          fontSize: "1rem",
+          fontWeight: 600,
+          textTransform: "none",
+          boxShadow: (theme) =>
+            `0 8px 16px ${theme.palette.primary.main}40`,
+          "&:hover": {
+            boxShadow: (theme) =>
+              `0 12px 24px ${theme.palette.primary.main}50`,
+          },
+        }}
       >
         Sign in
       </LoadingButton>
-    </Box>
+    </Stack>
   );
 
   return (

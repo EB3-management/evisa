@@ -15,8 +15,8 @@ import { Iconify } from "src/components/iconify";
 import { toast } from "src/components/snackbar";
 
 import { signOut } from "src/api";
+import { ProfileGeneral } from "./profile-general";
 
-import { ProfileGeneral } from "../profile-general";
 
 // ----------------------------------------------------------------------
 
@@ -47,7 +47,6 @@ export function ProfileView() {
         heading="Profile"
         links={[
           { name: "Dashboard", href: paths.dashboard.root },
-          { name: "Organization", href: paths.dashboard.profile.root },
           { name: "Profile" },
         ]}
         action={

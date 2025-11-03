@@ -15,6 +15,7 @@ export const endpoints = {
     list: "finance-plan",
     assign: (id) => `finance-plan/assign-plan/${id}`,
     financeList: "finance-plan/list-assigned-plans",
+    detail: (id) => `finance-plan/assigned-plan/${id}`,
   },
   document: {
     list: "documents",
@@ -30,7 +31,6 @@ export const endpoints = {
 
   profile: {
     get: "employee-profile/view-profile",
-    update: "organization/updateOrganization",
   },
 
   form: {

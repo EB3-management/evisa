@@ -12,13 +12,13 @@ import {
   Stack,
   Typography,
   Chip,
-  Grid,
   TextField,
 } from "@mui/material";
 
 import { Form } from "src/components/hook-form";
 import { toast } from "src/components/snackbar";
 import { createAppointment } from "src/api";
+import Grid from "@mui/material/Grid2";
 
 // ----------------------------------------------------------------------
 
@@ -281,151 +281,151 @@ export function AppointmentBookingDialog({
             name="name"
             control={control}
             render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Full Name"
-              placeholder="Enter your full name"
-              fullWidth
-              size="small"
-              error={!!error}
-              helperText={error?.message}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                  "&:hover": {
-                    boxShadow: 1,
+              <TextField
+                {...field}
+                label="Full Name"
+                placeholder="Enter your full name"
+                fullWidth
+                size="small"
+                error={!!error}
+                helperText={error?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 1.5,
+                    "&:hover": {
+                      boxShadow: 1,
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: 2,
+                    },
                   },
-                  "&.Mui-focused": {
-                    boxShadow: 2,
-                  },
-                },
-              }}
-            />
-          )}
-        />
+                }}
+              />
+            )}
+          />
 
-        {/* Email Field - Editable */}
-        <Controller
-          name="email"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Email Address"
-              type="email"
-              placeholder="your.email@example.com"
-              fullWidth
-              size="small"
-              error={!!error}
-              helperText={error?.message}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                  "&:hover": {
-                    boxShadow: 1,
+          {/* Email Field - Editable */}
+          <Controller
+            name="email"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Email Address"
+                type="email"
+                placeholder="your.email@example.com"
+                fullWidth
+                size="small"
+                error={!!error}
+                helperText={error?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 1.5,
+                    "&:hover": {
+                      boxShadow: 1,
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: 2,
+                    },
                   },
-                  "&.Mui-focused": {
-                    boxShadow: 2,
-                  },
-                },
-              }}
-            />
-          )}
-        />
+                }}
+              />
+            )}
+          />
 
-        {/* Contact Field - Editable */}
-        <Controller
-          name="contact_number"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Contact Number"
-              placeholder="+1 (555) 123-4567"
-              fullWidth
-              size="small"
-              error={!!error}
-              helperText={error?.message}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                  "&:hover": {
-                    boxShadow: 1,
+          {/* Contact Field - Editable */}
+          <Controller
+            name="contact_number"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Contact Number"
+                placeholder="+1 (555) 123-4567"
+                fullWidth
+                size="small"
+                error={!!error}
+                helperText={error?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 1.5,
+                    "&:hover": {
+                      boxShadow: 1,
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: 2,
+                    },
                   },
-                  "&.Mui-focused": {
-                    boxShadow: 2,
-                  },
-                },
-              }}
-            />
-          )}
-        />
+                }}
+              />
+            )}
+          />
 
-        {/* Address Field - Editable */}
-        <Controller
-          name="address"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Address"
-              placeholder="Enter your full address"
-              multiline
-              rows={2}
-              fullWidth
-              size="small"
-              error={!!error}
-              helperText={error?.message}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                  "&:hover": {
-                    boxShadow: 1,
+          {/* Address Field - Editable */}
+          <Controller
+            name="address"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Address"
+                placeholder="Enter your full address"
+                multiline
+                rows={2}
+                fullWidth
+                size="small"
+                error={!!error}
+                helperText={error?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 1.5,
+                    "&:hover": {
+                      boxShadow: 1,
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: 2,
+                    },
                   },
-                  "&.Mui-focused": {
-                    boxShadow: 2,
-                  },
-                },
-              }}
-            />
-          )}
-        />
+                }}
+              />
+            )}
+          />
 
-        {/* Remarks Field */}
-        <Controller
-          name="remarks"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              label="Remarks (Optional)"
-              placeholder="Any additional information or special requests..."
-              multiline
-              rows={2}
-              fullWidth
-              size="small"
-              error={!!error}
-              helperText={error?.message}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                  "&:hover": {
-                    boxShadow: 1,
+          {/* Remarks Field */}
+          <Controller
+            name="remarks"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                label="Remarks (Optional)"
+                placeholder="Any additional information or special requests..."
+                multiline
+                rows={2}
+                fullWidth
+                size="small"
+                error={!!error}
+                helperText={error?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 1.5,
+                    "&:hover": {
+                      boxShadow: 1,
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: 2,
+                    },
                   },
-                  "&.Mui-focused": {
-                    boxShadow: 2,
-                  },
-                },
-              }}
-            />
-          )}
-        />
-      </Stack>
-    </Box>
-  );
-};
+                }}
+              />
+            )}
+          />
+        </Stack>
+      </Box>
+    );
+  };
 
-const renderActions = () => (
+  const renderActions = () => (
     <Box
       sx={{
         gap: { xs: 1.5, sm: 2 },

@@ -54,3 +54,20 @@ export const assignPlan = async (id, data) => {
     throw error;
   }
 };
+
+export function useGetAssignPlanShow(id) {
+  const url = endpoints.plan.detail(id);
+
+  const { data, isLoading, error } = useSWR(url, fetcher);
+
+  const memoizedValue = useMemo(
+    () => ({
+      planShow: data?.data || [],
+      planShowLoading: isLoading,
+      planShowError: error,
+    }),
+    [data?.data, isLoading, error]
+  );
+
+  return memoizedValue;
+}

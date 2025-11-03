@@ -31,7 +31,8 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
     if (!appointments || appointments.length === 0) return [];
 
     const appointment = appointments.find(
-      (item) => dayjs(item.date).format("YYYY-MM-DD") === day.format("YYYY-MM-DD")
+      (item) =>
+        dayjs(item.date).format("YYYY-MM-DD") === day.format("YYYY-MM-DD")
     );
 
     return appointment?.appointments || [];
@@ -54,9 +55,9 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
   return (
     <Card
       sx={{
-        p: { xs: 2, sm: 2.5, md: 3 },
+        p: { xs: 3, sm: 4 },
         width: "100%",
-        maxWidth: { xs: "100%", sm: 500 },
+        maxWidth: { xs: "100%", sm: 480, md: 520 },
         bgcolor: "background.paper",
         boxShadow: 3,
         borderRadius: 2,
@@ -168,7 +169,9 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
           const isCurrentMonth = day.month() === currentDate.month();
           const isToday = day.isSame(dayjs(), "day");
           const hasEvents = events.length > 0;
-          const availableSlots = events.filter((e) => e.status === "Available").length;
+          const availableSlots = events.filter(
+            (e) => e.status === "Available"
+          ).length;
 
           return (
             <Box
@@ -229,7 +232,7 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
                     fontWeight: 700,
                     minWidth: { xs: 45, sm: 50 },
                     width: "auto",
-                    "& .MuiChip-label": { 
+                    "& .MuiChip-label": {
                       px: { xs: 0.75, sm: 1 },
                       whiteSpace: "nowrap",
                     },

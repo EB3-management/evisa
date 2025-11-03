@@ -38,19 +38,8 @@ const PaymentListPage = lazy(() => import("src/pages/dashboard/payment/list"));
 // Profile
 const ProfilePage = lazy(() => import("src/pages/dashboard/profile/profile"));
 
-// Employee
-const EmployeeCreatePage = lazy(() =>
-  import("src/pages/dashboard/employee/create")
-);
-const EmployeeListPage = lazy(() =>
-  import("src/pages/dashboard/employee/list")
-);
-const EmployeeDetailPage = lazy(() =>
-  import("src/pages/dashboard/employee/detail")
-);
-const EmployeeEditPage = lazy(() =>
-  import("src/pages/dashboard/employee/edit")
-);
+// faqs
+const FaqsPage = lazy(() => import("src/pages/dashboard/faqs/list"));
 
 // ----------------------------------------------------------------------
 
@@ -89,7 +78,7 @@ export const dashboardRoutes = [
         element: <PlanPage />,
       },
       {
-        path: "plan-detail",
+        path: "payment-detail",
         children: [{ path: ":id", element: <PlanDetailPage /> }],
       },
       {
@@ -107,6 +96,8 @@ export const dashboardRoutes = [
         path: "payment",
         children: [{ index: true, element: <PaymentListPage /> }],
       },
+      { path: "faqs", element: <FaqsPage /> },
+      { path: "profile", element: <ProfilePage /> },
     ],
   },
 ];

@@ -6,7 +6,7 @@ import { ProfileView } from "src/sections/profile/view";
 
 // ----------------------------------------------------------------------
 
-const metadata = { title: `Organization profile - ${CONFIG.appName}` };
+const metadata = { title: `Profile - ${CONFIG.appName}` };
 
 export default function Page() {
   return (

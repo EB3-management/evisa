@@ -26,7 +26,7 @@ export const paths = {
   dashboard: {
     root: ROOTS.DASHBOARD,
     plan: `${ROOTS.DASHBOARD}/plan`,
-    detail: (id) => `${ROOTS.DASHBOARD}/plan-detail/${id}`,
+    detail: (id) => `${ROOTS.DASHBOARD}/payment-detail/${id}`,
     finance: `${ROOTS.DASHBOARD}/finance`,
 
     documents: {
@@ -55,13 +55,6 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/payment`,
     },
 
-    formTemplate: {
-      root: `${ROOTS.DASHBOARD}/form-template`,
-      create: `${ROOTS.DASHBOARD}/form-template/create`,
-      detail: (id) => `${ROOTS.DASHBOARD}/form-template/${id}`,
-      edit: (id) => `${ROOTS.DASHBOARD}/form-template/${id}/edit`,
-    },
-
     profile: {
       root: `${ROOTS.DASHBOARD}/profile`,
     },
@@ -70,34 +63,12 @@ export const paths = {
       detail: (id) => `${ROOTS.DASHBOARD}/lead-detail/${id}`,
     },
 
-    employee: {
-      root: `${ROOTS.DASHBOARD}/employee`,
-      create: `${ROOTS.DASHBOARD}/employee/create`,
-      detail: (id) => `${ROOTS.DASHBOARD}/employee/${id}`,
-      edit: (id) => `${ROOTS.DASHBOARD}/employee/${id}/edit`,
-    },
-
     appointment: {
       root: `${ROOTS.DASHBOARD}/appointment`,
-      category: `${ROOTS.DASHBOARD}/appointment/category`,
-      timeSlot: `${ROOTS.DASHBOARD}/appointment/time-slot`,
     },
 
-    creditLogs: {
-      root: `${ROOTS.DASHBOARD}/credit-logs`,
-    },
-
-    attendance: {
-      root: `${ROOTS.DASHBOARD}/attendance-report`,
-    },
-
-    reports: {
-      root: `${ROOTS.DASHBOARD}/reports/team-report`,
-      transaction: `${ROOTS.DASHBOARD}/reports/transaction-report`,
-      smsReport: `${ROOTS.DASHBOARD}/reports/sms-report`,
-      topupReport: `${ROOTS.DASHBOARD}/reports/topup-report`,
-      packageReport: `${ROOTS.DASHBOARD}/reports/package-report`,
-      creditReport: `${ROOTS.DASHBOARD}/reports/credit-report`,
+    faqs: {
+      root: `${ROOTS.DASHBOARD}/faqs`,
     },
   },
 };
