@@ -14,6 +14,7 @@ export const paths = {
   auth: {
     signIn: `${ROOTS.AUTH}/sign-in`,
     signUp: `${ROOTS.AUTH}/sign-up`,
+    termsAndConditions: `${ROOTS.AUTH}/terms-and-conditions`,
   },
   // eligibility: "/register-step-form",
 

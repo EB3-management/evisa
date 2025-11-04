@@ -16,6 +16,10 @@ const EligibilityPage = lazy(() =>
   import("src/pages/auth/eligibility-form/eligibility-form")
 );
 
+const TermsAndConditionPage = lazy(() =>
+  import("src/pages/auth/term-and-condition")
+);
+
 // ----------------------------------------------------------------------
 
 export const authRoutes = [
@@ -48,6 +52,16 @@ export const authRoutes = [
             <AuthCenteredLayout>
               <SignUpPage />
             </AuthCenteredLayout>
+          </GuestGuard>
+        ),
+      },
+      {
+        path: "terms-and-conditions",
+        element: (
+          <GuestGuard>
+            <FormCenteredLayout>
+              <TermsAndConditionPage />
+            </FormCenteredLayout>
           </GuestGuard>
         ),
       },

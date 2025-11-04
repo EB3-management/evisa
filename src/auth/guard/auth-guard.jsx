@@ -18,7 +18,7 @@ export function AuthGuard({ children }) {
   const pathname = usePathname();
 
   const { isLogin, token } = useAppSelector(selectAuthState);
-  console.log("this is bearer token", token);
+  console.log("this is bearer token auth guard", token);
 
   const [isChecking, setIsChecking] = useState(true);
 
@@ -48,7 +48,7 @@ export function AuthGuard({ children }) {
   useEffect(() => {
     checkPermissions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLogin]);
+  }, [isLogin, token]);
 
   if (isChecking) {
     return <SplashScreen />;

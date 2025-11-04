@@ -17,7 +17,6 @@ import {
   InputLabel,
   FormHelperText,
   Chip,
-  Grid,
   TextField,
   CircularProgress,
 } from "@mui/material";
@@ -33,6 +32,7 @@ import { Form } from "src/components/hook-form";
 import { toast } from "src/components/snackbar";
 
 import { createAppointment } from "src/api";
+import Grid from "@mui/material/Grid2";
 
 // ----------------------------------------------------------------------
 
@@ -94,11 +94,14 @@ export function AppointmentTimeSlotNewEditForm({
   // Update form values when profile data is loaded
   useEffect(() => {
     if (profile && showBookingForm) {
-      const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
-      const phoneNumber = profile.country_code && profile.phone 
-        ? `${profile.country_code}${profile.phone}` 
-        : profile.phone || "";
-      
+      const fullName = `${profile.first_name || ""} ${
+        profile.last_name || ""
+      }`.trim();
+      const phoneNumber =
+        profile.country_code && profile.phone
+          ? `${profile.country_code}${profile.phone}`
+          : profile.phone || "";
+
       methods.reset({
         name: fullName,
         email: profile.email || "",
@@ -109,15 +112,22 @@ export function AppointmentTimeSlotNewEditForm({
     }
   }, [profile, showBookingForm, methods]);
 
-  // Get available dates from API response
+  // Get available dates from API response (filter out past dates)
   const dateList = useMemo(() => {
     if (!appointments || appointments.length === 0) return [];
 
-    return appointments.map((item) => ({
-      value: dayjs(item.date).format("YYYY-MM-DD"),
-      label: dayjs(item.date).format("dddd, MMMM D, YYYY"),
-      rawDate: item.date,
-    }));
+    const today = dayjs().startOf('day');
+
+    return appointments
+      .filter((item) => {
+        const appointmentDate = dayjs(item.date).startOf('day');
+        return appointmentDate.isSame(today, 'day') || appointmentDate.isAfter(today);
+      })
+      .map((item) => ({
+        value: dayjs(item.date).format("YYYY-MM-DD"),
+        label: dayjs(item.date).format("dddd, MMMM D, YYYY"),
+        rawDate: item.date,
+      }));
   }, [appointments]);
 
   // Get time slots for selected date

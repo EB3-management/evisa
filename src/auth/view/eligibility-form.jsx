@@ -94,10 +94,18 @@ export const EligibilityFormSchema = zod
       .string()
       .min(1, { message: "Speaking proficiency is required!" }),
 
-    deported_from_US: zod.boolean(),
-    denied_entry_from_US: zod.boolean(),
-    pending_US_asylum_application: zod.boolean(),
-    special_accommodation: zod.boolean(),
+    deported_from_US: zod
+      .union([zod.boolean(), zod.string()])
+      .transform((val) => val === true || val === "true"),
+    denied_entry_from_US: zod
+      .union([zod.boolean(), zod.string()])
+      .transform((val) => val === true || val === "true"),
+    pending_US_asylum_application: zod
+      .union([zod.boolean(), zod.string()])
+      .transform((val) => val === true || val === "true"),
+    special_accommodation: zod
+      .union([zod.boolean(), zod.string()])
+      .transform((val) => val === true || val === "true"),
 
     passport_front: zod
       .any()
@@ -732,7 +740,7 @@ export function EligibilityFormView() {
 
       {/* Passport Upload Section */}
       <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 2 }}>
-        {renderSectionHeader("Document Upload", sameAddress ? "5" : "6")}
+        {renderSectionHeader("Passport Upload", sameAddress ? "5" : "6")}
 
         <Box sx={{ gap: 3, display: "flex", flexDirection: "column" }}>
           <Field.Upload
@@ -765,9 +773,9 @@ export function EligibilityFormView() {
               <Link
                 underline="always"
                 color="primary"
-                href="/terms-of-service"
+                href={paths.auth.termsAndConditions}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 sx={{ fontWeight: 600, color: "primary.dark" }}
               >
                 Terms and Conditions

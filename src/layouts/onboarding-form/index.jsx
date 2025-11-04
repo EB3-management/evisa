@@ -529,9 +529,11 @@ export default function OnboardingLayout() {
         beenToUsa: immigrationHistory?.been_to_usa?.toLowerCase() || "no",
         socialSecurity: immigrationHistory?.ever_had_ssn?.toLowerCase() || "no",
         socialSecurityNumber: immigrationHistory?.ssn_number || "",
-        inUsaApplicant: immigrationHistory?.employee_in_usa?.toLowerCase() || "no",
+        inUsaApplicant:
+          immigrationHistory?.employee_in_usa?.toLowerCase() || "no",
         applicantName: immigrationHistory?.employee_in_usa_if_yes_who || "",
-        inUsaDependent: immigrationHistory?.dependents_in_usa?.toLowerCase() || "no",
+        inUsaDependent:
+          immigrationHistory?.dependents_in_usa?.toLowerCase() || "no",
         dependentName: immigrationHistory?.dependents_in_usa_if_yes_who || "",
         i94Number: immigrationHistory?.recent_i94_number || "",
 
@@ -664,7 +666,8 @@ export default function OnboardingLayout() {
         tbDetails: healthRecord?.tb_employee_details || "",
         hasTbDependent: healthRecord?.tb_dependents?.toLowerCase() || "no",
         tbDependentDetails: healthRecord?.tb_dependents_details || "",
-        hasInsurance: healthRecord?.health_insurance_employee?.toLowerCase() || "no",
+        hasInsurance:
+          healthRecord?.health_insurance_employee?.toLowerCase() || "no",
         insuranceDetails: healthRecord?.health_insurance_employee_details || "",
         hasInsuranceDependent:
           healthRecord?.health_insurance_dependents?.toLowerCase() || "no",
@@ -1507,7 +1510,7 @@ export default function OnboardingLayout() {
           >
             <Box
               sx={{
-                backgroundColor: (theme) => theme.palette.primary.light,
+                backgroundColor: "primary.light",
                 borderRadius: 2,
                 p: 4,
                 boxShadow: "0 2px 10px rgba(0,0,0,0.2)",

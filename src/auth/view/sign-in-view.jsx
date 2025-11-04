@@ -183,11 +183,9 @@ export function SignInView() {
           fontSize: "1rem",
           fontWeight: 600,
           textTransform: "none",
-          boxShadow: (theme) =>
-            `0 8px 16px ${theme.palette.primary.main}40`,
+          boxShadow: (theme) => `0 8px 16px ${theme.palette.primary.main}40`,
           "&:hover": {
-            boxShadow: (theme) =>
-              `0 12px 24px ${theme.palette.primary.main}50`,
+            boxShadow: (theme) => `0 12px 24px ${theme.palette.primary.main}50`,
           },
         }}
       >
@@ -199,10 +197,10 @@ export function SignInView() {
   return (
     <>
       <FormHead
-        title="Sign in to your account"
+        title="Welcome Back to Your EB-3 Journey"
         description={
           <>
-            {`Don’t have an account? `}
+            {`New to EB-3 visa process? `}
             <Link
               component={RouterLink}
               href={paths.auth.signUp}

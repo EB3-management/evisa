@@ -75,7 +75,7 @@ export const CurrentAddress = ({ country }) => {
               <TextField
                 {...field}
                 fullWidth
-                placeholder="Bagmati"
+                placeholder="Enter state"
                 error={!!errors.state}
                 helperText={errors.state?.message}
                 sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
@@ -94,7 +94,7 @@ export const CurrentAddress = ({ country }) => {
               <TextField
                 {...field}
                 fullWidth
-                placeholder="Kathmandu"
+                placeholder="Enter city"
                 error={!!errors.city}
                 helperText={errors.city?.message}
                 sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
@@ -113,7 +113,7 @@ export const CurrentAddress = ({ country }) => {
               <TextField
                 {...field}
                 fullWidth
-                placeholder="44600"
+                placeholder="Enter zipcode"
                 error={!!errors.zipCode}
                 helperText={errors.zipCode?.message}
                 sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}

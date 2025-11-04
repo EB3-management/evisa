@@ -8,6 +8,18 @@ import { Iconify } from "src/components/iconify";
 export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
   const [currentDate, setCurrentDate] = useState(dayjs());
 
+  // Filter out past appointments (only show today and future dates)
+  const filteredAppointments = useMemo(() => {
+    if (!appointments || appointments.length === 0) return [];
+    
+    const today = dayjs().startOf('day');
+    
+    return appointments.filter((item) => {
+      const appointmentDate = dayjs(item.date).startOf('day');
+      return appointmentDate.isSame(today, 'day') || appointmentDate.isAfter(today);
+    });
+  }, [appointments]);
+
   // Get calendar data for current month
   const calendarData = useMemo(() => {
     const startOfMonth = currentDate.startOf("month");
@@ -28,9 +40,9 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
 
   // Get events for a specific day
   const getEventsForDay = (day) => {
-    if (!appointments || appointments.length === 0) return [];
+    if (!filteredAppointments || filteredAppointments.length === 0) return [];
 
-    const appointment = appointments.find(
+    const appointment = filteredAppointments.find(
       (item) =>
         dayjs(item.date).format("YYYY-MM-DD") === day.format("YYYY-MM-DD")
     );

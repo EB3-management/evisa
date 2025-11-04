@@ -247,9 +247,9 @@ export function SignUpView() {
               <Link
                 underline="always"
                 color="text.primary"
-                href="/terms-of-service"
+                href={paths.auth.termsAndConditions}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
               >
                 Terms and Conditions
               </Link>
@@ -281,7 +281,7 @@ export function SignUpView() {
   return (
     <>
       <FormHead
-        title="Get started"
+        title="Start Your EB-3 Visa Application"
         description={
           <>
             {`Already have an account? `}

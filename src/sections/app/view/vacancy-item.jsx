@@ -48,7 +48,7 @@ export function VacancyItem({
             // src={job.company_logo || "https://via.placeholder.com/48"}
             src={job.employer_name}
             variant="rounded"
-            sx={{ width: 48, height: 48, mb: 2 }}
+            sx={{ width: 48, height: 48, mb: 2, bgcolor: "secondary.main" }}
           />
 
           <ListItemText
@@ -166,7 +166,7 @@ export function VacancyItem({
               fontWeight: 600,
             }}
           >
-            Apply Now
+            View Detail
           </Button>
         </Box>
       </Card>

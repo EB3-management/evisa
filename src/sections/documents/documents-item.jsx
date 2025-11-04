@@ -137,6 +137,21 @@ export function DocumentsTableRow({
               fontSize: { xs: "0.65rem", sm: "0.75rem" },
               height: { xs: 20, sm: 24 },
               ...getStatusChipColor(row.status),
+              animation: "popup 1s ease-out infinite",
+              "@keyframes popup": {
+                "0%": {
+                  transform: "scale(0.9)",
+                  opacity: 0.7,
+                },
+                "60%": {
+                  transform: "scale(1.1)",
+                  opacity: 1,
+                },
+                "100%": {
+                  transform: "scale(1)",
+                  opacity: 1,
+                },
+              },
             }}
           />
         </TableCell>

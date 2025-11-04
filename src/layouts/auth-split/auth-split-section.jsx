@@ -42,11 +42,6 @@ export function AuthSplitSection(props) {
     dispatch(fetchAppointmentsRequest());
   }, [dispatch]);
 
-  // Fetch appointments when component mounts
-  useEffect(() => {
-    dispatch(fetchAppointmentsRequest());
-  }, [dispatch]);
-
   // Animation effect
   useEffect(() => {
     // Initial animation trigger
