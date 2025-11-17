@@ -24,6 +24,7 @@ export function DocumentsTableRow({
   onSelectRow,
 }) {
   const [openSigning, setOpenSigning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useAppDispatch();
 
   const getStatusChipColor = (status) => {
@@ -43,6 +44,7 @@ export function DocumentsTableRow({
   };
 
   const handleSubmitSignature = async (contractId, signatureData) => {
+    setIsSubmitting(true);
     try {
       // Send signature in the format backend expects
       const response = await signContract(contractId, {
@@ -63,6 +65,8 @@ export function DocumentsTableRow({
         "Failed to sign contract";
       toast.error(errorMessage);
       throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -224,6 +228,7 @@ export function DocumentsTableRow({
         onClose={() => setOpenSigning(false)}
         contract={row}
         onSubmitSignature={handleSubmitSignature}
+        isSubmitting={isSubmitting}
       />
     </>
   );

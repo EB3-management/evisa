@@ -12,7 +12,7 @@ function* fetchOnboardingSaga({ payload }) {
 
     // Extract the nested data from response.data.data
     // const profileData = response?.data?.data || {};
-
+    console.log("this is onboarding response", response);
     yield put(fetchOnBoardingSuccess(response));
   } catch (error) {
     yield put(fetchOnBoardingFailure());

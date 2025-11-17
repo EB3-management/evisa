@@ -34,6 +34,8 @@ export const MainApplicantDetails = ({ country }) => {
     formState: { errors },
   } = useFormContext();
 
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <Box id="section-0" sx={{ mb: 6 }}>
       {/* <Typography
@@ -111,6 +113,9 @@ export const MainApplicantDetails = ({ country }) => {
                 fullWidth
                 error={!!errors.dob}
                 helperText={errors.dob?.message}
+                inputProps={{
+                  max: today,
+                }}
                 sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
               />
             )}
@@ -127,7 +132,7 @@ export const MainApplicantDetails = ({ country }) => {
             render={({ field }) => (
               <>
                 <RadioGroup row {...field}>
-                  {["male", "female", "other"].map((value) => (
+                  {["Male", "Female", "Other"].map((value) => (
                     <FormControlLabel
                       key={value}
                       value={value}
@@ -172,7 +177,7 @@ export const MainApplicantDetails = ({ country }) => {
                     <em>Select Country</em>
                   </MenuItem>
                   {country?.map((option) => (
-                    <MenuItem key={option.value} value={String(option.value)}>
+                    <MenuItem key={option.value} value={option.label}>
                       {option.label}
                     </MenuItem>
                   ))}

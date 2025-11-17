@@ -205,10 +205,10 @@ export const saveFinalSubmit = async (data) => {
   }
 };
 
-export const fetchOnBoardingStatus = async (id) => {
+export const fetchOnBoardingStatus = async () => {
   try {
     const response = await fetcher(endpoints.form.status);
-
+    console.log("this is onboarding", response);
     return response.data;
   } catch (error) {
     console.error(error);

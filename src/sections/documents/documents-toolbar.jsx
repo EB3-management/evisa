@@ -1,16 +1,16 @@
-import {
-  TextField,
-  Box,
-  MenuItem,
-  CircularProgress,
-} from "@mui/material";
+import { TextField, Box, MenuItem, CircularProgress } from "@mui/material";
 
 import { useCallback } from "react";
-import { useGetVacancy } from "src/api/vacancy";
+import { useGetAppliedVacancy, useGetVacancy } from "src/api/vacancy";
 
 export function DocumentsTableToolbar({ filters, onResetPage }) {
   const { state: currentFilters, setState: updateFilters } = filters;
-  const { vacancy: vacancyList = [], vacancyLoading } = useGetVacancy();
+  // const { vacancy: vacancyList = [], vacancyLoading } = useGetVacancy();
+  const {
+    appliedVacancy: vacancyList = [],
+    appliedVacancyLoading,
+    mutateAppliedVacancy,
+  } = useGetAppliedVacancy();
 
   const handleFilterVacancy = useCallback(
     (event) => {
@@ -43,7 +43,7 @@ export function DocumentsTableToolbar({ filters, onResetPage }) {
         display: "flex",
         flexDirection: { xs: "column", sm: "row" },
         gap: { xs: 1.5, sm: 2 },
-        alignItems: { xs: 'stretch', sm: 'flex-end' },
+        alignItems: { xs: "stretch", sm: "flex-end" },
         p: { xs: 2, sm: 2.5 },
         flexWrap: "wrap",
       }}
@@ -54,21 +54,21 @@ export function DocumentsTableToolbar({ filters, onResetPage }) {
         label="Select Vacancy"
         value={currentFilters.vacancy_id || ""}
         onChange={handleFilterVacancy}
-        sx={{ 
+        sx={{
           width: { xs: "100%", sm: "auto" },
           minWidth: { sm: 200, md: 250 },
-          flex: { xs: '1', sm: 'initial' }
+          flex: { xs: "1", sm: "initial" },
         }}
       >
         <MenuItem value="">All</MenuItem>
-        {vacancyLoading ? (
+        {appliedVacancyLoading ? (
           <MenuItem disabled>
             <CircularProgress size={20} />
           </MenuItem>
         ) : (
           vacancyList?.map((vacancy) => (
             <MenuItem key={vacancy.id} value={vacancy.id}>
-              {vacancy.title}
+              {vacancy.title} - {vacancy.employer_name}
             </MenuItem>
           ))
         )}
@@ -80,10 +80,10 @@ export function DocumentsTableToolbar({ filters, onResetPage }) {
         label="Status"
         value={currentFilters.status || ""}
         onChange={handleFilterStatus}
-        sx={{ 
+        sx={{
           width: { xs: "100%", sm: "auto" },
           minWidth: { sm: 180, md: 200 },
-          flex: { xs: '1', sm: 'initial' }
+          flex: { xs: "1", sm: "initial" },
         }}
       >
         {statusOptions.map((option) => (

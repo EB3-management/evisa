@@ -3,8 +3,8 @@ import { endpoints } from "./endpoints";
 import { fetcher, poster } from "src/lib";
 import { useMemo } from "react";
 
-export function useGetPlan() {
-  const url = endpoints.plan.list;
+export function useGetPlan(id) {
+  const url = endpoints.plan.list(id);
 
   const { data, isLoading, error } = useSWR(url, fetcher);
 

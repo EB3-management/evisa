@@ -13,6 +13,8 @@ import {
 } from "@mui/material";
 import { Iconify } from "src/components/iconify";
 import Grid from "@mui/material/Grid2";
+import { useGetFaqs } from "src/api";
+import { Markdown } from "src/components/markdown";
 
 // FAQ Data
 const FAQ_DATA = [
@@ -79,6 +81,7 @@ const FAQ_DATA = [
 ];
 
 export function FaqsView() {
+  const { faqs, faqsLoading, faqsError } = useGetFaqs();
   const [expanded, setExpanded] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -149,7 +152,7 @@ export function FaqsView() {
 
         {/* FAQ Accordions */}
         <Stack spacing={2}>
-          {FAQ_DATA.map((faq, index) => (
+          {faqs.map((faq, index) => (
             <Accordion
               key={faq.id}
               expanded={expanded === `panel${faq.id}`}
@@ -239,7 +242,7 @@ export function FaqsView() {
                   pt: 0,
                 }}
               >
-                <Typography
+                {/* <Typography
                   variant="body2"
                   sx={{
                     color: "text.secondary",
@@ -248,7 +251,8 @@ export function FaqsView() {
                   }}
                 >
                   {faq.answer}
-                </Typography>
+                </Typography> */}
+                <Markdown children={faq.answer} />
               </AccordionDetails>
             </Accordion>
           ))}
@@ -332,15 +336,23 @@ export function FaqsView() {
                       <Box>
                         <Typography
                           variant="caption"
-                          sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.75rem" }}
+                          sx={{
+                            color: "text.secondary",
+                            fontWeight: 500,
+                            fontSize: "0.75rem",
+                          }}
                         >
                           Call Us
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ color: "text.primary", fontWeight: 600, fontSize: "0.9375rem" }}
+                          sx={{
+                            color: "text.primary",
+                            fontWeight: 600,
+                            fontSize: "0.9375rem",
+                          }}
                         >
-                          +1 (555) 123-4567
+                          +1 (972) 999-0180 / +1 (703) 867-5233
                         </Typography>
                       </Box>
                     </Stack>
@@ -381,13 +393,21 @@ export function FaqsView() {
                       <Box>
                         <Typography
                           variant="caption"
-                          sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.75rem" }}
+                          sx={{
+                            color: "text.secondary",
+                            fontWeight: 500,
+                            fontSize: "0.75rem",
+                          }}
                         >
                           Email Us
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ color: "text.primary", fontWeight: 600, fontSize: "0.9375rem" }}
+                          sx={{
+                            color: "text.primary",
+                            fontWeight: 600,
+                            fontSize: "0.9375rem",
+                          }}
                         >
                           support@eb3visa.com
                         </Typography>

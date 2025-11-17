@@ -50,7 +50,7 @@ export const CurrentAddress = ({ country }) => {
                     <em>Select Country</em>
                   </MenuItem>
                   {country?.map((option) => (
-                    <MenuItem key={option.value} value={String(option.value)}>
+                    <MenuItem key={option.value} value={option.label}>
                       {option.label}
                     </MenuItem>
                   ))}

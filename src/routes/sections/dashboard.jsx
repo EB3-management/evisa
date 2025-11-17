@@ -38,8 +38,16 @@ const PaymentListPage = lazy(() => import("src/pages/dashboard/payment/list"));
 // Profile
 const ProfilePage = lazy(() => import("src/pages/dashboard/profile/profile"));
 
+// visastatus
+const VisaStatusPage = lazy(() =>
+  import("src/pages/dashboard/visa-status/list")
+);
+
 // faqs
 const FaqsPage = lazy(() => import("src/pages/dashboard/faqs/list"));
+
+// guide
+const GuidePage = lazy(() => import("src/pages/dashboard/faqs/guide"));
 
 // ----------------------------------------------------------------------
 
@@ -75,7 +83,8 @@ export const dashboardRoutes = [
       },
       {
         path: "plan",
-        element: <PlanPage />,
+        children: [{ path: ":id", element: <PlanPage /> }],
+        // element: <PlanPage />,
       },
       {
         path: "payment-detail",
@@ -98,6 +107,8 @@ export const dashboardRoutes = [
       },
       { path: "faqs", element: <FaqsPage /> },
       { path: "profile", element: <ProfilePage /> },
+      { path: "visa-status", element: <VisaStatusPage /> },
+      { path: "guide", element: <GuidePage /> },
     ],
   },
 ];

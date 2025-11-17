@@ -11,7 +11,7 @@ export const onBoardingRoutes = [
       </AuthGuard>
     ),
     children: [
-      { path: "/apply/:id", element: <Step1Page /> },
+      { path: "/apply", element: <Step1Page /> },
       { path: "apply/step2", element: <Step2Page /> },
       // add more steps here
     ],

@@ -39,6 +39,21 @@ export const saveEligibilityForm = async (data) => {
   }
 };
 
+export function useGetEligibilityData() {
+  const { data, isLoading, error } = useSWR(endpoints.vacancy.show, fetcher);
+
+  const memoizedValue = useMemo(
+    () => ({
+      eligibilityData: data?.data || [],
+      eligibilityLoading: isLoading,
+      eligibilityError: error,
+    }),
+    [data?.data, isLoading, error]
+  );
+
+  return memoizedValue;
+}
+
 export const signOut = async () => {
   try {
     const response = await poster(endpoints.auth.signOut);
@@ -65,3 +80,27 @@ export function useGetCountryCode() {
 
   return memoizedValue;
 }
+
+export const emailLinkSend = async () => {
+  try {
+    const response = await poster(endpoints.auth.emailLink);
+
+    return response;
+  } catch (error) {
+    console.error(error);
+
+    throw error;
+  }
+};
+
+export const emailVerify = async (data) => {
+  try {
+    const response = await poster(endpoints.auth.emailVerify, data);
+
+    return response;
+  } catch (error) {
+    console.error(error);
+
+    throw error;
+  }
+};

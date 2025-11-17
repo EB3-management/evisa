@@ -19,6 +19,10 @@ import {
 
 import { StoreProvider } from "./redux";
 import { ApolloProvider } from "./lib";
+import { injectStore } from "./lib/axios/axios";
+import store from "./redux/store";
+
+injectStore(store)
 
 // ----------------------------------------------------------------------
 

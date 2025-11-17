@@ -26,7 +26,8 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
-    plan: `${ROOTS.DASHBOARD}/plan`,
+    // plan: `${ROOTS.DASHBOARD}/plan`,
+    plan: (id) => `${ROOTS.DASHBOARD}/plan/${id}`,
     detail: (id) => `${ROOTS.DASHBOARD}/payment-detail/${id}`,
     finance: `${ROOTS.DASHBOARD}/finance`,
 
@@ -70,6 +71,14 @@ export const paths = {
 
     faqs: {
       root: `${ROOTS.DASHBOARD}/faqs`,
+    },
+
+    visaStatus: {
+      root: `${ROOTS.DASHBOARD}/visa-status`,
+    },
+
+    guide: {
+      root: `${ROOTS.DASHBOARD}/guide`,
     },
   },
 };

@@ -3,34 +3,34 @@ import { usePopover } from "minimal-shared/hooks";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import Card from "@mui/material/Card";
-import Avatar from "@mui/material/Avatar";
-import Divider from "@mui/material/Divider";
-import MenuList from "@mui/material/MenuList";
-import MenuItem from "@mui/material/MenuItem";
-import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import ListItemText from "@mui/material/ListItemText";
 import Chip from "@mui/material/Chip";
 
-import { RouterLink } from "src/routes/components";
-
-import { fDate, fDateTime } from "src/utils/format-time";
+import { fDateTime } from "src/utils/format-time";
 import { fCurrency } from "src/utils/format-number";
 
 import { Iconify } from "src/components/iconify";
-import { CustomPopover } from "src/components/custom-popover";
-import { Button } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import { paths } from "src/routes/paths";
 import { useRouter } from "src/routes/hooks";
 import { DashboardContent } from "src/layouts/dashboard";
 import { assignPlan } from "src/api/plan";
+import { applyVacancy } from "src/api/vacancy";
 import { toast } from "sonner";
+import { useState } from "react";
 
 // ----------------------------------------------------------------------
 
-export function PlanItem({ job, selectedVacancyId, sx, ...other }) {
+export function PlanItem({
+  job,
+  selectedVacancyId,
+  hasAssignedPlan,
+  sx,
+  ...other
+}) {
   const router = useRouter();
-  console.log("this is sele", job.id);
+  const [isLoading, setIsLoading] = useState(false);
+  console.log("this is sele", job);
 
   const renderHeader = () => (
     <Box
@@ -64,6 +64,20 @@ export function PlanItem({ job, selectedVacancyId, sx, ...other }) {
               fontWeight: 500,
             }}
           />
+
+          {job.assigned && (
+            <Chip
+              label="Assigned"
+              size="small"
+              icon={<Iconify icon="mdi:check-circle" width={16} />}
+              sx={{
+                bgcolor: "#22C55E",
+                color: "white",
+                fontWeight: 600,
+                fontSize: 12,
+              }}
+            />
+          )}
         </Box>
         <Typography
           variant="h6"
@@ -223,53 +237,120 @@ export function PlanItem({ job, selectedVacancyId, sx, ...other }) {
 
   const handleClick = async () => {
     try {
-      await assignPlan(selectedVacancyId, {
+      // ✅ SCENARIO 1: If a plan is already assigned
+      if (hasAssignedPlan) {
+        // Only allow clicking the assigned plan
+        if (job.assigned) {
+          // Navigate to contract page
+          router.push(paths.dashboard.contract.root);
+          return;
+        } else {
+          // Disable other plans
+          toast.info("A plan is already assigned. Please proceed to contract.");
+          return;
+        }
+      }
+
+      // ✅ Start loading
+      setIsLoading(true);
+
+      // ✅ SCENARIO 2: No plan is assigned yet - call applyVacancy API first
+      console.log("📤 Calling applyVacancy API...");
+      const applyResponse = await applyVacancy(selectedVacancyId);
+
+      console.log("✅ Apply Vacancy Response:", applyResponse);
+
+      // Show success message from applyVacancy
+      if (applyResponse?.message) {
+        toast.success(applyResponse.message);
+      }
+
+      // After successful apply, assign the selected plan
+      console.log("📤 Assigning plan...");
+      const assignResponse = await assignPlan(selectedVacancyId, {
         finance_plan_id: job.id,
       });
 
       console.log("Selected Vacancy ID:", selectedVacancyId);
       console.log("Plan ID:", job.id);
+      console.log("✅ Assign Plan Response:", assignResponse);
 
+      // Show success message from assignPlan
       toast.success("Plan assigned successfully!");
-      router.push(paths.dashboard.finance);
+
+      // Navigate to contract page
+      router.push(paths.dashboard.contract.root);
     } catch (error) {
       const backendMessage =
         error?.response?.data?.message ||
         error?.message ||
-        "Failed to assign plan";
+        "Failed to process request";
 
       toast.error(backendMessage);
-      console.error("Assign Plan Error:", error);
+      console.error("Error:", error);
+    } finally {
+      // ✅ Stop loading
+      setIsLoading(false);
     }
   };
 
-  const renderAction = () => (
-    <Box sx={{ p: 3, pt: 2 }}>
-      <Button
-        fullWidth
-        variant="contained"
-        size="large"
-        endIcon={<Iconify icon="solar:arrow-right-linear" />}
-        onClick={handleClick}
-        sx={{
-          bgcolor: "#2BA597",
-          color: "#ffffff",
-          borderRadius: 1.5,
-          textTransform: "none",
-          fontWeight: 600,
-          py: 1.5,
-          boxShadow: "0 4px 12px rgba(43, 165, 151, 0.24)",
+  const renderAction = () => {
+    // ✅ Determine if this plan should be disabled
+    const isDisabled = hasAssignedPlan && !job.assigned;
 
-          "&:hover": {
-            bgcolor: "#1D7E73",
-            boxShadow: "0 8px 24px rgba(43, 165, 151, 0.32)",
-          },
-        }}
-      >
-        Select This Plan
-      </Button>
-    </Box>
-  );
+    return (
+      <Box sx={{ p: 3, pt: 2 }}>
+        <Button
+          fullWidth
+          variant="contained"
+          size="large"
+          onClick={handleClick}
+          disabled={isDisabled || isLoading}
+          startIcon={
+            isLoading ? (
+              <CircularProgress size={20} sx={{ color: "white" }} />
+            ) : job.assigned ? (
+              <Iconify icon="mdi:check-circle" />
+            ) : null
+          }
+          endIcon={
+            !job.assigned && !isLoading ? (
+              <Iconify icon="solar:arrow-right-linear" />
+            ) : null
+          }
+          sx={{
+            bgcolor: job.assigned ? "#22C55E" : "#2BA597",
+            color: "#ffffff",
+            borderRadius: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            py: 1.5,
+            boxShadow: job.assigned
+              ? "0 4px 12px rgba(34, 197, 94, 0.24)"
+              : "0 4px 12px rgba(43, 165, 151, 0.24)",
+
+            "&:hover": {
+              bgcolor: job.assigned ? "#22C55E" : "#1D7E73",
+              boxShadow: job.assigned
+                ? "0 4px 12px rgba(34, 197, 94, 0.24)"
+                : "0 8px 24px rgba(43, 165, 151, 0.32)",
+            },
+            "&.Mui-disabled": {
+              bgcolor: "#e0e0e0",
+              color: "#9e9e9e",
+              opacity: 0.6,
+            },
+          }}
+        >
+          {isLoading
+            ? "Processing..."
+            : job.assigned
+            ? "View Contract"
+            : "Select This Plan"}
+        </Button>
+      </Box>
+    );
+  };
 
   return (
     <DashboardContent>
@@ -281,10 +362,14 @@ export function PlanItem({ job, selectedVacancyId, sx, ...other }) {
           bgcolor: "#ffffff",
           border: "1px solid #D2F3EE",
           transition: "all 0.3s ease-in-out",
+          opacity: hasAssignedPlan && !job.assigned ? 0.5 : 1,
           "&:hover": {
             boxShadow: "0 12px 32px rgba(43, 165, 151, 0.16)",
-            transform: "translateY(-4px)",
-            borderColor: "#5DC8B9",
+            transform:
+              job.assigned || (hasAssignedPlan && !job.assigned)
+                ? "none"
+                : "translateY(-4px)",
+            borderColor: job.assigned ? "#22C55E" : "#5DC8B9",
           },
           ...sx,
         }}

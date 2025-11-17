@@ -63,7 +63,7 @@ const maritalStatusOptions = [
   "Divorced",
   "Widow",
   "Separated",
-  "Other",
+  "Others",
 ];
 
 /* ---------------------- ✅ MAIN COMPONENT ---------------------- */

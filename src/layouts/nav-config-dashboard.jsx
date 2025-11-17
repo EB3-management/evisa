@@ -82,9 +82,8 @@ export const navData = [
 
       {
         title: "Visa Status",
-        path: paths.dashboard.appointment.root,
+        path: paths.dashboard.visaStatus.root,
         icon: ICONS.appointment,
-        disabled: true,
       },
       {
         title: "Faqs",

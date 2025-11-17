@@ -2,7 +2,7 @@ export * from "./endpoints";
 
 export * from "./auth";
 
-export * from "./campaign";
+export * from "./faqs";
 
 export * from "./form-template";
 
@@ -20,4 +20,4 @@ export * from "./permission";
 
 export * from "./appointment";
 
-export * from "./telecommunication-reward";
+export * from "./visa-status";

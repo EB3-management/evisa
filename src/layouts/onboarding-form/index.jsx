@@ -18,7 +18,7 @@ import {
   contactDetailsSchema,
 } from "src/components/onboarding/forms/ContactDetails";
 import { ONBOARDING_STEPS } from "src/constant/onboardingSteps";
-import { useGetCountryCode } from "src/api";
+import { useGetCountryCode, useGetEligibilityData } from "src/api";
 import {
   SponsorInformation,
   sponsorInformationSchema,
@@ -93,7 +93,8 @@ import { useGetVacancyDetail } from "src/api/vacancy";
 import { useRouter } from "src/routes/hooks";
 import { paths } from "src/routes/paths";
 import { useAppDispatch, useAppSelector } from "src/redux/hooks";
-import { fetchProfileRequest } from "src/redux/actions";
+import { fetchOnBoardingRequest, fetchProfileRequest } from "src/redux/actions";
+import { toast } from "sonner";
 
 export default function OnboardingLayout() {
   const dispatch = useAppDispatch();
@@ -101,11 +102,20 @@ export default function OnboardingLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [lastUserId, setLastUserId] = useState(null);
   const { country } = useGetCountryCode();
   const { id } = useParams();
+  const selectedVacancyId = useAppSelector(
+    (state) => state.vacancy.selectedVacancyId
+  );
 
   const router = useRouter();
 
+  const { eligibilityData, eligibilityLoading, eligibilityError } =
+    useGetEligibilityData();
+
+  console.log("this is eligibility", eligibilityData);
   const { onBoarding, isLoading: isLoadingOnBoarding } = useAppSelector(
     (state) => state.onBoarding || { onBoarding: {}, isLoading: false }
   );
@@ -114,8 +124,62 @@ export default function OnboardingLayout() {
     (state) => state.profile || { profile: null }
   );
 
-  console.log("this is current onbarding status", onBoarding);
-  console.log("this is profile data", profile);
+  // Load user-specific progress when profile is available
+  useEffect(() => {
+    if (profile?.id) {
+      const userId = profile.id.toString();
+
+      console.log("🔍 Profile loaded:", {
+        userId,
+        lastUserId,
+        isInitialized,
+        currentStep,
+      });
+
+      // Check if user has changed
+      if (lastUserId && lastUserId !== userId) {
+        console.log("👤 Different user detected, resetting initialization");
+        // Different user logged in, reset initialization
+        setIsInitialized(false);
+      }
+
+      // Load this user's saved step (only once per user)
+      if (!isInitialized || lastUserId !== userId) {
+        const savedStep = localStorage.getItem(
+          `onboarding_current_step_${userId}`
+        );
+        const savedCompleted = localStorage.getItem(
+          `onboarding_completed_steps_${userId}`
+        );
+
+        console.log("📦 Loading from localStorage:", {
+          savedStep,
+          savedCompleted,
+          key: `onboarding_current_step_${userId}`,
+        });
+
+        if (savedStep) {
+          console.log("✅ Setting step to:", parseInt(savedStep, 10));
+          setCurrentStep(parseInt(savedStep, 10));
+        } else {
+          console.log("⚠️ No saved step, resetting to 0");
+          setCurrentStep(0);
+        }
+
+        if (savedCompleted) {
+          setCompletedSteps(new Set(JSON.parse(savedCompleted)));
+        } else {
+          setCompletedSteps(new Set());
+        }
+
+        setLastUserId(userId);
+        setIsInitialized(true);
+      } else {
+        console.log("✋ Already initialized for this user, skipping load");
+      }
+    }
+  }, [profile?.id, isInitialized, lastUserId]);
+
   const stepSchemas = [
     mainApplicantSchema,
     currentAddressSchema,
@@ -178,64 +242,12 @@ export default function OnboardingLayout() {
       speaking: "",
 
       //pastwork experience
-      recent_job: "no", // radio
-      job2: "no",
-      job3: "no",
-      job4: "no",
-
-      // recent_job_company_name: "",
-      // recent_job_job_title: "",
-      // recent_job_start_date: "",
-      // recent_job_end_date: "",
-      // recent_job_currently_employed: false,
-      // recent_job_city: "",
-      // recent_job_state: "",
-      // recent_job_zip_code: "",
-      // recent_job_supervisor_name: "",
-      // recent_job_job_duty: "",
-      // recent_job_job_description: "",
-
-      // job2_company_name: "",
-      // job2_job_title: "",
-      // job2_start_date: "",
-      // job2_end_date: "",
-      // job2_currently_employed: false,
-      // job2_city: "",
-      // job2_state: "",
-      // job2_zip_code: "",
-      // job2_supervisor_name: "",
-      // job2_job_duty: "",
-      // job2_job_description: "",
-
-      // job3_company_name: "",
-      // job3_job_title: "",
-      // job3_start_date: "",
-      // job3_end_date: "",
-      // job3_currently_employed: false,
-      // job3_city: "",
-      // job3_state: "",
-      // job3_zip_code: "",
-      // job3_supervisor_name: "",
-      // job3_job_duty: "",
-      // job3_job_description: "",
-
-      // job4_company_name: "",
-      // job4_job_title: "",
-      // job4_start_date: "",
-      // job4_end_date: "",
-      // job4_currently_employed: false,
-      // job4_city: "",
-      // job4_state: "",
-      // job4_zip_code: "",
-      // job4_supervisor_name: "",
-      // job4_job_duty: "",
-      // job4_job_description: "",
+      has_work_experience: "No",
+      work_experiences: [],
 
       //dependent
-      dependent_1: "no",
-      dependent_2: "no",
-      dependent_3: "no",
-      dependent_4: "no",
+      has_dependents: "No",
+      dependents: [],
 
       //emergency contact
       emergencyFullName: "",
@@ -247,16 +259,30 @@ export default function OnboardingLayout() {
       //immigration history
 
       types: "",
-      beenToUsa: "no",
-      socialSecurity: "no",
+      beenToUsa: "No",
+      socialSecurity: "No",
       socialSecurityNumber: "",
-      inUsaApplicant: "no",
+      inUsaApplicant: "No",
       applicantName: "",
-      inUsaDependent: "no",
+      inUsaDependent: "No",
       dependentName: "",
       i94Number: "",
 
       //visa
+      has_visa_records: "No",
+      visa_records: [],
+
+      //visa rejection
+      employee_visa_rejected: "No",
+      employee_fullname: "",
+      employee_visa_type: "",
+      employee_rejection_reason: "",
+      employee_rejection_date: "",
+      dependents_visa_rejected: "No",
+      dependent_fullname: "",
+      dependent_visa_type: "",
+      dependent_rejection_reason: "",
+      dependent_rejection_date: "",
 
       //immigration incident
       e_overstayed_usa_visa_i94_employee: "no",
@@ -280,11 +306,14 @@ export default function OnboardingLayout() {
       ebb_imr_judge_h_ofcr_dependents: "no",
       ebb_imr_judge_h_ofcr_dependents_if_yes: "",
 
+      //criminal records
+      criminal_record_employee: "No",
+      criminal_record_dependents: "No",
+      criminal_records: [],
+
       //inadmissibility
-      inadmissibility_1: "no",
-      inadmissibility_2: "no",
-      inadmissibility_3: "no",
-      inadmissibility_4: "no",
+      has_inadmissibility: "No",
+      inadmissibility_records: [],
 
       //health
       hasSTD: "no",
@@ -300,25 +329,70 @@ export default function OnboardingLayout() {
 
   useEffect(() => {
     dispatch(fetchProfileRequest());
+    dispatch(fetchOnBoardingRequest());
   }, [dispatch]);
+
+  // Persist currentStep to localStorage with user-specific key
+  useEffect(() => {
+    if (profile?.id && isInitialized) {
+      const userId = profile.id.toString();
+      console.log("💾 Saving step to localStorage:", currentStep);
+      localStorage.setItem(
+        `onboarding_current_step_${userId}`,
+        currentStep.toString()
+      );
+    }
+  }, [currentStep, profile?.id, isInitialized]);
+
+  // Persist completedSteps to localStorage with user-specific key
+  useEffect(() => {
+    if (profile?.id && isInitialized) {
+      const userId = profile.id.toString();
+      console.log(
+        "💾 Saving completed steps to localStorage:",
+        Array.from(completedSteps)
+      );
+      localStorage.setItem(
+        `onboarding_completed_steps_${userId}`,
+        JSON.stringify(Array.from(completedSteps))
+      );
+    }
+  }, [completedSteps, profile?.id, isInitialized]);
+
+  // ✅ Helper function to normalize English proficiency levels
+  const normalizeEnglishLevel = (level) => {
+    if (!level) return "";
+    // Convert "Advance" to "Advanced" for consistency
+    return level === "Advance" ? "Advanced" : level;
+  };
+
+  // ✅ Helper function to get English proficiency with fallback
+  const getEnglishProficiency = (skill) => {
+    // Priority: onBoarding > eligibilityData
+    const onBoardingValue = onBoarding?.english_language_proficiency?.[skill];
+    const eligibilityValue =
+      eligibilityData?.employee?.english_language_proficiency?.[skill];
+
+    return normalizeEnglishLevel(onBoardingValue || eligibilityValue);
+  };
 
   // Populate form with profile and onBoarding data
   useEffect(() => {
-    if (profile || onBoarding) {
+    if (profile || onBoarding || eligibilityData) {
       const employee = onBoarding?.employee;
       const employeeAddress = onBoarding?.employeeAddress;
       const academicRecords = onBoarding?.academicRecords || [];
-      const englishProficiency = onBoarding?.englishProficiency;
+      const englishProficiency = onBoarding?.english_language_proficiency;
       const workExperiences = onBoarding?.workExperiences || [];
       const dependents = onBoarding?.dependents || [];
       const maritalStatus = onBoarding?.maritalStatus;
       const emergencyContact = onBoarding?.emergencyContact;
       const immigrationHistory = onBoarding?.immigrationHistories?.[0]; // Take first item from array
       const visaRecords = onBoarding?.visaRecords || [];
-      const visaRejection = onBoarding?.visaRejections?.[0]; // Take first item from array
+      const visaRejection = onBoarding?.visaRejections || []; // Take first item from array
       const immigrationIncidents = onBoarding?.immigrationIncidents?.[0]; // Take first item from array
       const criminalRecords = onBoarding?.criminalRecords || [];
-      const inadmissibilityRecord = onBoarding?.inadmissibilityRecord;
+      const inadmissibilityRecords = onBoarding?.inadmissibilityRecords || [];
       const healthRecord = onBoarding?.healthRecord;
 
       // Helper function to check if academic level exists
@@ -334,59 +408,6 @@ export default function OnboardingLayout() {
           (record) =>
             record.program_name?.toLowerCase() === programName.toLowerCase()
         ) || {};
-
-      // Helper function to populate work experience fields
-      const getWorkExperience = (index) => {
-        const exp = workExperiences[index];
-        if (!exp) return {};
-
-        const jobKey = index === 0 ? "recent_job" : `job${index + 1}`;
-        return {
-          [`${jobKey}_company_name`]: exp.company_name || "",
-          [`${jobKey}_job_title`]: exp.job_title || "",
-          [`${jobKey}_job_description`]: exp.job_desc || "",
-          [`${jobKey}_job_duty`]: exp.job_duty || "",
-          [`${jobKey}_supervisor_name`]: exp.supervisor_name || "",
-          [`${jobKey}_start_date`]: exp.start_date || "",
-          [`${jobKey}_end_date`]: exp.end_date || "",
-          [`${jobKey}_currently_employed`]: exp.current || false,
-          [`${jobKey}_city`]: exp.city || "",
-          [`${jobKey}_state`]: exp.state || "",
-          [`${jobKey}_zip_code`]: exp.zip_code || "",
-        };
-      };
-
-      // Helper function to populate dependent fields
-      const getDependentFields = (index) => {
-        const dep = dependents[index];
-        if (!dep) return {};
-
-        return {
-          first_name: dep.first_name || "",
-          middle_name: dep.middle_name || "",
-          last_name: dep.last_name || "",
-          dob: dep.dob || "",
-          gender: dep.gender?.toLowerCase() || "",
-          kinship: dep.relation || "",
-          birth_country: dep.country_of_birth || "",
-          citizenship_country: dep.country_of_citizenship || "",
-          education_level: dep.education_level?.toLowerCase() || "",
-        };
-      };
-
-      // Helper function to populate visa record fields
-      const getVisaRecord = (index) => {
-        const visa = visaRecords[index];
-        if (!visa) return {};
-
-        const prefix = index === 0 ? "visa" : `visa${index + 1}`;
-        return {
-          [`${prefix}Name`]: visa.visa_fullname || "",
-          [`${prefix}Type`]: visa.visa_type || "",
-          [`${prefix}ExpeditionDate`]: visa.visa_expedition_date || "",
-          [`${prefix}ExpirationDate`]: visa.visa_expiration_date || "",
-        };
-      };
 
       // Populate Academic Information
       const academicFields = {};
@@ -411,41 +432,57 @@ export default function OnboardingLayout() {
       );
 
       // Populate Work Experiences
-      const workFields = {};
-      const jobKeys = ["recent_job", "job2", "job3", "job4"];
-      jobKeys.forEach((key, index) => {
-        if (workExperiences[index]) {
-          workFields[key] = "yes";
-          Object.assign(workFields, getWorkExperience(index));
-        } else {
-          workFields[key] = "no";
-        }
-      });
+      const workFields = {
+        has_work_experience: workExperiences.length > 0 ? "Yes" : "No",
+        work_experiences: workExperiences.map((exp) => ({
+          company_name: exp.jwe_company_name || "",
+          job_title: exp.jwe_job_title || "",
+          start_date: exp.jwe_start_date || "",
+          end_date: exp.jwe_end_date || "",
+          currently_employed: !!exp.jwe_current, // ✅ Convert to boolean
+          job_description: exp.jwe_job_desc || "",
+          city: exp.jwe_city || "",
+          state: exp.jwe_state || "",
+          zip_code: exp.jwe_zip_code || "",
+          supervisor_name: exp.jwe_supervisor_name || "",
+          job_duty: exp.jwe_job_duty || "",
+        })),
+      };
 
       // Populate Dependents
-      const dependentFields = {};
-      [1, 2, 3, 4].forEach((num) => {
-        const index = num - 1;
-        if (dependents[index]) {
-          dependentFields[`dependent_${num}`] = "yes";
-          dependentFields[`dependent_${num}_fields`] =
-            getDependentFields(index);
-        } else {
-          dependentFields[`dependent_${num}`] = "no";
-        }
-      });
+      const dependentFields = {
+        has_dependents: dependents.length > 0 ? "Yes" : "No",
+        dependents: dependents.map((dep) => ({
+          first_name: dep.dependent_first_name || "",
+          middle_name: dep.dependent_middle_name || "",
+          last_name: dep.dependent_last_name || "",
+          dob: dep.dependent_dob || "",
+          kinship: dep.dependent_relation || "",
+          birth_country: dep.dependent_country_of_birth || "",
+          citizenship_country: dep.dependent_country_of_citizenship || "",
+        })),
+      };
 
       // Populate Visa Records
-      const visaFields = {};
-      const recordKeys = ["recentRecord", "record2", "record3", "record4"];
-      recordKeys.forEach((key, index) => {
-        if (visaRecords[index]) {
-          visaFields[key] = "yes";
-          Object.assign(visaFields, getVisaRecord(index));
-        } else {
-          visaFields[key] = "no";
-        }
-      });
+      const visaFields = {
+        has_visa_records: visaRecords.length > 0 ? "Yes" : "No",
+        visa_records: visaRecords.map((visa) => ({
+          visaName: visa.visa_fullname || "",
+          visaType: visa.visa_type || "",
+          visaExpeditionDate: visa.visa_expedition_date || "",
+          visaExpirationDate: visa.visa_expiration_date || "",
+        })),
+      };
+
+      const employeeRejection = visaRejection.find(
+        (r) => r.rejected_for === "Employee"
+      );
+      const dependentRejection = visaRejection.find(
+        (r) => r.rejected_for === "Dependent"
+      );
+
+      console.log("📋 Employee Rejection:", employeeRejection);
+      console.log("📋 Dependent Rejection:", profile?.birth_country);
 
       // Populate form with all data
       methods.reset({
@@ -453,23 +490,38 @@ export default function OnboardingLayout() {
         firstName: employee?.first_name || profile?.first_name || "",
         middleName: employee?.middle_name || profile?.middle_name || "",
         lastName: employee?.last_name || profile?.last_name || "",
-        dob: employee?.dob || profile?.dob || "",
-        gender:
-          employee?.gender?.toLowerCase() ||
-          profile?.gender?.toLowerCase() ||
+        dob:
+          employee?.dob || profile?.dob || eligibilityData?.employee?.dob || "",
+        gender: employee?.gender || profile?.gender || "",
+        countryOfBirth:
+          employee?.birth_country ||
+          eligibilityData?.employee?.birth_country ||
           "",
-        countryOfBirth: employee?.birth_country || profile?.birth_country || "",
         citizenship1: employee?.nationality || profile?.nationality || "",
 
         citizenship2: "",
 
         // Current Address - from employeeAddress
-        country: employeeAddress?.current_country || "",
-        state: employeeAddress?.current_province_state || "",
-        city: employeeAddress?.current_city_town || "",
-        zipCode: employeeAddress?.current_zip_code || "",
-        address: employeeAddress?.current_street || "",
-
+        country:
+          employeeAddress?.current_country ||
+          eligibilityData?.employee?.employee_address?.current_country ||
+          "",
+        state:
+          employeeAddress?.current_province_state ||
+          eligibilityData?.employee?.employee_address?.current_province_state ||
+          "",
+        city:
+          employeeAddress?.current_city_town ||
+          eligibilityData?.employee?.employee_address?.current_city_town ||
+          "",
+        zipCode:
+          employeeAddress?.current_zip_code ||
+          eligibilityData?.employee?.employee_address?.current_zip_code ||
+          "",
+        address:
+          employeeAddress?.current_street ||
+          eligibilityData?.employee?.employee_address?.current_street ||
+          "",
         // Contact Details
         email: employee?.email || profile?.email || "",
         phone: employee?.phone || profile?.phone || "",
@@ -482,23 +534,29 @@ export default function OnboardingLayout() {
         // Academic Information
         ...academicFields,
 
-        // English Language Proficiency
-        writing:
-          englishProficiency?.english_proficiency_writing === "Advance"
-            ? "Advanced"
-            : englishProficiency?.english_proficiency_writing || "",
-        listening:
-          englishProficiency?.english_proficiency_listening === "Advance"
-            ? "Advanced"
-            : englishProficiency?.english_proficiency_listening || "",
-        reading:
-          englishProficiency?.english_proficiency_reading === "Advance"
-            ? "Advanced"
-            : englishProficiency?.english_proficiency_reading || "",
-        speaking:
-          englishProficiency?.english_proficiency_speaking === "Advance"
-            ? "Advanced"
-            : englishProficiency?.english_proficiency_speaking || "",
+        // ✅ English Language Proficiency - Clean implementation
+        writing: getEnglishProficiency("writing"),
+        listening: getEnglishProficiency("listening"),
+        reading: getEnglishProficiency("reading"),
+        speaking: getEnglishProficiency("speaking"),
+
+        // // English Language Proficiency
+        // writing:
+        //   englishProficiency?.writing === "Advance"
+        //     ? "Advanced"
+        //     : englishProficiency?.writing || "",
+        // listening:
+        //   englishProficiency?.listening === "Advance"
+        //     ? "Advanced"
+        //     : englishProficiency?.listening || "",
+        // reading:
+        //   englishProficiency?.reading === "Advance"
+        //     ? "Advanced"
+        //     : englishProficiency?.reading || "",
+        // speaking:
+        //   englishProficiency?.speaking === "Advance"
+        //     ? "Advanced"
+        //     : englishProficiency?.speaking || "",
 
         // Past Work Experience
         ...workFields,
@@ -526,29 +584,30 @@ export default function OnboardingLayout() {
 
         // Immigration History
         types: immigrationHistory?.immigration_type || "",
-        beenToUsa: immigrationHistory?.been_to_usa?.toLowerCase() || "no",
-        socialSecurity: immigrationHistory?.ever_had_ssn?.toLowerCase() || "no",
+        beenToUsa: immigrationHistory?.been_to_usa || "No",
+        socialSecurity: immigrationHistory?.ever_had_ssn || "No",
         socialSecurityNumber: immigrationHistory?.ssn_number || "",
-        inUsaApplicant:
-          immigrationHistory?.employee_in_usa?.toLowerCase() || "no",
+        inUsaApplicant: immigrationHistory?.employee_in_usa || "No",
         applicantName: immigrationHistory?.employee_in_usa_if_yes_who || "",
-        inUsaDependent:
-          immigrationHistory?.dependents_in_usa?.toLowerCase() || "no",
+        inUsaDependent: immigrationHistory?.dependents_in_usa || "No",
         dependentName: immigrationHistory?.dependents_in_usa_if_yes_who || "",
         i94Number: immigrationHistory?.recent_i94_number || "",
 
         // Visa Records
         ...visaFields,
 
-        // Visa Rejection - Check if rejection exists in array for Employee or Dependent
-        employee_visa_rejected:
-          visaRejection?.rejected_for?.toLowerCase() === "employee"
-            ? "Yes"
-            : "No",
-        dependents_visa_rejected:
-          visaRejection?.rejected_for?.toLowerCase() === "dependent"
-            ? "Yes"
-            : "No",
+        // Visa Rejection - Populate from API
+        employee_visa_rejected: employeeRejection ? "Yes" : "No",
+        employee_fullname: employeeRejection?.rejection_fullname || "",
+        employee_visa_type: employeeRejection?.rejection_visa || "",
+        employee_rejection_reason: employeeRejection?.rejection_reason || "",
+        employee_rejection_date: employeeRejection?.rejection_date || "",
+
+        dependents_visa_rejected: dependentRejection ? "Yes" : "No",
+        dependent_fullname: dependentRejection?.rejection_fullname || "",
+        dependent_visa_type: dependentRejection?.rejection_visa || "",
+        dependent_rejection_reason: dependentRejection?.rejection_reason || "",
+        dependent_rejection_date: dependentRejection?.rejection_date || "",
 
         // Immigration Incidents
         e_overstayed_usa_visa_i94_employee:
@@ -623,39 +682,15 @@ export default function OnboardingLayout() {
           outcome: record.criminal_record_outcome || "",
         })),
 
-        // Inadmissibility - Single record from API
-        inadmissibility_1: inadmissibilityRecord ? "yes" : "no",
-        inadmissibility_1_condition:
-          inadmissibilityRecord?.inadmissibilities_condition_name || "",
-        inadmissibility_1_date:
-          inadmissibilityRecord?.inadmissibilities_date || "",
-        inadmissibility_1_doctor:
-          inadmissibilityRecord?.inadmissibilities_doctor_name || "",
-        inadmissibility_1_procedure:
-          inadmissibilityRecord?.inadmissibilities_procedure || "",
-        inadmissibility_1_name:
-          inadmissibilityRecord?.inadmissibilities_procedure_name || "",
-
-        inadmissibility_2: "no",
-        inadmissibility_2_condition: "",
-        inadmissibility_2_date: "",
-        inadmissibility_2_doctor: "",
-        inadmissibility_2_procedure: "",
-        inadmissibility_2_name: "",
-
-        inadmissibility_3: "no",
-        inadmissibility_3_condition: "",
-        inadmissibility_3_date: "",
-        inadmissibility_3_doctor: "",
-        inadmissibility_3_procedure: "",
-        inadmissibility_3_name: "",
-
-        inadmissibility_4: "no",
-        inadmissibility_4_condition: "",
-        inadmissibility_4_date: "",
-        inadmissibility_4_doctor: "",
-        inadmissibility_4_procedure: "",
-        inadmissibility_4_name: "",
+        // Inadmissibility
+        has_inadmissibility: inadmissibilityRecords.length > 0 ? "Yes" : "No",
+        inadmissibility_records: inadmissibilityRecords.map((record) => ({
+          name: record.inadmissibilities_procedure_name || "",
+          condition: record.inadmissibilities_condition_name || "",
+          doctor: record.inadmissibilities_doctor_name || "",
+          procedure: record.inadmissibilities_procedure || "",
+          date: record.inadmissibilities_date || "",
+        })),
 
         // Health Records
         hasSTD: healthRecord?.std_employee?.toLowerCase() || "no",
@@ -752,45 +787,35 @@ export default function OnboardingLayout() {
 
   //workexperiences form
   const transformWorkExperienceData = (formData) => {
-    const jobs = ["recent_job", "job2", "job3", "job4"];
-
-    const work_experiences = jobs
-      .filter((job) => formData[job] === "yes")
-      .map((job) => ({
-        company_name: formData[`${job}_company_name`] || "",
-        job_title: formData[`${job}_job_title`] || "",
-        job_desc: formData[`${job}_job_description`] || "",
-        job_duty: formData[`${job}_job_duty`] || "",
-        supervisor_name: formData[`${job}_supervisor_name`] || "",
-        start_date: formData[`${job}_start_date`] || "",
-        end_date: formData[`${job}_end_date`] || "",
-        current: formData[`${job}_currently_employed`] || false,
-        city: formData[`${job}_city`] || "",
-        state: formData[`${job}_state`] || "",
-        zip_code: formData[`${job}_zip_code`] || "",
-      }));
+    const work_experiences = (formData.work_experiences || []).map((exp) => ({
+      company_name: exp.company_name || "",
+      job_title: exp.job_title || "",
+      job_desc: exp.job_description || "",
+      job_duty: exp.job_duty || "",
+      supervisor_name: exp.supervisor_name || "",
+      start_date: exp.start_date || "",
+      end_date: exp.end_date || "",
+      current: exp.currently_employed || false,
+      city: exp.city || "",
+      state: exp.state || "",
+      zip_code: exp.zip_code || "",
+    }));
 
     return { work_experiences };
   };
 
   //dependent information
+  //dependent information
   const transformDependentData = (formData) => {
-    const dependentNumbers = [1, 2, 3, 4];
-
-    const dependents = dependentNumbers
-      .filter((num) => formData[`dependent_${num}`] === "yes")
-      .map((num) => {
-        const fields = formData[`dependent_${num}_fields`] || {};
-        return {
-          first_name: fields.first_name || "",
-          middle_name: fields.middle_name || "",
-          last_name: fields.last_name || "",
-          dob: fields.dob || "",
-          relation: fields.kinship || "", // 👈 mapped to API's "relation"
-          country_of_birth: fields.birth_country || "",
-          country_of_citizenship: fields.citizenship_country || "",
-        };
-      });
+    const dependents = (formData.dependents || []).map((dependent) => ({
+      first_name: dependent.first_name || "",
+      middle_name: dependent.middle_name || "",
+      last_name: dependent.last_name || "",
+      dob: dependent.dob || "",
+      relation: dependent.kinship || "", // 👈 mapped to API's "relation"
+      country_of_birth: dependent.birth_country || "",
+      country_of_citizenship: dependent.citizenship_country || "",
+    }));
 
     return { dependents };
   };
@@ -800,11 +825,11 @@ export default function OnboardingLayout() {
     const status = formData.maritalStatus || "";
 
     // Clean country name by removing phone code in parentheses
-    const cleanCountryName = (countryStr) => {
-      if (!countryStr) return "";
-      // Remove anything in parentheses (like phone codes)
-      return countryStr.replace(/\s*\([^)]*\)\s*/g, "").trim();
-    };
+    // const cleanCountryName = (countryStr) => {
+    //   if (!countryStr) return "";
+    //   // Remove anything in parentheses (like phone codes)
+    //   return countryStr.replace(/\s*\([^)]*\)\s*/g, "").trim();
+    // };
 
     return {
       legally_married:
@@ -820,7 +845,7 @@ export default function OnboardingLayout() {
         ? formData.clarifyMaritalStatus || ""
         : "",
       legally_married_if_yes_country:
-        status === "Yes" ? cleanCountryName(formData.countryOfMarriage) : "",
+        status === "Yes" ? formData.countryOfMarriage || "" : "",
       legally_married_if_yes_date_of_marriage:
         status === "Yes" ? formData.dateOfMarriage || "" : "",
     };
@@ -857,32 +882,48 @@ export default function OnboardingLayout() {
 
   //visa
   const transformVisaData = (formData) => {
-    const records = ["recentRecord", "record2", "record3", "record4"];
-    const prefixes = ["visa", "visa2", "visa3", "visa4"];
-
-    const visa_records = records
-      .map((record, index) => {
-        if (formData[record] === "yes") {
-          const prefix = prefixes[index];
-          return {
-            fullname: formData[`${prefix}Name`] || "",
-            type: formData[`${prefix}Type`] || "",
-            expedition_date: formData[`${prefix}ExpeditionDate`] || "",
-            expiration_date: formData[`${prefix}ExpirationDate`] || "",
-          };
-        }
-        return null;
-      })
-      .filter(Boolean); // Remove null values
+    const visa_records = (formData.visa_records || []).map((record) => ({
+      fullname: record.visaName || "",
+      type: record.visaType || "",
+      expedition_date: record.visaExpeditionDate || "",
+      expiration_date: record.visaExpirationDate || "",
+    }));
 
     return { visa_records };
   };
 
   //visa rejection
-  const transformVisaRejectionData = (formData) => ({
-    employee_visa_rejected: formData.employee_visa_rejected,
-    dependents_visa_rejected: formData.dependents_visa_rejected,
-  });
+  const transformVisaRejectionData = (formData) => {
+    const visa_rejections = [];
+
+    // Add employee rejection if Yes
+    if (formData.employee_visa_rejected === "Yes") {
+      visa_rejections.push({
+        rejected_for: "Employee",
+        fullname: formData.employee_fullname || "",
+        visa: formData.employee_visa_type || "",
+        reason: formData.employee_rejection_reason || "",
+        date: formData.employee_rejection_date || "",
+      });
+    }
+
+    // Add dependent rejection if Yes
+    if (formData.dependents_visa_rejected === "Yes") {
+      visa_rejections.push({
+        rejected_for: "Dependent",
+        fullname: formData.dependent_fullname || "",
+        visa: formData.dependent_visa_type || "",
+        reason: formData.dependent_rejection_reason || "",
+        date: formData.dependent_rejection_date || "",
+      });
+    }
+
+    return {
+      employee_visa_rejected: formData.employee_visa_rejected,
+      dependents_visa_rejected: formData.dependents_visa_rejected,
+      visa_rejections,
+    };
+  };
 
   const transformImmigrationIncidentData = (formData) => ({
     immigration_incidents: {
@@ -950,25 +991,21 @@ export default function OnboardingLayout() {
   });
 
   //inadmissibilty
+  //inadmissibilty
   const transformInadmissibilityData = (formData) => {
-    const records = [];
-
-    [1, 2, 3, 4].forEach((num) => {
-      const selected = formData[`inadmissibility_${num}`];
-      if (selected === "yes") {
-        records.push({
-          condition: `Inadmissibility ${num}`,
-          condition_name: formData[`inadmissibility_${num}_condition`] || "",
-          date: formData[`inadmissibility_${num}_date`] || "",
-          doctor_name: formData[`inadmissibility_${num}_doctor`] || "",
-          procedure: formData[`inadmissibility_${num}_procedure`] || "",
-          procedure_name: formData[`inadmissibility_${num}_name`] || "",
-        });
-      }
-    });
+    const inadmissibility_records = (
+      formData.inadmissibility_records || []
+    ).map((record) => ({
+      condition: record.condition || "",
+      condition_name: record.condition || "",
+      date: record.date || "",
+      doctor_name: record.doctor || "",
+      procedure: record.procedure || "",
+      procedure_name: record.name || "",
+    }));
 
     return {
-      inadmissibility_records: records,
+      inadmissibility_records,
     };
   };
 
@@ -995,6 +1032,10 @@ export default function OnboardingLayout() {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const oncloseLayout = () => {
+    // Optionally: clear progress when user closes the form
+    // Uncomment if you want to reset on close
+    // localStorage.removeItem('onboarding_current_step');
+    // localStorage.removeItem('onboarding_completed_steps');
     router.push(paths.dashboard.root);
   };
 
@@ -1038,6 +1079,7 @@ export default function OnboardingLayout() {
           await saveEmergencyContact(transformEmergencyContactData(formData));
           break;
         case 10:
+          console.log("this is immigration ", formData);
           await saveImmigrationHistory(
             transformImmigrationHistoryData(formData)
           );
@@ -1059,16 +1101,18 @@ export default function OnboardingLayout() {
         case 15:
           await saveInadmissibility(transformInadmissibilityData(formData));
           break;
-        case 16:
+        case 16: {
           await saveHealth(transformHealthData(formData));
-          await saveFinalSubmit({
+          const response = await saveFinalSubmit({
             is_draft: false,
             status: "Pending",
             agree_to_terms: formData.agree_to_terms,
           });
-          alert("Form submitted successfully!");
-          router.push(paths.dashboard.plan);
+          toast.success(response.message || "Form submitted successfully!");
+          // alert("Form submitted successfully!");
+          router.push(paths.dashboard.plan(selectedVacancyId));
           break;
+        }
         default:
           break;
       }
@@ -1106,6 +1150,12 @@ export default function OnboardingLayout() {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
+      // Clear this user's localStorage after final submission
+      if (profile?.id) {
+        const userId = profile.id.toString();
+        localStorage.removeItem(`onboarding_current_step_${userId}`);
+        localStorage.removeItem(`onboarding_completed_steps_${userId}`);
+      }
       handleSubmit(onSubmit)();
     }
   };
@@ -1441,7 +1491,7 @@ export default function OnboardingLayout() {
       case 2:
         return <ContactDetails />;
       case 3:
-        return <SponsorInformation detail={id} />;
+        return <SponsorInformation />;
       case 4:
         return <AcademicInformation country={country} />;
       case 5:

@@ -8,400 +8,150 @@ import {
   TextField,
   Checkbox,
   FormHelperText,
+  Stack,
+  Button,
+  IconButton,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useFormContext, Controller, useWatch } from "react-hook-form";
+import { useFormContext, Controller, useFieldArray } from "react-hook-form";
 import { z } from "zod";
+import { Icon } from "@iconify/react";
+import { useEffect } from "react";
 
-const workFields = [
-  { name: "recent_job", label: "Recent Job" },
-  { name: "job2", label: "Job 2" },
-  { name: "job3", label: "Job 3" },
-  { name: "job4", label: "Job 4" },
-];
-
-// ✅ Complete schema with all fields defined explicitly
+// ✅ New schema using array pattern like CriminalRecords
 export const pastWorkExperiencesSchema = z
   .object({
-    // Yes/No selections for each job
-    recent_job: z.enum(["yes", "no"], {
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
-    job2: z.enum(["yes", "no"], {
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
-    job3: z.enum(["yes", "no"], {
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
-    job4: z.enum(["yes", "no"], {
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
-
-    // All fields optional by default
-    recent_job_company_name: z.string().optional(),
-    recent_job_job_title: z.string().optional(),
-    recent_job_start_date: z.string().optional(),
-    recent_job_end_date: z.string().optional(),
-    recent_job_currently_employed: z.boolean().optional(),
-    recent_job_job_description: z.string().optional(),
-
-    job2_company_name: z.string().optional(),
-    job2_job_title: z.string().optional(),
-    job2_start_date: z.string().optional(),
-    job2_end_date: z.string().optional(),
-    job2_currently_employed: z.boolean().optional(),
-    job2_job_description: z.string().optional(),
-
-    job3_company_name: z.string().optional(),
-    job3_job_title: z.string().optional(),
-    job3_start_date: z.string().optional(),
-    job3_end_date: z.string().optional(),
-    job3_currently_employed: z.boolean().optional(),
-    job3_job_description: z.string().optional(),
-
-    job4_company_name: z.string().optional(),
-    job4_job_title: z.string().optional(),
-    job4_start_date: z.string().optional(),
-    job4_end_date: z.string().optional(),
-    job4_currently_employed: z.boolean().optional(),
-    job4_job_description: z.string().optional(),
+    has_work_experience: z.enum(["Yes", "No"]),
+    work_experiences: z
+      .array(
+        z.object({
+          company_name: z.string().min(1, "Company name is required"),
+          job_title: z.string().min(1, "Job title is required"),
+          start_date: z.string().min(1, "Start date is required"),
+          end_date: z.string().optional(),
+          currently_employed: z.boolean().optional(),
+          job_description: z.string().min(1, "Job description is required"),
+          city: z.string().optional(),
+          state: z.string().optional(),
+          zip_code: z.string().optional(),
+          supervisor_name: z.string().optional(),
+          job_duty: z.string().optional(),
+        })
+      )
+      .optional()
+      .default([]),
   })
   .superRefine((data, ctx) => {
-    const jobs = ["recent_job", "job2", "job3", "job4"];
-
-    jobs.forEach((jobName) => {
-      if (data[jobName] === "yes") {
-        // Company name required
-        if (
-          !data[`${jobName}_company_name`] ||
-          data[`${jobName}_company_name`].trim() === ""
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Company name is required",
-            path: [`${jobName}_company_name`],
-          });
-        }
-
-        // Job title validation
-        // Job title required
-        if (
-          !data[`${jobName}_job_title`] ||
-          data[`${jobName}_job_title`].trim() === ""
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Job title is required",
-            path: [`${jobName}_job_title`],
-          });
-        }
-
-        // Start date required
-        if (
-          !data[`${jobName}_start_date`] ||
-          data[`${jobName}_start_date`].trim() === ""
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Start date is required",
-            path: [`${jobName}_start_date`],
-          });
-        }
-
-        // End date required if not currently employed
-        if (!data[`${jobName}_currently_employed`]) {
-          if (
-            !data[`${jobName}_end_date`] ||
-            data[`${jobName}_end_date`].trim() === ""
-          ) {
+    if (data.has_work_experience === "Yes") {
+      if (!data.work_experiences || data.work_experiences.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please add at least one work experience",
+          path: ["work_experiences"],
+        });
+      } else {
+        data.work_experiences.forEach((experience, index) => {
+          if (!experience.company_name?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Company name is required",
+              path: ["work_experiences", index, "company_name"],
+            });
+          }
+          if (!experience.job_title?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Job title is required",
+              path: ["work_experiences", index, "job_title"],
+            });
+          }
+          if (!experience.start_date) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Start date is required",
+              path: ["work_experiences", index, "start_date"],
+            });
+          }
+          if (!experience.currently_employed && !experience.end_date) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "End date is required if not currently employed",
-              path: [`${jobName}_end_date`],
+              path: ["work_experiences", index, "end_date"],
             });
-          } else if (data[`${jobName}_start_date`]) {
-            const startDate = new Date(data[`${jobName}_start_date`]);
-            const endDate = new Date(data[`${jobName}_end_date`]);
+          }
+          if (
+            experience.start_date &&
+            experience.end_date &&
+            !experience.currently_employed
+          ) {
+            const startDate = new Date(experience.start_date);
+            const endDate = new Date(experience.end_date);
             if (endDate < startDate) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: "End date must be after start date",
-                path: [`${jobName}_end_date`],
+                path: ["work_experiences", index, "end_date"],
               });
             }
           }
-        }
-
-        // Job description required
-        if (
-          !data[`${jobName}_job_description`] ||
-          data[`${jobName}_job_description`].trim() === ""
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Job description is required",
-            path: [`${jobName}_job_description`],
-          });
-        }
+          if (!experience.job_description?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Job description is required",
+              path: ["work_experiences", index, "job_description"],
+            });
+          }
+        });
       }
-    });
+    }
   });
 
 export const PastWorkExperiences = () => {
   const {
     control,
     formState: { errors },
+    watch,
+    setValue,
   } = useFormContext();
 
-  // Watch all work experience responses
-  const watchedJobs = useWatch({
+  const hasWorkExperience = watch("has_work_experience");
+
+  const {
+    fields: workExperiences,
+    append,
+    remove,
+  } = useFieldArray({
     control,
-    name: workFields.map((field) => field.name),
+    name: "work_experiences",
   });
 
-  // Watch "Currently Employed" status for each job
-  const currentlyEmployed = useWatch({
-    control,
-    name: workFields.map((field) => `${field.name}_currently_employed`),
-  });
+  const showForm = hasWorkExperience === "Yes";
 
-  // Render fields for each job
-  const renderJobFields = (jobName, index) => (
-    <Grid container spacing={3} sx={{ mt: 1 }}>
-      {/* Row 1: Company Name and Job Title */}
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Typography sx={{ mb: 1 }}>Company Name</Typography>
-        <Controller
-          name={`${jobName}_company_name`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter company name"
-              error={!!errors[`${jobName}_company_name`]}
-              helperText={errors[`${jobName}_company_name`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
+  // ✅ Auto-add first work experience when "Yes" is selected, clear when "No"
+  useEffect(() => {
+    if (showForm && workExperiences.length === 0) {
+      // Add first work experience when "Yes" is selected
+      append({
+        company_name: "",
+        job_title: "",
+        start_date: "",
+        end_date: "",
+        currently_employed: false,
+        job_description: "",
+        city: "",
+        state: "",
+        zip_code: "",
+        supervisor_name: "",
+        job_duty: "",
+      });
+    } else if (!showForm && workExperiences.length > 0) {
+      // Clear all records when "No" is selected
+      setValue("work_experiences", []);
+      console.log("🗑️ Cleared work experiences");
+    }
+  }, [showForm, workExperiences.length, setValue, append]);
 
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Typography sx={{ mb: 1 }}>Job Title</Typography>
-        <Controller
-          name={`${jobName}_job_title`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter job title"
-              error={!!errors[`${jobName}_job_title`]}
-              helperText={errors[`${jobName}_job_title`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      {/* Row 2: Start Date and End Date */}
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Typography sx={{ mb: 1 }}>Start Date</Typography>
-        <Controller
-          name={`${jobName}_start_date`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type="date"
-              fullWidth
-              error={!!errors[`${jobName}_start_date`]}
-              helperText={errors[`${jobName}_start_date`]?.message}
-              InputLabelProps={{ shrink: true }}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Typography sx={{ mb: 1 }}>
-          End Date
-          {/* {" "}
-          {!currentlyEmployed[index] && (
-            <span style={{ color: "#f44336" }}>*</span>
-          )} */}
-        </Typography>
-        <Controller
-          name={`${jobName}_end_date`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type="date"
-              fullWidth
-              disabled={currentlyEmployed[index]}
-              error={!!errors[`${jobName}_end_date`]}
-              helperText={errors[`${jobName}_end_date`]?.message}
-              InputLabelProps={{ shrink: true }}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      {/* Currently Employed Checkbox */}
-      <Grid size={{ xs: 12 }}>
-        <Controller
-          name={`${jobName}_currently_employed`}
-          control={control}
-          defaultValue={false}
-          render={({ field }) => (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  {...field}
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  sx={{
-                    color: "secondary.main",
-                    "&.Mui-checked": {
-                      color: "secondary.main",
-                    },
-                  }}
-                />
-              }
-              label="Currently Employed"
-            />
-          )}
-        />
-      </Grid>
-
-      {/* Row 3: City, State, Zip Code */}
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-        <Typography sx={{ mb: 1 }}>City</Typography>
-        <Controller
-          name={`${jobName}_city`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter city"
-              error={!!errors[`${jobName}_city`]}
-              helperText={errors[`${jobName}_city`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-        <Typography sx={{ mb: 1 }}>State</Typography>
-        <Controller
-          name={`${jobName}_state`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter state"
-              error={!!errors[`${jobName}_state`]}
-              helperText={errors[`${jobName}_state`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-        <Typography sx={{ mb: 1 }}>Zip Code</Typography>
-        <Controller
-          name={`${jobName}_zip_code`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter zip code"
-              error={!!errors[`${jobName}_zip_code`]}
-              helperText={errors[`${jobName}_zip_code`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      {/* Row 4: Supervisor Name and Job Duty */}
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Typography sx={{ mb: 1 }}>Supervisor Name</Typography>
-        <Controller
-          name={`${jobName}_supervisor_name`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter supervisor name"
-              error={!!errors[`${jobName}_supervisor_name`]}
-              helperText={errors[`${jobName}_supervisor_name`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Typography sx={{ mb: 1 }}>Job Duty</Typography>
-        <Controller
-          name={`${jobName}_job_duty`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              placeholder="Enter job duty"
-              error={!!errors[`${jobName}_job_duty`]}
-              helperText={errors[`${jobName}_job_duty`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-
-      {/* Row 5: Job Description */}
-      <Grid size={{ xs: 12 }}>
-        <Typography sx={{ mb: 1 }}>Job Description</Typography>
-        <Controller
-          name={`${jobName}_job_description`}
-          control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Describe your responsibilities and achievements (minimum 50 characters)"
-              error={!!errors[`${jobName}_job_description`]}
-              helperText={errors[`${jobName}_job_description`]?.message}
-              sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-            />
-          )}
-        />
-      </Grid>
-    </Grid>
-  );
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <Box id="section-6" sx={{ mb: 6 }}>
@@ -410,67 +160,456 @@ export const PastWorkExperiences = () => {
       </Typography>
 
       <Grid container spacing={4}>
-        {workFields.map((field, index) => (
-          <Grid size={{ xs: 12 }} key={field.name}>
-            <Box
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                border: "1px solid rgba(255, 255, 255, 0.63)",
-              }}
-            >
-              <Typography sx={{ mb: 1 }}>{field.label}</Typography>
-              <Controller
-                name={field.name}
-                control={control}
-                defaultValue="no"
-                render={({ field: radioField }) => (
-                  <FormControl error={!!errors[field.name]}>
-                    <RadioGroup row {...radioField} sx={{ gap: 2 }}>
-                      <FormControlLabel
-                        value="yes"
-                        control={
-                          <Radio
-                            sx={{
-                              color: "secondary.main",
-                              "&.Mui-checked": {
-                                color: "secondary.main",
-                              },
-                            }}
-                          />
-                        }
-                        label="Yes"
-                      />
-                      <FormControlLabel
-                        value="no"
-                        control={
-                          <Radio
-                            sx={{
-                              color: "secondary.main",
-                              "&.Mui-checked": {
-                                color: "secondary.main",
-                              },
-                            }}
-                          />
-                        }
-                        label="No"
-                      />
-                    </RadioGroup>
-                    {errors[field.name] && (
-                      <FormHelperText>
-                        {errors[field.name]?.message}
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
-              />
+        {/* Main Question */}
+        <Grid size={{ xs: 12 }}>
+          <Typography sx={{ mb: 2, fontWeight: 500 }}>
+            Do you have any work experience?
+          </Typography>
 
-              {/* Conditionally render job fields when "yes" is selected */}
-              {watchedJobs[index] === "yes" &&
-                renderJobFields(field.name, index)}
+          <Controller
+            name="has_work_experience"
+            control={control}
+            defaultValue="No"
+            render={({ field }) => (
+              <FormControl>
+                <RadioGroup row {...field}>
+                  <FormControlLabel
+                    value="Yes"
+                    control={
+                      <Radio
+                        sx={{
+                          color: "secondary.main",
+                          "&.Mui-checked": {
+                            color: "secondary.main",
+                          },
+                        }}
+                      />
+                    }
+                    label="Yes"
+                  />
+                  <FormControlLabel
+                    value="No"
+                    control={
+                      <Radio
+                        sx={{
+                          color: "secondary.main",
+                          "&.Mui-checked": {
+                            color: "secondary.main",
+                          },
+                        }}
+                      />
+                    }
+                    label="No"
+                  />
+                </RadioGroup>
+              </FormControl>
+            )}
+          />
+        </Grid>
+
+        {/* Work Experience Forms */}
+        {showForm && (
+          <Grid size={{ xs: 12 }}>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Please provide your work experience details
+              </Typography>
+
+              {workExperiences.map((item, index) => (
+                <Box
+                  key={item.id}
+                  sx={{
+                    mb: 3,
+                    p: 3,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 2,
+                    backgroundColor: "#fafafa",
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      color="primary"
+                    >
+                      {index === 0
+                        ? "Work Experience"
+                        : `Work Experience ${index + 1}`}
+                    </Typography>
+                    {workExperiences.length > 1 && (
+                      <IconButton
+                        color="error"
+                        onClick={() => remove(index)}
+                        size="small"
+                      >
+                        <Icon icon="mdi:delete" width={20} />
+                      </IconButton>
+                    )}
+                  </Stack>
+
+                  <Grid container spacing={3}>
+                    {/* Row 1: Company Name and Job Title */}
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Controller
+                        name={`work_experiences.${index}.company_name`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Company Name"
+                            fullWidth
+                            required
+                            placeholder="Enter company name"
+                            error={
+                              !!errors.work_experiences?.[index]?.company_name
+                            }
+                            helperText={
+                              errors.work_experiences?.[index]?.company_name
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Controller
+                        name={`work_experiences.${index}.job_title`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Job Title"
+                            fullWidth
+                            required
+                            placeholder="Enter job title"
+                            error={
+                              !!errors.work_experiences?.[index]?.job_title
+                            }
+                            helperText={
+                              errors.work_experiences?.[index]?.job_title
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Row 2: Start Date and End Date */}
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Controller
+                        name={`work_experiences.${index}.start_date`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Start Date"
+                            type="date"
+                            fullWidth
+                            required
+                            InputLabelProps={{ shrink: true }}
+                            inputProps={{ max: today }}
+                            error={
+                              !!errors.work_experiences?.[index]?.start_date
+                            }
+                            helperText={
+                              errors.work_experiences?.[index]?.start_date
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Controller
+                        name={`work_experiences.${index}.end_date`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="End Date"
+                            type="date"
+                            fullWidth
+                            disabled={watch(
+                              `work_experiences.${index}.currently_employed`
+                            )}
+                            InputLabelProps={{ shrink: true }}
+                            inputProps={{ max: today }}
+                            error={!!errors.work_experiences?.[index]?.end_date}
+                            helperText={
+                              errors.work_experiences?.[index]?.end_date
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Currently Employed Checkbox */}
+                    <Grid size={{ xs: 12 }}>
+                      <Controller
+                        name={`work_experiences.${index}.currently_employed`}
+                        control={control}
+                        defaultValue={false}
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                {...field}
+                                checked={!!field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.checked);
+                                  if (e.target.checked) {
+                                    setValue(
+                                      `work_experiences.${index}.end_date`,
+                                      ""
+                                    );
+                                  }
+                                }}
+                                sx={{
+                                  color: "secondary.main",
+                                  "&.Mui-checked": {
+                                    color: "secondary.main",
+                                  },
+                                }}
+                              />
+                            }
+                            label="Currently Employed"
+                            sx={{
+                              "& .MuiFormControlLabel-label": {
+                                color: "text.primary",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Row 3: City, State, Zip Code */}
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Controller
+                        name={`work_experiences.${index}.city`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="City"
+                            fullWidth
+                            placeholder="Enter city"
+                            error={!!errors.work_experiences?.[index]?.city}
+                            helperText={
+                              errors.work_experiences?.[index]?.city?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Controller
+                        name={`work_experiences.${index}.state`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="State"
+                            fullWidth
+                            placeholder="Enter state"
+                            error={!!errors.work_experiences?.[index]?.state}
+                            helperText={
+                              errors.work_experiences?.[index]?.state?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Controller
+                        name={`work_experiences.${index}.zip_code`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Zip Code"
+                            fullWidth
+                            placeholder="Enter zip code"
+                            error={!!errors.work_experiences?.[index]?.zip_code}
+                            helperText={
+                              errors.work_experiences?.[index]?.zip_code
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Row 4: Supervisor Name and Job Duty */}
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Controller
+                        name={`work_experiences.${index}.supervisor_name`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Supervisor Name"
+                            fullWidth
+                            placeholder="Enter supervisor name"
+                            error={
+                              !!errors.work_experiences?.[index]
+                                ?.supervisor_name
+                            }
+                            helperText={
+                              errors.work_experiences?.[index]?.supervisor_name
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Controller
+                        name={`work_experiences.${index}.job_duty`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Job Duty"
+                            fullWidth
+                            placeholder="Enter job duty"
+                            error={!!errors.work_experiences?.[index]?.job_duty}
+                            helperText={
+                              errors.work_experiences?.[index]?.job_duty
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Row 5: Job Description */}
+                    <Grid size={{ xs: 12 }}>
+                      <Controller
+                        name={`work_experiences.${index}.job_description`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Job Description"
+                            fullWidth
+                            required
+                            multiline
+                            rows={4}
+                            placeholder="Describe your responsibilities and achievements"
+                            error={
+                              !!errors.work_experiences?.[index]
+                                ?.job_description
+                            }
+                            helperText={
+                              errors.work_experiences?.[index]?.job_description
+                                ?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              ))}
+
+              {/* ✅ Add button shown just below the fields */}
+              <Button
+                variant="outlined"
+                startIcon={<Icon icon="mdi:plus" />}
+                onClick={() =>
+                  append({
+                    company_name: "",
+                    job_title: "",
+                    start_date: "",
+                    end_date: "",
+                    currently_employed: false,
+                    job_description: "",
+                    city: "",
+                    state: "",
+                    zip_code: "",
+                    supervisor_name: "",
+                    job_duty: "",
+                  })
+                }
+                sx={{ mt: 1 }}
+              >
+                Add Another Work Experience
+              </Button>
             </Box>
           </Grid>
-        ))}
+        )}
       </Grid>
     </Box>
   );

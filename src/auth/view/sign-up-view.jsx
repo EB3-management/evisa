@@ -120,8 +120,9 @@ export function SignUpView() {
       toast.success(
         response.message || "Registration successful! Welcome aboard."
       );
+      router.push("/auth/verify-email");
 
-      router.push("/auth/register-step-form");
+      // router.push("/auth/register-step-form");
     } catch (error) {
       const errorMessages = Object.values(error.message).flat();
       toast.error(errorMessages[0]);
@@ -153,7 +154,9 @@ export function SignUpView() {
       <Field.Text
         name="email"
         label="Email"
+        placeholder="Please enter a valid email address"
         slotProps={{ inputLabel: { shrink: true } }}
+        
       />
 
       <Box
@@ -169,7 +172,8 @@ export function SignUpView() {
           slotProps={{ inputLabel: { shrink: true } }}
         >
           {country.map((option) => (
-            <MenuItem key={option.label} value={String(option.value)}>
+            //  <MenuItem key={option.label} value={String(option.label)}></MenuItem>
+            <MenuItem key={option.label} value={option.label}>
               {option.label}
             </MenuItem>
           ))}

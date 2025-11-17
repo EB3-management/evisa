@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Box,
   Typography,
@@ -16,6 +15,7 @@ import { Controller, useFormContext, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import Grid from "@mui/material/Grid2";
 import { Icon } from "@iconify/react";
+import { useEffect } from "react";
 
 // ------------------ Validation Schema ------------------
 export const criminalRecordSchema = z
@@ -34,13 +34,15 @@ export const criminalRecordSchema = z
           outcome: z.string().min(1, "Outcome is required"),
         })
       )
-      .optional(),
+      .optional()
+      .default([]),
   })
   .superRefine((data, ctx) => {
     const hasEmployee = data.criminal_record_employee === "Yes";
     const hasDependent = data.criminal_record_dependents === "Yes";
 
     // If either employee or dependent has criminal record, require at least one entry
+    // ✅ Only validate if Yes is selected
     if (hasEmployee || hasDependent) {
       if (!data.criminal_records || data.criminal_records.length === 0) {
         ctx.addIssue({
@@ -48,7 +50,50 @@ export const criminalRecordSchema = z
           message: "Please add at least one criminal record",
           path: ["criminal_records"],
         });
+      } else {
+        // ✅ Validate each record only if records exist
+        data.criminal_records.forEach((record, index) => {
+          if (!record.related_to) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Please select who this record is related to",
+              path: ["criminal_records", index, "related_to"],
+            });
+          }
+          if (!record.name?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Name is required",
+              path: ["criminal_records", index, "name"],
+            });
+          }
+          if (!record.type_of_record?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Type of record is required",
+              path: ["criminal_records", index, "type_of_record"],
+            });
+          }
+          if (!record.date) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Date is required",
+              path: ["criminal_records", index, "date"],
+            });
+          }
+          if (!record.outcome?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Outcome is required",
+              path: ["criminal_records", index, "outcome"],
+            });
+          }
+        });
       }
+    }
+    // ✅ If both are "No", clear any existing criminal records
+    else {
+      // No validation needed when both are "No"
     }
   });
 
@@ -58,6 +103,7 @@ export const CriminalRecord = () => {
     control,
     formState: { errors },
     watch,
+    setValue,
   } = useFormContext();
 
   const employeeAnswer = watch("criminal_record_employee");
@@ -73,6 +119,23 @@ export const CriminalRecord = () => {
   });
 
   const showForm = employeeAnswer === "Yes" || dependentAnswer === "Yes";
+
+  // ✅ Auto-add first record when "Yes" is selected, clear when both are "No"
+  useEffect(() => {
+    if (showForm && criminalRecords.length === 0) {
+      // Add first record when switching to "Yes"
+      append({
+        related_to: "",
+        name: "",
+        type_of_record: "",
+        date: "",
+        outcome: "",
+      });
+    } else if (!showForm && criminalRecords.length > 0) {
+      // Clear all records when both answers are "No"
+      setValue("criminal_records", []);
+    }
+  }, [showForm, criminalRecords.length, append, setValue]);
 
   // Get available options based on selections
   const getRelatedToOptions = () => {
@@ -199,24 +262,12 @@ export const CriminalRecord = () => {
           />
         </Grid>
         {/* Criminal Records Form */}
-        {/* // inside your component CriminalRecord (replace the relevant part) */}
-        {/* Criminal Records Form */}
         {showForm && (
           <Grid size={{ xs: 12 }}>
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 If any record Criminal record please fill up the form
               </Typography>
-
-              {/* ✅ Ensure at least one default record when Yes is pressed */}
-              {criminalRecords.length === 0 &&
-                append({
-                  related_to: "",
-                  name: "",
-                  type_of_record: "",
-                  date: "",
-                  outcome: "",
-                })}
 
               {criminalRecords.map((item, index) => (
                 <Box
@@ -235,7 +286,11 @@ export const CriminalRecord = () => {
                     alignItems="center"
                     sx={{ mb: 2 }}
                   >
-                    <Typography variant="subtitle1" fontWeight={600} color="primary">
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      color="primary"
+                    >
                       {index === 0 ? "Criminal Record" : `Record ${index + 1}`}
                     </Typography>
                     {criminalRecords.length > 1 && (

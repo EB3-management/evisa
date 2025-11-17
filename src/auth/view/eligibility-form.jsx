@@ -34,6 +34,7 @@ import { Form, Field } from "src/components/hook-form";
 import { getErrorMessage } from "../utils";
 import { FormHead } from "../components/form-head";
 import { Logo } from "src/components/logo";
+import dayjs from "dayjs";
 
 // ----------------------------------------------------------------------
 
@@ -264,8 +265,6 @@ export function EligibilityFormView() {
       console.log("Form Data:", submitData);
 
       const response = await saveEligibilityForm(submitData);
-      // dispatch(setOrganization(response.data));
-      // toast.success(response.message || "Registration successful! Welcome aboard.");
 
       reset();
       toast.success(response.message || "Eligibility form saved successfully!");
@@ -273,7 +272,8 @@ export function EligibilityFormView() {
     } catch (error) {
       const errorMessages = Object.values(error.message).flat();
       toast.error(
-        errorMessages[0] || "Something went wrong. Please try again."
+        // errorMessages[0] || "Something went wrong. Please try again."
+        error.message || "Something went wrong. Please try again."
       );
     }
   });
@@ -332,6 +332,7 @@ export function EligibilityFormView() {
           <Field.DatePicker
             name="date_of_birth"
             label="Date of Birth"
+            maxDate={dayjs()}
             slotProps={{
               textField: {
                 fullWidth: true,
@@ -382,7 +383,7 @@ export function EligibilityFormView() {
                 <em>Select country</em>
               </MenuItem>
               {country.map((option) => (
-                <MenuItem key={option.label} value={String(option.value)}>
+                <MenuItem key={option.label} value={String(option.label)}>
                   {option.label}
                 </MenuItem>
               ))}
@@ -412,7 +413,7 @@ export function EligibilityFormView() {
                 <em>Select country</em>
               </MenuItem>
               {country.map((option) => (
-                <MenuItem key={option.label} value={String(option.value)}>
+                <MenuItem key={option.label} value={String(option.label)}>
                   {option.label}
                 </MenuItem>
               ))}
@@ -521,7 +522,7 @@ export function EligibilityFormView() {
                   <em>Select country</em>
                 </MenuItem>
                 {country.map((option) => (
-                  <MenuItem key={option.label} value={String(option.value)}>
+                  <MenuItem key={option.label} value={String(option.label)}>
                     {option.label}
                   </MenuItem>
                 ))}

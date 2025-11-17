@@ -16,7 +16,7 @@ import {
 import Grid from "@mui/material/Grid2";
 
 import { DashboardContent } from "src/layouts/dashboard";
-import { useGetVacancyDetail } from "src/api/vacancy";
+import { applyVacancy, useGetVacancyDetail } from "src/api/vacancy";
 import { Iconify } from "src/components/iconify";
 import { useNavigate } from "react-router";
 import { paths } from "src/routes/paths";
@@ -33,7 +33,9 @@ export function VacancyDetailView({ id }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const { vacancyDetail, vacancyLoading } = useGetVacancyDetail(id);
+  const { vacancyDetail, vacancyLoading, mutateVacancyDetail } =
+    useGetVacancyDetail(id);
+    
   const { onBoarding, isLoading: isLoadingOnBoarding } = useAppSelector(
     (state) => state.onBoarding || { onBoarding: {}, isLoading: false }
   );
@@ -61,41 +63,212 @@ export function VacancyDetailView({ id }) {
     : [];
 
   // Handle Apply Now click
+
   const handleApplyNow = async () => {
     try {
       setIsCheckingStatus(true);
 
-      // Check onboarding status from Redux store
       const status = onBoarding?.status;
 
-      if (status) {
-        if (status === "In Progress") {
-          // Redirect to apply form if In Progress
-          navigate(`/apply/${id}`);
-        } else if (status === "Completed") {
-          // Redirect to dashboard plan if Completed
+      console.log("🔍 Onboarding Status:", status);
 
-          dispatch(setSelectedVacancyId(id));
-          navigate(paths.dashboard.plan);
-          // router.push(paths.dashboard.plan(id));
-          toast.success("Your onboarding form is already completed!");
-        } else {
-          // Handle other statuses - default to apply form
-          navigate(`/apply/${id}`);
-        }
-      } else {
-        // If no status found, redirect to apply form
-        navigate(`/apply/${id}`);
+      // Set selected vacancy ID
+      dispatch(setSelectedVacancyId(id));
+
+      // ✅ SCENARIO 1: Onboarding is "In Progress" - redirect to apply/complete onboarding
+      if (status === "In Progress") {
+        toast.info("Please complete your onboarding form");
+        navigate(`/apply`);
+        // navigate(`/apply/${id}`);
+
+        return;
       }
-    } catch (error) {
-      console.error("Error checking onboarding status:", error);
 
-      // If error occurs, still allow navigation to apply form
-      navigate(`/apply/${id}`);
+      // ✅ SCENARIO 2: Onboarding is "Completed" - go to plan page
+      if (status === "Completed") {
+        router.push(paths.dashboard.plan(id));
+        return;
+      }
+
+      // ✅ SCENARIO 3: No clear status - default to apply form
+      toast.info("Please complete your onboarding form");
+      navigate(`/apply`);
+
+      // navigate(`/apply/${id}`);
+    } catch (error) {
+      console.error("❌ Error checking onboarding status:", error);
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsCheckingStatus(false);
     }
   };
+  // const handleApplyNow = async () => {
+  //   try {
+  //     setIsCheckingStatus(true);
+
+  //     const status = onBoarding?.status;
+
+  //     console.log("🔍 Onboarding Status:", status);
+  //     console.log("🔍 Is Already Applied:", vacancyDetail?.is_applied);
+
+  //      // ✅ SCENARIO 1: Already applied BUT onboarding still in progress
+  //   if (vacancyDetail?.is_applied && status === "In Progress") {
+  //     toast.info("Please complete your onboarding form to finalize your application");
+  //     dispatch(setSelectedVacancyId(id));
+  //     navigate(`/apply/${id}`); // ✅ Redirect to complete onboarding
+  //     return;
+  //   }
+
+  //   // ✅ SCENARIO 2: Already applied AND onboarding completed
+  //   if (vacancyDetail?.is_applied && status === "Completed") {
+  //     toast.success("Your application has been submitted!");
+  //     dispatch(setSelectedVacancyId(id));
+  //     router.push(paths.dashboard.plan(id));
+  //     return;
+  //   }
+
+  //     if (vacancyDetail?.is_applied) {
+  //       toast.info("You have already applied for this vacancy");
+  //       // Navigate to plan page to view application
+  //       // navigate(`${paths.dashboard.plan}?vacancy=${id}`);
+  //       router.push(paths.dashboard.plan(id));
+
+  //       return;
+  //     }
+
+  //     // ✅ SCENARIO 2: Check onboarding status before applying
+  //     if (status === "In Progress") {
+  //       // Onboarding is not completed, redirect to complete it first
+  //       toast.info("Please complete your onboarding form first");
+  //       dispatch(setSelectedVacancyId(id));
+  //       navigate(`/apply/${id}`);
+  //       return;
+  //     }
+
+  //     // ✅ SCENARIO 3: Onboarding is completed, call apply API
+  //     if (status === "Completed") {
+  //       console.log("📤 Calling apply vacancy API...");
+
+  //       const response = await applyVacancy(id);
+
+  //       console.log("✅ Application Response:", response);
+
+  //       // ✅ Revalidate vacancy detail to update is_applied status
+  //       await mutateVacancyDetail();
+
+  //       // ✅ Show success message and navigate to plan
+  //       toast.success(
+  //         response.message || "Application submitted successfully!"
+  //       );
+  //       dispatch(setSelectedVacancyId(id));
+  //       // navigate(`${paths.dashboard.plan}?vacancy=${id}`);
+  //       router.push(paths.dashboard.plan(id));
+
+  //       return;
+  //     }
+
+  //     // if (status) {
+  //     //   if (status === "In Progress") {
+  //     //     // Redirect to apply form if In Progress
+  //     //     navigate(`/apply/${id}`);
+  //     //   } else if (status === "Completed") {
+  //     //     // Redirect to dashboard plan if Completed
+
+  //     //     dispatch(setSelectedVacancyId(id));
+  //     //     navigate(paths.dashboard.plan(id));
+  //     //     // router.push(paths.dashboard.plan(id));
+  //     //     toast.success("Your onboarding form is already completed!");
+  //     //   } else {
+  //     //     // Handle other statuses - default to apply form
+  //     //     navigate(`/apply/${id}`);
+  //     //   }
+  //     // } else {
+  //     //   // If no status found, redirect to apply form
+  //     //   navigate(`/apply/${id}`);
+  //     // }
+  //   } catch (error) {
+  //     console.error("Error checking onboarding status:", error);
+
+  //     // If error occurs, still allow navigation to apply form
+  //     // navigate(`/apply/${id}`);
+  //   } finally {
+  //     setIsCheckingStatus(false);
+  //   }
+  // };
+  // const handleApplyNow = async () => {
+  //   try {
+  //     setIsCheckingStatus(true);
+
+  //     // ✅ Step 1: Check if already applied
+  //     if (vacancyDetail?.is_applied) {
+  //       // ✅ Step 2: If already applied, check onboarding status
+  //       const status = onBoarding?.status;
+
+  //       console.log("🔍 Already Applied - Onboarding Status:", status);
+
+  //       if (status === "In Progress") {
+  //         dispatch(setSelectedVacancyId(id));
+  //         // ✅ Case: Already applied BUT onboarding is still in progress
+  //         // This means they started the application but didn't complete onboarding
+  //         // Action: Take them back to continue/complete the onboarding form
+  //         toast.info(
+  //           "Please complete your onboarding form to finalize your application"
+  //         );
+  //         navigate(`/apply/${id}`);
+  //         return;
+  //       }
+
+  //       if (status === "Completed") {
+  //         // ✅ Case: Already applied AND onboarding is completed
+  //         // They've done everything - just view their application in the plan page
+  //         dispatch(setSelectedVacancyId(id));
+  //         toast.success("Your application has been submitted!");
+  //         navigate(paths.dashboard.plan(id));
+  //         return;
+  //       }
+
+  //       // ✅ Case: Already applied but status is unclear (null, undefined, or other)
+  //       // Default behavior: Show already applied message
+  //       toast.info("You have already applied for this vacancy");
+  //       return;
+  //     }
+
+  //     // ✅ Step 3: If NOT applied yet, call the API to apply
+  //     const response = await applyVacancy(id);
+
+  //     console.log("✅ Application Response:", response);
+
+  //     // ✅ Revalidate to get updated vacancy data
+  //     await mutateVacancyDetail();
+
+  //     // ✅ After successful application, check status to determine next step
+  //     const status = onBoarding?.status;
+
+  //     if (status === "In Progress") {
+  //       // Newly applied but onboarding incomplete - go complete it
+  //       toast.info("Please complete your onboarding form");
+  //       navigate(`/apply/${id}`);
+  //     } else if (status === "Completed") {
+  //       // Newly applied and onboarding already complete - go to plan
+  //       dispatch(setSelectedVacancyId(id));
+  //       toast.success("Application submitted successfully!");
+  //       navigate(paths.dashboard.plan);
+  //     } else {
+  //       // No clear status - default to apply form
+  //       toast.info("Please complete your onboarding form");
+  //       navigate(`/apply/${id}`);
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Error applying for vacancy:", error);
+
+  //     toast.error(
+  //       error.response?.message ||
+  //         "Failed to submit application. Please try again."
+  //     );
+  //   } finally {
+  //     setIsCheckingStatus(false);
+  //   }
+  // };
 
   // Get initials for avatar
   const getInitials = (name) => {
@@ -880,7 +1053,7 @@ export function VacancyDetailView({ id }) {
                     }}
                   >
                     {vacancyDetail?.is_applied
-                      ? "Your application is under review. We'll contact you soon!"
+                      ? "Click to view your application status"
                       : "Take the next step in your career journey"}
                   </Typography>
                   <Button
@@ -888,16 +1061,12 @@ export function VacancyDetailView({ id }) {
                     size="large"
                     fullWidth
                     onClick={handleApplyNow}
-                    disabled={
-                      vacancyDetail?.is_applied ||
-                      isCheckingStatus ||
-                      isLoadingOnBoarding
-                    }
+                    // disabled={isCheckingStatus || isLoadingOnBoarding} // ✅ Only disable while loading
                     startIcon={
-                      vacancyDetail?.is_applied ? (
-                        <Iconify icon="mdi:check-circle" width={22} />
-                      ) : isCheckingStatus || isLoadingOnBoarding ? (
+                      isLoadingOnBoarding ? (
                         <CircularProgress size={20} color="inherit" />
+                      ) : vacancyDetail?.is_applied ? (
+                        <Iconify icon="mdi:eye" width={22} />
                       ) : (
                         <Iconify icon="mdi:send" width={22} />
                       )
@@ -924,10 +1093,10 @@ export function VacancyDetailView({ id }) {
                       },
                     }}
                   >
-                    {vacancyDetail?.is_applied
-                      ? "Already Applied"
-                      : isCheckingStatus || isLoadingOnBoarding
+                    {isLoadingOnBoarding
                       ? "Loading..."
+                      : vacancyDetail?.is_applied
+                      ? "View Application"
                       : "Apply Now"}
                   </Button>
                 </Box>

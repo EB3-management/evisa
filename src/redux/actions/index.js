@@ -2,8 +2,6 @@ export * from "./auth-actions";
 
 export * from "./form-template-actions";
 
-export * from "./campaign-actions";
-
 export * from "./profile-actions";
 
 export * from "./employee-actions";

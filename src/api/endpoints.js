@@ -1,20 +1,27 @@
+import { list } from "src/theme/core/components/list";
+
 export const endpoints = {
   auth: {
     signIn: "login",
     signUp: "register",
     signOut: "logout",
     country: "country",
+    emailLink: "email/verification-notification",
+    emailVerify: "email/change",
   },
 
   vacancy: {
     eligibilityForm: "eligibility/save-eligibility-form",
+    show: "eligibility/show-eligibility-form",
     list: "vacancy",
     detail: (id) => `vacancy/show/${id}`,
+    applied: (id) => `vacancy/apply/${id}`,
+    appliedVacancy: "vacancy/applied",
   },
   plan: {
-    list: "finance-plan",
+    list: (id) => `finance-plan/${id}`,
     assign: (id) => `finance-plan/assign-plan/${id}`,
-    financeList: "finance-plan/list-assigned-plans",
+    financeList: "finance-plan/assigned-plans",
     detail: (id) => `finance-plan/assigned-plan/${id}`,
   },
   document: {
@@ -61,23 +68,9 @@ export const endpoints = {
     update: (id) => `user/update/${id}`,
   },
 
-  telecommunication: {
-    providers: "/telcos",
-    dataPack: {
-      ncell: "data-pack/ncell",
-      ntc: "data-pack/ntc",
-    },
-    topUpAmount: "top-amount",
-  },
-
-  topUpAmount: "top-amount",
-
-  formTemplate: {
-    create: "form-template/store",
-    list: "form-template",
-    detail: (id) => `form-template/show/${id}`,
-    update: (id) => `form-template/update/${id}`,
-    validationRule: "validation-rule",
+  visaStatus: {
+    list: "employee-visa-status/status-list",
+    visaLogStatus: "employee-visa-status",
   },
 
   lead: {
@@ -108,44 +101,18 @@ export const endpoints = {
   appointment: {
     list: "appointments",
     create: "booked-appointments/store",
-
-    // category: {
-    //   create: "appointment-category/store",
-    //   list: "appointment-category",
-    //   detail: (id) => `appointment-category/show/${id}`,
-    //   update: (id) => `appointment-category/update/${id}`,
-    // },
-
-    // timeSlot: {
-    //   create: "appointment-slot/store",
-    //   list: "appointment-slot",
-    //   detail: (id) => `appointment-slot/show/${id}`,
-    //   update: (id) => `appointment-slot/update/${id}`,
-    // },
   },
 
-  creditLogs: {
-    list: "organization-credit-log",
+  faqs: {
+    list: "faqs",
+    guide: "dashboard/guide",
+    dashboard: "dashboard",
+  },
+  termCondition: {
+    list: "dashboard/terms-and-conditions",
   },
 
   public: {
     key: "rsa/public-key",
-  },
-
-  siteSettings: {
-    get: "site-setting",
-  },
-
-  hr: {
-    nepaliDates: "nepali-date",
-    attendance: "monthly-report",
-  },
-  reports: {
-    teamReports: "report/team",
-    transactions: "report/transaction",
-    sms: "report/sms",
-    topup: "report/topup",
-    package: "report/package",
-    credit: "report/credits",
   },
 };

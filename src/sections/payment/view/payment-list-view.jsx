@@ -74,7 +74,7 @@ export function PaymentListView() {
           { name: "Dashboard", href: paths.dashboard.root },
           {
             name: "Payment",
-            href: paths.dashboard.appointment.root,
+            href: paths.dashboard.payment.root,
           },
           { name: "List" },
         ]}
