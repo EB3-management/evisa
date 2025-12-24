@@ -114,7 +114,7 @@ export function PlanItem({
       sx={{
         px: 3,
         py: 2,
-        bgcolor: "#D2F3EE",
+        bgcolor: "primary.lighter",
         borderTop: 1,
         borderBottom: 1,
         borderColor: "#CDE2E0",
@@ -128,18 +128,18 @@ export function PlanItem({
         }}
       >
         <Box>
-          <Typography variant="caption" sx={{ color: "#4F8E88" }}>
+          <Typography variant="caption" sx={{ color: "primary.main" }}>
             Total Fee
           </Typography>
-          <Typography variant="h4" sx={{ color: "#2BA597", fontWeight: 700 }}>
+          <Typography variant="h4" sx={{ color: "secondary.dark", fontWeight: 700 }}>
             {fCurrency(job.total_fee)} {job.currency}
           </Typography>
         </Box>
         <Box sx={{ textAlign: "right" }}>
-          <Typography variant="caption" sx={{ color: "#4F8E88" }}>
+          <Typography variant="caption" sx={{ color: "primary.main" }}>
             Installments
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "#114B46" }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.dark" }}>
             {job.installment_count} payments
           </Typography>
         </Box>

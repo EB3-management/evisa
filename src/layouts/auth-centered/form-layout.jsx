@@ -159,7 +159,7 @@ const backgroundStyles = () => ({
   width: "100%",
   height: "100%",
   background:
-    "linear-gradient(180deg, #5383ff 0%, rgba(53, 73, 255, 0.7) 100%)",
+    "linear-gradient(180deg, #0e8b7e 50%, rgba(248, 227, 190, 0.7) 100%)",
   filter: "blur(250px)",
   pointerEvents: "none",
 });

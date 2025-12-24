@@ -26,7 +26,7 @@ import {
 } from "@mui/material";
 import { useGetVacancy, useGetAppliedVacancy } from "src/api/vacancy";
 import { useRouter } from "src/routes/hooks";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { paths } from "src/routes/paths";
 import { useAppDispatch, useAppSelector } from "src/redux/hooks";
 import { fetchProfileRequest } from "src/redux/actions";
@@ -82,14 +82,20 @@ export function AppView() {
   // Get user profile from Redux
   const { profile } = useAppSelector((state) => state.profile || {});
 
-  // // ✅ Redirect to eligibility form if not filled (only once on mount)
-  // useEffect(() => {
-  //   if (dashboardLoading) return; // Wait for data to load
+  //to avoid rerender
+  const hasCheckedEligibility = useRef(false);
 
-  //   if (dashboard?.eligibilityFormStatus === "Not Filled") {
-  //     navigate("/auth/register-step-form", { replace: true });
-  //   }
-  // }, [dashboard?.eligibilityFormStatus, dashboardLoading, navigate]);
+  // ✅ Redirect to eligibility form if not filled (only once on mount)
+  useEffect(() => {
+    if (dashboardLoading) return; // Wait for data to load
+
+    if (dashboard?.eligibilityFormStatus === "Not Filled") {
+      hasCheckedEligibility.current = true;
+      navigate("/auth/register-step-form", { replace: true });
+    } else {
+      hasCheckedEligibility.current = true;
+    }
+  }, [dashboard?.eligibilityFormStatus, dashboardLoading, navigate]);
 
   // ✅ Refresh data when component mounts
   useEffect(() => {
@@ -231,9 +237,12 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: theme.palette.primary.main,
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <Stack
@@ -301,9 +310,12 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                background: theme.palette.secondary.main,
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <Stack
@@ -366,9 +378,12 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                background: theme.palette.primary.main,
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <Stack
@@ -431,9 +446,12 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                background: theme.palette.secondary.main,
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <Stack
@@ -453,13 +471,13 @@ export function AppView() {
                     Total paying fees
                   </Typography>
                   <Typography
-                    variant="h4"
+                    variant="h3"
                     sx={{
                       fontWeight: 700,
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+                      fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
                     }}
                   >
-                    {dashboard?.total_fee}
+                    {dashboard?.total_fee || 0}
                   </Typography>
                 </Box>
                 <Box
@@ -733,21 +751,21 @@ export function AppView() {
                     subtitle: "After job selection",
                     status: "upcoming",
                     icon: "mdi:file-upload",
-                    color: "info",
+                    color: "secondary",
                   },
                   {
                     title: "Review & Sign Contract",
                     subtitle: "Digital signature required",
                     status: "upcoming",
                     icon: "mdi:file-sign",
-                    color: "warning",
+                    color: "primary",
                   },
                   {
                     title: "Complete Payment",
                     subtitle: "Process visa application fee",
                     status: "upcoming",
                     icon: "mdi:credit-card-check",
-                    color: "success",
+                    color: "secondary",
                   },
                 ].map((milestone, index) => (
                   <Box
@@ -755,15 +773,12 @@ export function AppView() {
                     sx={{
                       p: { xs: 1.5, sm: 2 },
                       border: 2,
-                      borderColor:
-                        milestone.status === "current"
-                          ? `${milestone.color}.main`
-                          : "divider",
+                      borderColor: `${milestone.color}.main`,
                       borderRadius: { xs: 1.5, sm: 2 },
-                      bgcolor:
-                        milestone.status === "current"
-                          ? `${milestone.color}.lighter`
-                          : "transparent",
+                      // bgcolor:
+                      //   milestone.status === "current"
+                      //     ? `${milestone.color}.lighter`
+                      //     : "transparent",
                       transition: "all 0.3s",
                       "&:hover": {
                         borderColor: `${milestone.color}.main`,
@@ -810,17 +825,6 @@ export function AppView() {
                           >
                             {milestone.title}
                           </Typography>
-                          {milestone.status === "current" && (
-                            <Chip
-                              label="Current"
-                              size="small"
-                              color={milestone.color}
-                              sx={{
-                                height: { xs: 20, sm: 24 },
-                                fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                              }}
-                            />
-                          )}
                         </Stack>
                         <Typography
                           variant="caption"
@@ -833,14 +837,6 @@ export function AppView() {
                           {milestone.subtitle}
                         </Typography>
                       </Box>
-                      {milestone.status === "current" && (
-                        <Iconify
-                          icon="mdi:chevron-right"
-                          width={{ xs: 20, sm: 24 }}
-                          color="text.secondary"
-                          sx={{ flexShrink: 0 }}
-                        />
-                      )}
                     </Stack>
                   </Box>
                 ))}
@@ -889,7 +885,7 @@ export function AppView() {
                       <Iconify
                         icon="mdi:finance"
                         width={24}
-                        color="primary.main"
+                        sx={{ color: "primary.main" }}
                       />
                     </Box>
                   </Stack>
@@ -928,7 +924,7 @@ export function AppView() {
                       <Iconify
                         icon="mdi:check-circle"
                         width={32}
-                        color="primary.main"
+                        sx={{ color: "primary.main" }}
                       />
                     </Stack>
                   </Box>
@@ -937,9 +933,9 @@ export function AppView() {
                     sx={{
                       p: 2,
                       borderRadius: 2,
-                      bgcolor: "warning.lighter",
+                      bgcolor: "secondary.lighter",
                       border: "1px solid",
-                      borderColor: "warning.light",
+                      borderColor: "secondary.light",
                     }}
                   >
                     <Stack
@@ -956,7 +952,7 @@ export function AppView() {
                         </Typography>
                         <Typography
                           variant="h6"
-                          sx={{ fontWeight: 700, color: "warning.main" }}
+                          sx={{ fontWeight: 700, color: "secondary.main" }}
                         >
                           ${dashboard?.due_amount?.toLocaleString() || "0"}
                         </Typography>
@@ -964,7 +960,7 @@ export function AppView() {
                       <Iconify
                         icon="mdi:clock-alert-outline"
                         width={32}
-                        color="warning.main"
+                        sx={{ color: "secondary.main" }}
                       />
                     </Stack>
                   </Box>
@@ -1000,7 +996,7 @@ export function AppView() {
                       <Iconify
                         icon="mdi:file-document-multiple"
                         width={32}
-                        color="primary.main"
+                        sx={{ color: "primary.main" }}
                       />
                     </Stack>
                   </Box>
@@ -1009,14 +1005,14 @@ export function AppView() {
             </Card>
 
             {/* Resources */}
-            <Card sx={{ p: 3, borderRadius: 3, bgcolor: "warning.lighter" }}>
+            <Card sx={{ p: 3, borderRadius: 3, bgcolor: "secondary.lighter" }}>
               <Stack spacing={2}>
                 <Box
                   sx={{
                     width: 48,
                     height: 48,
                     borderRadius: 2,
-                    bgcolor: "warning.main",
+                    bgcolor: "primary.main",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1040,7 +1036,7 @@ export function AppView() {
                   <Button
                     fullWidth
                     variant="outlined"
-                    color="warning"
+                    color="primary"
                     onClick={() => router.push(paths.dashboard.guide.root)}
                     startIcon={<Iconify icon="mdi:file-document" />}
                     sx={{ justifyContent: "flex-start", borderRadius: 1.5 }}
@@ -1050,7 +1046,7 @@ export function AppView() {
                   <Button
                     fullWidth
                     variant="outlined"
-                    color="warning"
+                    color="primary"
                     onClick={() => router.push(paths.dashboard.faqs.root)}
                     startIcon={
                       <Iconify icon="mdi:frequently-asked-questions" />

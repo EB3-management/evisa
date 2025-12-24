@@ -11,12 +11,14 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
   // Filter out past appointments (only show today and future dates)
   const filteredAppointments = useMemo(() => {
     if (!appointments || appointments.length === 0) return [];
-    
-    const today = dayjs().startOf('day');
-    
+
+    const today = dayjs().startOf("day");
+
     return appointments.filter((item) => {
-      const appointmentDate = dayjs(item.date).startOf('day');
-      return appointmentDate.isSame(today, 'day') || appointmentDate.isAfter(today);
+      const appointmentDate = dayjs(item.date).startOf("day");
+      return (
+        appointmentDate.isSame(today, "day") || appointmentDate.isAfter(today)
+      );
     });
   }, [appointments]);
 
@@ -89,7 +91,7 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
           sx={{
             fontWeight: 700,
             fontSize: { xs: "1rem", sm: "1.15rem", md: "1.25rem" },
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            background: "linear-gradient(135deg, #0e8b7e 0%, #ffbc48 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
@@ -101,12 +103,7 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
             size="small"
             onClick={handleToday}
             sx={{
-              bgcolor: "action.hover",
-              "&:hover": {
-                bgcolor: "primary.lighter",
-                transform: "scale(1.1)",
-              },
-              transition: "all 0.2s",
+              bgcolor: "primary.lighter",
             }}
           >
             <Iconify icon="solar:calendar-bold" width={18} />

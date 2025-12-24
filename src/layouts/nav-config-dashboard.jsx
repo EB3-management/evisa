@@ -39,13 +39,13 @@ export const icon = (name) => (
 // };
 
 const ICONS = {
-  tour: icon("ic-tour"),
+  job: icon("ic-job"),
   file: icon("ic-file"),
-  invoice: icon("ic-invoice"),
-  dashboard: icon("ic-dashboard"),
-  user: icon("ic-user"),
-  appointment: icon("ic-job"),
-  logs: icon("ic-logs"),
+  dashboard: icon("ic-dashboard-view"),
+  contract: icon("ic-invoice"),
+  payment: icon("ic-banking"),
+  visa: icon("ic-tour"),
+  faqs: icon("ic-chat"),
 };
 
 // ----------------------------------------------------------------------
@@ -60,7 +60,7 @@ export const navData = [
       {
         title: "Jobs",
         path: paths.dashboard.vacancy.root,
-        icon: ICONS.file,
+        icon: ICONS.job,
       },
 
       {
@@ -72,23 +72,23 @@ export const navData = [
       {
         title: "Contract",
         path: paths.dashboard.contract.root,
-        icon: ICONS.user,
+        icon: ICONS.contract,
       },
       {
         title: "Payment History",
         path: paths.dashboard.payment.root,
-        icon: ICONS.user,
+        icon: ICONS.payment,
       },
 
       {
         title: "Visa Status",
         path: paths.dashboard.visaStatus.root,
-        icon: ICONS.appointment,
+        icon: ICONS.visa,
       },
       {
         title: "Faqs",
         path: paths.dashboard.faqs.root,
-        icon: ICONS.logs,
+        icon: ICONS.faqs,
       },
     ],
   },

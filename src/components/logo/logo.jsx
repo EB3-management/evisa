@@ -23,6 +23,7 @@ export const Logo = forwardRef((props, ref) => {
     disabled,
     logoUrl,
     sx,
+    size = "default",
     ...other
   } = props;
 
@@ -35,7 +36,14 @@ export const Logo = forwardRef((props, ref) => {
 
   // const { siteSetting } = useAppSelector(selectSiteSetting);
 
-  const logoSource = logoUrl || fallbackLogo;
+  // const logoSource = logoUrl || fallbackLogo;
+  const logoSource = size === "mini" ? faviconLogo : logoUrl || fallbackLogo;
+
+  const logoHeight = {
+    mini: 32, // Smaller for collapsed nav
+    default: 40, // Regular size
+    large: 48, // Larger if needed
+  };
 
   const logoImg = (
     <img
@@ -68,7 +76,8 @@ export const Logo = forwardRef((props, ref) => {
     >
       <Box
         sx={{
-          height: isSingle ? 40 : 36,
+          height: logoHeight[size] || logoHeight.default, // ← Dynamic height
+          width: size === "mini" ? logoHeight[size] : "auto", // ← Square for mini
           flexShrink: 0,
         }}
       >

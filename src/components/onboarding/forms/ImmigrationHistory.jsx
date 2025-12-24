@@ -73,70 +73,111 @@ const types = [
   { id: "DV1", name: "Diversity Immigrant (Principal Applicant)" },
   { id: "DV2", name: "Spouse of DV1" },
   { id: "DV3", name: "Child of DV1" },
+  { id: "OTHER", name: "Other" },
 ];
 
 // ------------------ Validation Schema ------------------
 export const immigrationHistorySchema = z
   .object({
-    types: z.string().min(1, "Please select a type"),
-    beenToUsa: z.enum(["Yes", "No"], {
+    hasImmigrationHistory: z.enum(["Yes", "No"], {
       errorMap: () => ({ message: "Please select an option" }),
     }),
-    socialSecurity: z.enum(["Yes", "No"], {
-      // ✅ Changed from lowercase
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
+    types: z.string().optional(),
+    beenToUsa: z.enum(["Yes", "No"]).optional(),
+    socialSecurity: z.enum(["Yes", "No"]).optional(),
     socialSecurityNumber: z.string().optional(),
-    inUsaApplicant: z.enum(["Yes", "No"], {
-      // ✅ Changed from lowercase
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
+    inUsaApplicant: z.enum(["Yes", "No"]).optional(),
     applicantName: z.string().optional(),
-    inUsaDependent: z.enum(["Yes", "No"], {
-      // ✅ Changed from lowercase
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
+    inUsaDependent: z.enum(["Yes", "No"]).optional(),
     dependentName: z.string().optional(),
     i94Number: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    // Social Security Number required if "Yes"
-    if (data.socialSecurity === "Yes" && !data.socialSecurityNumber?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please enter your Social Security Number",
-        path: ["socialSecurityNumber"],
-      });
-    }
+    // Only validate if user has immigration history
+    if (data.hasImmigrationHistory === "Yes") {
+      // Type is required
+      if (!data.types?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select a type",
+          path: ["types"],
+        });
+      }
 
-    // Applicant Name required if in USA
-    if (data.inUsaApplicant === "Yes" && !data.applicantName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please enter applicant name",
-        path: ["applicantName"],
-      });
-    }
+      // beenToUsa is required
+      if (!data.beenToUsa) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select an option",
+          path: ["beenToUsa"],
+        });
+      }
 
-    // Dependent Name required if in USA
-    if (data.inUsaDependent === "Yes" && !data.dependentName?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please enter dependent name",
-        path: ["dependentName"],
-      });
-    }
+      // socialSecurity is required
+      if (!data.socialSecurity) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select an option",
+          path: ["socialSecurity"],
+        });
+      }
 
-    // I-94 Number required if applicant or dependent in USA
-    if (
-      (data.inUsaApplicant === "Yes" || data.inUsaDependent === "Yes") &&
-      !data.i94Number?.trim()
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please enter your most recent I-94 number",
-        path: ["i94Number"],
-      });
+      // Social Security Number required if "Yes"
+      if (data.socialSecurity === "Yes" && !data.socialSecurityNumber?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter your Social Security Number",
+          path: ["socialSecurityNumber"],
+        });
+      }
+
+      // inUsaApplicant is required
+      if (!data.inUsaApplicant) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select an option",
+          path: ["inUsaApplicant"],
+        });
+      }
+
+      // Applicant Name required if in USA
+      if (data.inUsaApplicant === "Yes" && !data.applicantName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter applicant name",
+          path: ["applicantName"],
+        });
+      }
+
+      // inUsaDependent is required
+      if (!data.inUsaDependent) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select an option",
+          path: ["inUsaDependent"],
+        });
+      }
+
+      // Dependent Name required if in USA
+      if (data.inUsaDependent === "Yes" && !data.dependentName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter dependent name",
+          path: ["dependentName"],
+        });
+      }
+
+      // I-94 Number required if applicant or dependent in USA
+      if (
+        (data.inUsaApplicant === "Yes" || data.inUsaDependent === "Yes") &&
+        !data.i94Number?.trim()
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter your most recent I-94 number",
+          path: ["i94Number"],
+        });
+      }
     }
   });
 
@@ -148,6 +189,7 @@ export const ImmigrationHistory = () => {
     watch,
   } = useFormContext();
 
+  const hasImmigrationHistory = watch("hasImmigrationHistory");
   const socialSecurity = watch("socialSecurity");
   const inUsaApplicant = watch("inUsaApplicant");
   const inUsaDependent = watch("inUsaDependent");
@@ -163,53 +205,17 @@ export const ImmigrationHistory = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Type */}
+        {/* First Question: Do you have immigration history? */}
         <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>Type </Typography>
-          <Controller
-            name="types"
-            control={control}
-            defaultValue=""
-            render={({ field }) => (
-              <FormControl fullWidth error={!!errors.types}>
-                <TextField
-                  {...field}
-                  select
-                  fullWidth
-                  displayEmpty
-                  error={!!errors.types}
-                  sx={{
-                    "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
-                  }}
-                >
-                  <MenuItem value="">
-                    <em>Select Type</em>
-                  </MenuItem>
-                  {types.map((option) => (
-                    <MenuItem key={option.id} value={option.id}>
-                      {option.id} – {option.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                {errors.types && (
-                  <FormHelperText>{errors.types?.message}</FormHelperText>
-                )}
-              </FormControl>
-            )}
-          />
-        </Grid>
-
-        {/* Have you ever been to USA */}
-        <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>
-            Have you ever been to the United States of America?
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>
+            Do you have any immigration history?
           </Typography>
           <Controller
-            name="beenToUsa"
+            name="hasImmigrationHistory"
             control={control}
             defaultValue="No"
             render={({ field }) => (
-              <FormControl error={!!errors.beenToUsa}>
+              <FormControl error={!!errors.hasImmigrationHistory}>
                 <RadioGroup row {...field}>
                   <FormControlLabel
                     value="Yes"
@@ -240,278 +246,378 @@ export const ImmigrationHistory = () => {
                     label="No"
                   />
                 </RadioGroup>
-                {errors.beenToUsa && (
-                  <FormHelperText>{errors.beenToUsa?.message}</FormHelperText>
+                {errors.hasImmigrationHistory && (
+                  <FormHelperText>
+                    {errors.hasImmigrationHistory?.message}
+                  </FormHelperText>
                 )}
               </FormControl>
             )}
           />
         </Grid>
 
-        {/* Social Security */}
-        <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>
-            Have you ever had a Social Security Number?
-          </Typography>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-          >
-            <Controller
-              name="socialSecurity"
-              control={control}
-              defaultValue="No"
-              render={({ field }) => (
-                <FormControl error={!!errors.socialSecurity}>
-                  <RadioGroup row {...field}>
-                    <FormControlLabel
-                      value="Yes"
-                      control={
-                        <Radio
-                          sx={{
-                            color: "secondary.main",
-                            "&.Mui-checked": {
-                              color: "secondary.main",
-                            },
-                          }}
-                        />
-                      }
-                      label="Yes"
-                    />
-                    <FormControlLabel
-                      value="No"
-                      control={
-                        <Radio
-                          sx={{
-                            color: "secondary.main",
-                            "&.Mui-checked": {
-                              color: "secondary.main",
-                            },
-                          }}
-                        />
-                      }
-                      label="No"
-                    />
-                  </RadioGroup>
-                  {errors.socialSecurity && (
-                    <FormHelperText>
-                      {errors.socialSecurity?.message}
-                    </FormHelperText>
-                  )}
-                </FormControl>
-              )}
-            />
-
-            {socialSecurity === "Yes" && (
+        {/* Show all fields only if Yes */}
+        {hasImmigrationHistory === "Yes" && (
+          <>
+            {/* Type */}
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ mb: 1 }}>Type </Typography>
               <Controller
-                name="socialSecurityNumber"
+                name="types"
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    placeholder="Social Security Number"
-                    fullWidth
-                    sx={{
-                      maxWidth: { xs: "100%", sm: 400 },
-                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
-                    }}
-                    error={!!errors.socialSecurityNumber}
-                    helperText={errors.socialSecurityNumber?.message}
-                  />
+                  <FormControl fullWidth error={!!errors.types}>
+                    <TextField
+                      {...field}
+                      select
+                      fullWidth
+                      displayEmpty
+                      error={!!errors.types}
+                      sx={{
+                        "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                      }}
+                    >
+                      <MenuItem value="">
+                        <em>Select Type</em>
+                      </MenuItem>
+                      {types.map((option) => (
+                        <MenuItem key={option.id} value={option.id}>
+                          {option.id} – {option.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    {errors.types && (
+                      <FormHelperText>{errors.types?.message}</FormHelperText>
+                    )}
+                  </FormControl>
                 )}
               />
-            )}
-          </Stack>
-        </Grid>
+            </Grid>
 
-        {/* Section Header */}
-        <Grid size={{ xs: 12 }}>
-          <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
-            Please answer for the Principal Applicant and Dependents
-          </Typography>
-
-          <Typography>Are you currently in the US?</Typography>
-        </Grid>
-
-        {/* Applicant */}
-        <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>Applicant</Typography>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-          >
-            <Controller
-              name="inUsaApplicant"
-              control={control}
-              defaultValue="No"
-              render={({ field }) => (
-                <FormControl error={!!errors.inUsaApplicant}>
-                  <RadioGroup row {...field}>
-                    <FormControlLabel
-                      value="Yes"
-                      control={
-                        <Radio
-                          sx={{
-                            color: "secondary.main",
-                            "&.Mui-checked": {
-                              color: "secondary.main",
-                            },
-                          }}
-                        />
-                      }
-                      label="Yes"
-                    />
-                    <FormControlLabel
-                      value="No"
-                      control={
-                        <Radio
-                          sx={{
-                            color: "secondary.main",
-                            "&.Mui-checked": {
-                              color: "secondary.main",
-                            },
-                          }}
-                        />
-                      }
-                      label="No"
-                    />
-                  </RadioGroup>
-                  {errors.inUsaApplicant && (
-                    <FormHelperText>
-                      {errors.inUsaApplicant?.message}
-                    </FormHelperText>
-                  )}
-                </FormControl>
-              )}
-            />
-
-            {inUsaApplicant === "Yes" && (
+            {/* Have you ever been to USA */}
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ mb: 1 }}>
+                Have you ever been to the United States of America?
+              </Typography>
               <Controller
-                name="applicantName"
+                name="beenToUsa"
                 control={control}
-                defaultValue=""
+                defaultValue="No"
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    placeholder="If yes, who?"
-                    fullWidth
-                    sx={{
-                      maxWidth: { xs: "100%", sm: 400 },
-                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
-                    }}
-                    error={!!errors.applicantName}
-                    helperText={errors.applicantName?.message}
-                  />
+                  <FormControl error={!!errors.beenToUsa}>
+                    <RadioGroup row {...field}>
+                      <FormControlLabel
+                        value="Yes"
+                        control={
+                          <Radio
+                            sx={{
+                              color: "secondary.main",
+                              "&.Mui-checked": {
+                                color: "secondary.main",
+                              },
+                            }}
+                          />
+                        }
+                        label="Yes"
+                      />
+                      <FormControlLabel
+                        value="No"
+                        control={
+                          <Radio
+                            sx={{
+                              color: "secondary.main",
+                              "&.Mui-checked": {
+                                color: "secondary.main",
+                              },
+                            }}
+                          />
+                        }
+                        label="No"
+                      />
+                    </RadioGroup>
+                    {errors.beenToUsa && (
+                      <FormHelperText>
+                        {errors.beenToUsa?.message}
+                      </FormHelperText>
+                    )}
+                  </FormControl>
                 )}
               />
-            )}
-          </Stack>
-        </Grid>
+            </Grid>
 
-        {/* Dependent */}
-        <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>Dependents</Typography>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-          >
-            <Controller
-              name="inUsaDependent"
-              control={control}
-              defaultValue="No"
-              render={({ field }) => (
-                <FormControl error={!!errors.inUsaDependent}>
-                  <RadioGroup row {...field}>
-                    <FormControlLabel
-                      value="Yes"
-                      control={
-                        <Radio
-                          sx={{
-                            color: "secondary.main",
-                            "&.Mui-checked": {
-                              color: "secondary.main",
-                            },
-                          }}
+            {/* Social Security */}
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ mb: 1 }}>
+                Have you ever had a Social Security Number?
+              </Typography>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems={{ xs: "flex-start", sm: "center" }}
+              >
+                <Controller
+                  name="socialSecurity"
+                  control={control}
+                  defaultValue="No"
+                  render={({ field }) => (
+                    <FormControl error={!!errors.socialSecurity}>
+                      <RadioGroup row {...field}>
+                        <FormControlLabel
+                          value="Yes"
+                          control={
+                            <Radio
+                              sx={{
+                                color: "secondary.main",
+                                "&.Mui-checked": {
+                                  color: "secondary.main",
+                                },
+                              }}
+                            />
+                          }
+                          label="Yes"
                         />
-                      }
-                      label="Yes"
-                    />
-                    <FormControlLabel
-                      value="No"
-                      control={
-                        <Radio
-                          sx={{
-                            color: "secondary.main",
-                            "&.Mui-checked": {
-                              color: "secondary.main",
-                            },
-                          }}
+                        <FormControlLabel
+                          value="No"
+                          control={
+                            <Radio
+                              sx={{
+                                color: "secondary.main",
+                                "&.Mui-checked": {
+                                  color: "secondary.main",
+                                },
+                              }}
+                            />
+                          }
+                          label="No"
                         />
-                      }
-                      label="No"
-                    />
-                  </RadioGroup>
-                  {errors.inUsaDependent && (
-                    <FormHelperText>
-                      {errors.inUsaDependent?.message}
-                    </FormHelperText>
+                      </RadioGroup>
+                      {errors.socialSecurity && (
+                        <FormHelperText>
+                          {errors.socialSecurity?.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
                   )}
-                </FormControl>
-              )}
-            />
-
-            {inUsaDependent === "Yes" && (
-              <Controller
-                name="dependentName"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    placeholder="If yes, who?"
-                    fullWidth
-                    sx={{
-                      maxWidth: { xs: "100%", sm: 400 },
-                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
-                    }}
-                    error={!!errors.dependentName}
-                    helperText={errors.dependentName?.message}
-                  />
-                )}
-              />
-            )}
-          </Stack>
-        </Grid>
-
-        {/* I-94 Number */}
-        {(inUsaApplicant === "Yes" || inUsaDependent === "Yes") && (
-          <Grid size={{ xs: 12 }}>
-            <Typography sx={{ mb: 1 }}>
-              If you are currently in the US, please provide your most recent
-              I-94 number
-            </Typography>
-            <Controller
-              name="i94Number"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  placeholder="Enter I-94 Number"
-                  sx={{
-                    "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
-                  }}
-                  error={!!errors.i94Number}
-                  helperText={errors.i94Number?.message}
                 />
-              )}
-            />
-          </Grid>
+
+                {socialSecurity === "Yes" && (
+                  <Controller
+                    name="socialSecurityNumber"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        placeholder="Social Security Number"
+                        fullWidth
+                        sx={{
+                          maxWidth: { xs: "100%", sm: 400 },
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#fff",
+                          },
+                        }}
+                        error={!!errors.socialSecurityNumber}
+                        helperText={errors.socialSecurityNumber?.message}
+                      />
+                    )}
+                  />
+                )}
+              </Stack>
+            </Grid>
+
+            {/* Section Header */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                Please answer for the Principal Applicant and Dependents
+              </Typography>
+
+              <Typography>Are you currently in the US?</Typography>
+            </Grid>
+
+            {/* Applicant */}
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ mb: 1 }}>Applicant</Typography>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems={{ xs: "flex-start", sm: "center" }}
+              >
+                <Controller
+                  name="inUsaApplicant"
+                  control={control}
+                  defaultValue="No"
+                  render={({ field }) => (
+                    <FormControl error={!!errors.inUsaApplicant}>
+                      <RadioGroup row {...field}>
+                        <FormControlLabel
+                          value="Yes"
+                          control={
+                            <Radio
+                              sx={{
+                                color: "secondary.main",
+                                "&.Mui-checked": {
+                                  color: "secondary.main",
+                                },
+                              }}
+                            />
+                          }
+                          label="Yes"
+                        />
+                        <FormControlLabel
+                          value="No"
+                          control={
+                            <Radio
+                              sx={{
+                                color: "secondary.main",
+                                "&.Mui-checked": {
+                                  color: "secondary.main",
+                                },
+                              }}
+                            />
+                          }
+                          label="No"
+                        />
+                      </RadioGroup>
+                      {errors.inUsaApplicant && (
+                        <FormHelperText>
+                          {errors.inUsaApplicant?.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
+                />
+
+                {inUsaApplicant === "Yes" && (
+                  <Controller
+                    name="applicantName"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        placeholder="If yes, who?"
+                        fullWidth
+                        sx={{
+                          maxWidth: { xs: "100%", sm: 400 },
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#fff",
+                          },
+                        }}
+                        error={!!errors.applicantName}
+                        helperText={errors.applicantName?.message}
+                      />
+                    )}
+                  />
+                )}
+              </Stack>
+            </Grid>
+
+            {/* Dependent */}
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ mb: 1 }}>Dependents</Typography>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems={{ xs: "flex-start", sm: "center" }}
+              >
+                <Controller
+                  name="inUsaDependent"
+                  control={control}
+                  defaultValue="No"
+                  render={({ field }) => (
+                    <FormControl error={!!errors.inUsaDependent}>
+                      <RadioGroup row {...field}>
+                        <FormControlLabel
+                          value="Yes"
+                          control={
+                            <Radio
+                              sx={{
+                                color: "secondary.main",
+                                "&.Mui-checked": {
+                                  color: "secondary.main",
+                                },
+                              }}
+                            />
+                          }
+                          label="Yes"
+                        />
+                        <FormControlLabel
+                          value="No"
+                          control={
+                            <Radio
+                              sx={{
+                                color: "secondary.main",
+                                "&.Mui-checked": {
+                                  color: "secondary.main",
+                                },
+                              }}
+                            />
+                          }
+                          label="No"
+                        />
+                      </RadioGroup>
+                      {errors.inUsaDependent && (
+                        <FormHelperText>
+                          {errors.inUsaDependent?.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
+                />
+
+                {inUsaDependent === "Yes" && (
+                  <Controller
+                    name="dependentName"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        placeholder="If yes, who?"
+                        fullWidth
+                        sx={{
+                          maxWidth: { xs: "100%", sm: 400 },
+                          "& .MuiOutlinedInput-root": {
+                            backgroundColor: "#fff",
+                          },
+                        }}
+                        error={!!errors.dependentName}
+                        helperText={errors.dependentName?.message}
+                      />
+                    )}
+                  />
+                )}
+              </Stack>
+            </Grid>
+
+            {/* I-94 Number */}
+            {(inUsaApplicant === "Yes" || inUsaDependent === "Yes") && (
+              <Grid size={{ xs: 12 }}>
+                <Typography sx={{ mb: 1 }}>
+                  If you are currently in the US, please provide your most
+                  recent I-94 number
+                </Typography>
+                <Controller
+                  name="i94Number"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      placeholder="Enter I-94 Number"
+                      sx={{
+                        "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                      }}
+                      error={!!errors.i94Number}
+                      helperText={errors.i94Number?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            )}
+          </>
         )}
       </Grid>
     </Box>

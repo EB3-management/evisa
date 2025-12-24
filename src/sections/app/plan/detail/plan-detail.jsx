@@ -460,7 +460,7 @@ export function PlanDetail({ id }) {
                         key={index}
                         sx={{
                           "&:hover": {
-                            bgcolor: "action.hover",
+                            bgcolor: "primary.lighter",
                           },
                         }}
                       >

@@ -111,8 +111,4 @@ export const endpoints = {
   termCondition: {
     list: "dashboard/terms-and-conditions",
   },
-
-  public: {
-    key: "rsa/public-key",
-  },
 };

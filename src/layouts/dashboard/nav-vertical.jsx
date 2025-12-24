@@ -27,7 +27,7 @@ export function NavVertical({
     <>
       {slots?.topArea ?? (
         <Box sx={{ pl: 3.5, pt: 2.5, pb: 1 }}>
-          <Logo />
+          <Logo size="default" />
         </Box>
       )}
 
@@ -45,7 +45,7 @@ export function NavVertical({
     <>
       {slots?.topArea ?? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 2.5 }}>
-          <Logo />
+          <Logo size="mini" />
         </Box>
       )}
 
@@ -79,7 +79,7 @@ export function NavVertical({
       sx={sx}
       {...other}
     >
-      {/* <NavToggleButton
+      <NavToggleButton
         isNavMini={isNavMini}
         onClick={onToggleNav}
         sx={[
@@ -88,7 +88,7 @@ export function NavVertical({
             [theme.breakpoints.up(layoutQuery)]: { display: "inline-flex" },
           }),
         ]}
-      /> */}
+      />
       {isNavMini ? renderNavMini() : renderNavVertical()}
     </NavRoot>
   );

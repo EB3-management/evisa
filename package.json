@@ -39,6 +39,7 @@
     "@fontsource-variable/nunito-sans": "^5.1.1",
     "@fontsource-variable/public-sans": "^5.1.2",
     "@fontsource/barlow": "^5.1.1",
+    "@fontsource/poppins": "^5.2.7",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/interaction": "^6.1.15",
