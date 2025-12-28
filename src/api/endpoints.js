@@ -17,6 +17,7 @@ export const endpoints = {
     detail: (id) => `vacancy/show/${id}`,
     applied: (id) => `vacancy/apply/${id}`,
     appliedVacancy: "vacancy/applied",
+    visaCountry: "country/visa",
   },
   plan: {
     list: (id) => `finance-plan/${id}`,
@@ -28,6 +29,8 @@ export const endpoints = {
     list: "documents",
     store: "documents/store",
     delete: (id) => `documents/delete/${id}`,
+    update: (id) => `documents/update/${id}`,
+    type: "documents/document-types",
   },
   contract: {
     list: "contracts",
@@ -59,6 +62,7 @@ export const endpoints = {
     health: "onboarding-form/health",
     finalSubmit: "onboarding-form/final-submit",
     status: "onboarding-form/show-onboardingform-status",
+    immigrationType: (id) => `onboarding-form/get-immigration-types/${id}`,
   },
 
   employee: {

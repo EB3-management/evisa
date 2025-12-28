@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import useSWR from "swr";
 import { fetcher, poster } from "src/lib";
 import { endpoints } from "./endpoints";
 
@@ -216,3 +218,21 @@ export const fetchOnBoardingStatus = async () => {
     throw error;
   }
 };
+
+export function useGetImmigrationTypes(id) {
+  const url = endpoints.form.immigrationType(id);
+  console.log("thisis is endpoint id", id);
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher);
+
+  const memoizedValue = useMemo(
+    () => ({
+      immigrationType: data?.data || [],
+      immigrationTypeLoading: isLoading,
+      immigrationTypeError: error,
+      mutateImmigrationType: mutate,
+    }),
+    [data?.data, isLoading, error]
+  );
+
+  return memoizedValue;
+}

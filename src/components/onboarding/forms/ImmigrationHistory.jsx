@@ -20,69 +20,13 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Grid from "@mui/material/Grid2";
-
-// ------------------ Visa Type Data ------------------
-const types = [
-  { id: "E11", name: "EB-1 Extraordinary Ability" },
-  { id: "E12", name: "EB-1 Outstanding Professor/Researcher" },
-  { id: "E13", name: "EB-1 Multinational Executive/Manager" },
-  { id: "E21", name: "EB-2 Advanced Degree / Exceptional Ability" },
-  { id: "E31", name: "EB-3 Skilled Worker" },
-  { id: "E32", name: "EB-3 Professional" },
-  { id: "EW3", name: "EB-3 Other Worker" },
-  { id: "SD", name: "EB-4 Religious Worker" },
-  { id: "SR", name: "EB-4 Minister of Religion" },
-  { id: "T5", name: "EB-5 Investor (Regional Center)" },
-  { id: "I5", name: "EB-5 Investor (Direct Investment)" },
-  { id: "F11", name: "Unmarried Son/Daughter of U.S. Citizen" },
-  { id: "F21", name: "Spouse of Lawful Permanent Resident" },
-  { id: "F22", name: "Child of Lawful Permanent Resident" },
-  { id: "F23", name: "Unmarried Son/Daughter of LPR" },
-  { id: "F24", name: "Married Son/Daughter of U.S. Citizen" },
-  { id: "F41", name: "Brother/Sister of U.S. Citizen" },
-  { id: "F1", name: "Academic Student" },
-  { id: "F2", name: "Dependent of F1" },
-  { id: "M1", name: "Vocational Student" },
-  { id: "M2", name: "Dependent of M1" },
-  { id: "J1", name: "Exchange Visitor" },
-  { id: "J2", name: "Dependent of J1" },
-  { id: "H1B", name: "Specialty Occupation Worker" },
-  { id: "H1B1", name: "Singapore/Chile Specialty Worker" },
-  { id: "H2A", name: "Temporary Agricultural Worker" },
-  { id: "H2B", name: "Temporary Non-Agricultural Worker" },
-  { id: "L1A", name: "Intracompany Executive/Manager" },
-  { id: "L1B", name: "Intracompany Specialized Knowledge" },
-  { id: "O1", name: "Extraordinary Ability (Arts, Science, etc.)" },
-  { id: "O2", name: "Assistant to O1" },
-  { id: "P1", name: "Internationally Recognized Athlete/Performer" },
-  { id: "P2", name: "Artist/Entertainer in Exchange Program" },
-  { id: "P3", name: "Culturally Unique Artist/Entertainer" },
-  { id: "R1", name: "Religious Worker" },
-  { id: "K1", name: "Fiancé(e) of U.S. Citizen" },
-  { id: "K2", name: "Child of K1" },
-  { id: "K3", name: "Spouse of U.S. Citizen (awaiting immigrant visa)" },
-  { id: "K4", name: "Child of K3" },
-  { id: "U1", name: "Victim of Criminal Activity" },
-  { id: "T1", name: "Victim of Human Trafficking" },
-  { id: "Refugee", name: "Granted Abroad" },
-  { id: "Asylee", name: "Granted Inside U.S." },
-  { id: "TPS", name: "Temporary Protected Status" },
-  { id: "VAWA", name: "Violence Against Women Act Self-Petitioner" },
-  { id: "SIJ", name: "Special Immigrant Juvenile" },
-  { id: "DACA", name: "Deferred Action for Childhood Arrivals" },
-  { id: "DV1", name: "Diversity Immigrant (Principal Applicant)" },
-  { id: "DV2", name: "Spouse of DV1" },
-  { id: "DV3", name: "Child of DV1" },
-  { id: "OTHER", name: "Other" },
-];
+import { useGetImmigrationTypes } from "src/api/onboardingform";
 
 // ------------------ Validation Schema ------------------
 export const immigrationHistorySchema = z
   .object({
-    hasImmigrationHistory: z.enum(["Yes", "No"], {
-      errorMap: () => ({ message: "Please select an option" }),
-    }),
-    types: z.string().optional(),
+    hasImmigrationHistory: z.boolean().default(false),
+    types: z.union([z.string(), z.number()]).optional(),
     beenToUsa: z.enum(["Yes", "No"]).optional(),
     socialSecurity: z.enum(["Yes", "No"]).optional(),
     socialSecurityNumber: z.string().optional(),
@@ -94,9 +38,9 @@ export const immigrationHistorySchema = z
   })
   .superRefine((data, ctx) => {
     // Only validate if user has immigration history
-    if (data.hasImmigrationHistory === "Yes") {
+    if (data.hasImmigrationHistory === true) {
       // Type is required
-      if (!data.types?.trim()) {
+      if (!data.types) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please select a type",
@@ -182,13 +126,16 @@ export const immigrationHistorySchema = z
   });
 
 // ------------------ Component ------------------
-export const ImmigrationHistory = () => {
+export const ImmigrationHistory = ({ vacancyId }) => {
   const {
     control,
     formState: { errors },
     watch,
   } = useFormContext();
 
+  const { immigrationType, immigrationTypeLoading } =
+    useGetImmigrationTypes(vacancyId);
+  console.log("thisis vacancy id", vacancyId);
   const hasImmigrationHistory = watch("hasImmigrationHistory");
   const socialSecurity = watch("socialSecurity");
   const inUsaApplicant = watch("inUsaApplicant");
@@ -213,10 +160,14 @@ export const ImmigrationHistory = () => {
           <Controller
             name="hasImmigrationHistory"
             control={control}
-            defaultValue="No"
+            defaultValue={false}
             render={({ field }) => (
               <FormControl error={!!errors.hasImmigrationHistory}>
-                <RadioGroup row {...field}>
+                <RadioGroup
+                  row
+                  value={field.value ? "Yes" : "No"}
+                  onChange={(e) => field.onChange(e.target.value === "Yes")}
+                >
                   <FormControlLabel
                     value="Yes"
                     control={
@@ -257,7 +208,7 @@ export const ImmigrationHistory = () => {
         </Grid>
 
         {/* Show all fields only if Yes */}
-        {hasImmigrationHistory === "Yes" && (
+        {hasImmigrationHistory === true && (
           <>
             {/* Type */}
             <Grid size={{ xs: 12 }}>
@@ -274,16 +225,21 @@ export const ImmigrationHistory = () => {
                       fullWidth
                       displayEmpty
                       error={!!errors.types}
+                      disabled={immigrationTypeLoading}
                       sx={{
                         "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                       }}
                     >
                       <MenuItem value="">
-                        <em>Select Type</em>
+                        <em>
+                          {immigrationTypeLoading
+                            ? "Loading..."
+                            : "Select Type"}
+                        </em>
                       </MenuItem>
-                      {types.map((option) => (
+                      {immigrationType.map((option) => (
                         <MenuItem key={option.id} value={option.id}>
-                          {option.id} – {option.name}
+                          {option.name}
                         </MenuItem>
                       ))}
                     </TextField>

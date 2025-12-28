@@ -14,10 +14,15 @@ import {
 import { Iconify } from "src/components/iconify";
 import { VacancyItem } from "./vacancy-item";
 
-export function VacancyList({ vacancyList }) {
+export function VacancyList({ 
+  vacancyList, 
+  countryList = [], 
+  selectedCountry,
+  selectedVisaCategory,
+  onCountryChange,
+  onVisaCategoryChange
+}) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("latest");
-  const [filterType, setFilterType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
@@ -26,36 +31,35 @@ export function VacancyList({ vacancyList }) {
     setCurrentPage(1);
   }, []);
 
-  const handleSortChange = useCallback((event) => {
-    setSortBy(event.target.value);
-  }, []);
-
-  const handleFilterChange = useCallback((event) => {
-    setFilterType(event.target.value);
+  const handleCountryChange = useCallback((event) => {
+    onCountryChange(event.target.value);
+    onVisaCategoryChange("all"); // Reset visa category when country changes
     setCurrentPage(1);
-  }, []);
+  }, [onCountryChange, onVisaCategoryChange]);
+
+  const handleVisaCategoryChange = useCallback((event) => {
+    onVisaCategoryChange(event.target.value);
+    setCurrentPage(1);
+  }, [onVisaCategoryChange]);
 
   const handlePageChange = useCallback((event, page) => {
     setCurrentPage(page);
   }, []);
 
-  // Filter and sort logic
-  const filteredJobs = vacancyList
-    .filter((job) => {
-      const matchesSearch =
-        job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.company?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = filterType === "all" || job.type === filterType;
-      return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      if (sortBy === "latest")
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      if (sortBy === "oldest")
-        return new Date(a.createdAt) - new Date(b.createdAt);
-      if (sortBy === "popular") return (b.views || 0) - (a.views || 0);
-      return 0;
-    });
+  // Get visa categories for selected country
+  const availableVisaCategories =
+    selectedCountry === "all"
+      ? []
+      : countryList.find((country) => country.id === selectedCountry)
+          ?.visa_categories || [];
+
+  // Filter logic - API handles country/visa filtering, only search query is client-side
+  const filteredJobs = vacancyList.filter((job) => {
+    const matchesSearch =
+      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.company?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
   // Pagination
   const totalPages = Math.ceil(filteredJobs.length / itemsPerPage);
@@ -92,20 +96,32 @@ export function VacancyList({ vacancyList }) {
         />
 
         <Stack direction="row" spacing={1} sx={{ minWidth: { sm: "auto" } }}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <Select value={filterType} onChange={handleFilterChange}>
-              <MenuItem value="all">All Types</MenuItem>
-              <MenuItem value="full-time">Full Time</MenuItem>
-              <MenuItem value="part-time">Part Time</MenuItem>
-              <MenuItem value="contract">Contract</MenuItem>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <Select value={selectedCountry} onChange={handleCountryChange}>
+              <MenuItem value="all">All Countries</MenuItem>
+              {countryList.map((country) => (
+                <MenuItem key={country.id} value={country.id}>
+                  {country.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <Select value={sortBy} onChange={handleSortChange}>
-              <MenuItem value="latest">Latest</MenuItem>
-              <MenuItem value="oldest">Oldest</MenuItem>
-              <MenuItem value="popular">Popular</MenuItem>
+          <FormControl
+            size="small"
+            sx={{ minWidth: 140 }}
+            disabled={selectedCountry === "all"}
+          >
+            <Select
+              value={selectedVisaCategory}
+              onChange={handleVisaCategoryChange}
+            >
+              <MenuItem value="all">All Visa Types</MenuItem>
+              {availableVisaCategories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Stack>

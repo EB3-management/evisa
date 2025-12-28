@@ -7,8 +7,17 @@ import {
   IconButton,
   Typography,
   Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
-import { addDocuments, delDocument, useGetDocument } from "src/api/document";
+import {
+  addDocuments,
+  delDocument,
+  updateDocuments,
+  useGetDocument,
+} from "src/api/document";
 import { Iconify } from "src/components/iconify";
 import { DashboardContent } from "src/layouts/dashboard";
 import { fDateTime } from "src/utils/format-time";
@@ -21,6 +30,10 @@ import { paths } from "src/routes/paths";
 export function DocumentList() {
   const { documents, mutateDocument } = useGetDocument();
   const [openDialog, setOpenDialog] = useState(false);
+  const [editingDocument, setEditingDocument] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "approved":
@@ -34,29 +47,46 @@ export function DocumentList() {
   };
 
   const handleAddNew = () => {
+    setEditingDocument(null);
     setOpenDialog(true);
   };
 
-  const handleSaveDocument = async ({ fileName, file }) => {
-    try {
-      // convert file to base64
-      const base64 = await toBase64(file);
+  const handleEdit = (doc) => {
+    setEditingDocument(doc);
+    setOpenDialog(true);
+  };
 
+  const handleSaveDocument = async ({ documentType, file }) => {
+    try {
       const payload = {
-        document_type_id: "1", // you can make this dynamic if needed
-        file_path: base64,
+        document_type_id: documentType.toString(),
       };
 
-      await addDocuments(payload);
-      toast.success("Document uploaded successfully!");
+      // Only add file_path if a new file is provided
+      if (file) {
+        const base64 = await toBase64(file);
+        payload.file_path = base64;
+      }
+
+      let response;
+      if (editingDocument) {
+        // Update existing document
+        response = await updateDocuments(editingDocument.id, payload);
+        toast.success(response.message || "Document updated successfully!");
+      } else {
+        // Add new document
+        response = await addDocuments(payload);
+        toast.success(response.message || "Document uploaded successfully!");
+      }
 
       setOpenDialog(false);
+      setEditingDocument(null);
       mutateDocument();
     } catch (error) {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "Failed to upload document";
+        `Failed to ${editingDocument ? "update" : "upload"} document`;
       toast.error(message);
     }
   };
@@ -70,9 +100,14 @@ export function DocumentList() {
       reader.onerror = (error) => reject(error);
     });
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
+    setDocumentToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
     try {
-      await delDocument(id);
+      await delDocument(documentToDelete);
       toast.success("Document deleted successfully!");
       mutateDocument();
     } catch (error) {
@@ -81,6 +116,9 @@ export function DocumentList() {
         error?.message ||
         "Failed to delete document";
       toast.error(message);
+    } finally {
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
     }
   };
 
@@ -154,24 +192,44 @@ export function DocumentList() {
                   },
                 }}
               >
-                {/* Delete Button */}
-                <IconButton
-                  onClick={() => handleDelete(doc.id)}
+                {/* Action Buttons */}
+                <Box
                   sx={{
                     position: "absolute",
                     top: 8,
                     right: 8,
-                    bgcolor: "rgba(211, 47, 47, 0.9)",
-                    color: "#fff",
+                    display: "flex",
+                    gap: 1,
                     zIndex: 2,
-                    "&:hover": {
-                      bgcolor: "rgba(211, 47, 47, 1)",
-                    },
                   }}
-                  size="small"
                 >
-                  <Iconify icon="eva:trash-2-fill" width={18} />
-                </IconButton>
+                  <IconButton
+                    onClick={() => handleEdit(doc)}
+                    sx={{
+                      bgcolor: "rgba(43, 165, 151, 0.9)",
+                      color: "#fff",
+                      "&:hover": {
+                        bgcolor: "rgba(43, 165, 151, 1)",
+                      },
+                    }}
+                    size="small"
+                  >
+                    <Iconify icon="eva:edit-2-fill" width={18} />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDelete(doc.id)}
+                    sx={{
+                      bgcolor: "rgba(211, 47, 47, 0.9)",
+                      color: "#fff",
+                      "&:hover": {
+                        bgcolor: "rgba(211, 47, 47, 1)",
+                      },
+                    }}
+                    size="small"
+                  >
+                    <Iconify icon="eva:trash-2-fill" width={18} />
+                  </IconButton>
+                </Box>
 
                 {/* Document Image */}
                 <Box
@@ -313,9 +371,78 @@ export function DocumentList() {
 
       <AddDocumentDialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        onClose={() => {
+          setOpenDialog(false);
+          setEditingDocument(null);
+        }}
         onSave={handleSaveDocument}
+        editingDocument={editingDocument}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: "#114B46",
+            borderRadius: 2,
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            color: "#ffffff",
+            fontWeight: 600,
+            pb: 2,
+          }}
+        >
+          Confirm Delete
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "#ffffff" }}>
+            Are you sure you want to delete this document?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 2 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              borderColor: "#FFB74D",
+              color: "#FFB74D",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              "&:hover": {
+                borderColor: "#FFA726",
+                bgcolor: "rgba(255, 183, 77, 0.1)",
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            sx={{
+              bgcolor: "#D32F2F",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 4,
+              "&:hover": {
+                bgcolor: "#B71C1C",
+              },
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }

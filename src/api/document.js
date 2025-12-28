@@ -34,6 +34,18 @@ export const addDocuments = async (data) => {
   }
 };
 
+export const updateDocuments = async (id, data) => {
+  try {
+    const response = await poster(endpoints.document.update(id), data);
+
+    return response;
+  } catch (error) {
+    console.error(error);
+
+    throw error;
+  }
+};
+
 export const delDocument = async (id) => {
   try {
     const response = await deleter(endpoints.document.delete(id));
@@ -85,11 +97,11 @@ export const fetchContract = async (filters) => {
   try {
     // Build URL with query parameters if filters provided
     let url = endpoints.contract.list;
-    
+
     if (filters && Object.keys(filters).length > 0) {
       const params = new URLSearchParams();
-      if (filters.vacancy_id) params.append('vacancy_id', filters.vacancy_id);
-      if (filters.status) params.append('status', filters.status);
+      if (filters.vacancy_id) params.append("vacancy_id", filters.vacancy_id);
+      if (filters.status) params.append("status", filters.status);
       url = `${url}?${params.toString()}`;
     }
 
@@ -103,7 +115,7 @@ export const fetchContract = async (filters) => {
 
 export const signContract = async (id, data) => {
   try {
-    const response = await poster(endpoints.contract.sign(id),data);
+    const response = await poster(endpoints.contract.sign(id), data);
 
     return response;
   } catch (error) {
@@ -112,7 +124,6 @@ export const signContract = async (id, data) => {
     throw error;
   }
 };
-
 
 export const addContract = async (data) => {
   try {
@@ -125,3 +136,21 @@ export const addContract = async (data) => {
     throw error;
   }
 };
+
+export function useGetDocumentType() {
+  const url = endpoints.document.type;
+
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher);
+
+  const memoizedValue = useMemo(
+    () => ({
+      documentsType: data?.data || [],
+      documentTypeLoading: isLoading,
+      documentTypeError: error,
+      mutateDocumentType: mutate,
+    }),
+    [data?.data, isLoading, error]
+  );
+
+  return memoizedValue;
+}

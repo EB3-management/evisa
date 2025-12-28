@@ -1,10 +1,23 @@
-import { Box, Divider, Button, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Button,
+  Stack,
+  Typography,
+  Card,
+  CardContent,
+} from "@mui/material";
 import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Grid from "@mui/material/Grid2";
 
 import { OnboardingHeader } from "src/components/onboarding/OnboardingHeader";
 import { OnboardingSidebar } from "src/components/onboarding/OnboardingSidebar";
+import {
+  ProcessingInformation,
+  processingInformationSchema,
+} from "src/components/onboarding/forms/ProcessingInformation";
 import {
   MainApplicantDetails,
   mainApplicantSchema,
@@ -105,12 +118,19 @@ export default function OnboardingLayout() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [lastUserId, setLastUserId] = useState(null);
   const { country } = useGetCountryCode();
-  const { id } = useParams();
+  // const { id } = useParams();
   const selectedVacancyId = useAppSelector(
     (state) => state.vacancy.selectedVacancyId
   );
 
+  // Use selectedVacancyId from Redux or fallback to id from params
+  const vacancyId = selectedVacancyId;
+  console.log("🔍 Vacancy ID:", { selectedVacancyId, vacancyId });
+
   const router = useRouter();
+
+  // Fetch vacancy data
+  const { vacancyDetail } = useGetVacancyDetail(selectedVacancyId);
 
   const { eligibilityData, eligibilityLoading, eligibilityError } =
     useGetEligibilityData();
@@ -181,6 +201,7 @@ export default function OnboardingLayout() {
   }, [profile?.id, isInitialized, lastUserId]);
 
   const stepSchemas = [
+    processingInformationSchema,
     mainApplicantSchema,
     currentAddressSchema,
     contactDetailsSchema,
@@ -202,6 +223,13 @@ export default function OnboardingLayout() {
   const methods = useForm({
     resolver: zodResolver(stepSchemas[currentStep]),
     defaultValues: {
+      //processing information
+      adjustment_of_status: false,
+      date_of_last_entry: "",
+      i944_number: "",
+      embassy_name: "",
+      embassy_location: "",
+
       //main applicant
       firstName: "",
       middleName: "",
@@ -229,6 +257,7 @@ export default function OnboardingLayout() {
       sponsor_location: "",
 
       //academic information
+      hasFormalEducation: false,
       highSchool: "No",
       bachelor: "No",
       postgraduate: "No",
@@ -257,7 +286,7 @@ export default function OnboardingLayout() {
       emergencyAddress: "",
 
       //immigration history
-
+      hasImmigrationHistory: false,
       types: "",
       beenToUsa: "No",
       socialSecurity: "No",
@@ -713,6 +742,25 @@ export default function OnboardingLayout() {
     }
   }, [profile, onBoarding, methods]);
 
+  //processing information
+  const transformProcessingInformationData = (formData) => {
+    const data = {
+      adjustment_of_status: formData.adjustment_of_status,
+    };
+
+    if (formData.adjustment_of_status) {
+      // If adjustment of status is true
+      data.date_of_last_entry = formData.date_of_last_entry;
+      data.i944_number = formData.i944_number;
+    } else {
+      // If adjustment of status is false (consular processing)
+      data.embassy_name = formData.embassy_name;
+      data.embassy_location = formData.embassy_location;
+    }
+
+    return data;
+  };
+
   //main applicant detail
   const transformMainApplicantData = (formData) => ({
     first_name: formData.firstName,
@@ -749,7 +797,16 @@ export default function OnboardingLayout() {
 
   //Academic form
   const transformAcademicData = (formData) => {
+    console.log("🔍 Full formData:", formData);
+    console.log("🔍 hasFormalEducation:", formData.hasFormalEducation);
+
+    // If no formal education, return empty array
+    if (!formData.hasFormalEducation) {
+      return { has_formal_education: false, academic_records: [] };
+    }
+
     const academicLevels = [
+      "lowerSchool",
       "highSchool",
       "bachelor",
       "postgraduate",
@@ -757,8 +814,19 @@ export default function OnboardingLayout() {
       "phd",
     ];
 
+    // Log each level's value
+    academicLevels.forEach((level) => {
+      console.log(`🔍 ${level}:`, formData[level]);
+    });
+
     const academic_records = academicLevels
-      .filter((level) => formData[level] === "Yes") // Only include levels with "Yes"
+      .filter((level) => {
+        const isYes = formData[level]?.toLowerCase() === "yes";
+        console.log(
+          `🔍 Filtering ${level}: ${formData[level]} === "yes"? ${isYes}`
+        );
+        return isYes;
+      })
       .map((level) => ({
         program_name: level,
         institution_name: formData[`${level}_instituteName`] || "",
@@ -768,9 +836,13 @@ export default function OnboardingLayout() {
         city: formData[`${level}_city`] || "",
         zip_code: formData[`${level}_zipCode`] || "",
         address: formData[`${level}_address`] || "",
+        ...(level === "lowerSchool" && {
+          grade: formData.lowerSchool_grade || "",
+        }),
       }));
 
-    return { academic_records };
+    console.log("📤 Final academic_records:", academic_records);
+    return { has_formal_education: true, academic_records };
   };
 
   //englishlanguage
@@ -866,19 +938,28 @@ export default function OnboardingLayout() {
   };
 
   //immigration history
-  const transformImmigrationHistoryData = (formData) => ({
-    immigration_history: {
-      immigration_type: formData.types,
-      been_to_usa: formData.beenToUsa,
-      ever_had_ssn: formData.socialSecurity,
-      ssn_number: formData.socialSecurityNumber || "",
-      employee_in_usa: formData.inUsaApplicant,
-      employee_in_usa_if_yes_who: formData.applicantName || "",
-      dependents_in_usa: formData.inUsaDependent,
-      dependents_in_usa_if_yes_who: formData.dependentName || "",
-      recent_i94_number: formData.i94Number || "",
-    },
-  });
+  const transformImmigrationHistoryData = (formData) => {
+    // If no immigration history, return only the boolean
+    if (!formData.hasImmigrationHistory) {
+      return { has_immigration_history: false };
+    }
+
+    // If yes, return the full immigration history object
+    return {
+      has_immigration_history: true,
+      immigration_history: {
+        immigration_type: String(formData.types),
+        been_to_usa: formData.beenToUsa,
+        ever_had_ssn: formData.socialSecurity,
+        ssn_number: formData.socialSecurityNumber || "",
+        employee_in_usa: formData.inUsaApplicant,
+        employee_in_usa_if_yes_who: formData.applicantName || "",
+        dependents_in_usa: formData.inUsaDependent,
+        dependents_in_usa_if_yes_who: formData.dependentName || "",
+        recent_i94_number: formData.i94Number || "",
+      },
+    };
+  };
 
   //visa
   const transformVisaData = (formData) => {
@@ -1049,59 +1130,63 @@ export default function OnboardingLayout() {
     try {
       switch (stepIndex) {
         case 0:
-          await saveMainApplicantDetail(transformMainApplicantData(formData));
+          // Processing Information - skip API call for now
+          // await saveProcessingInformation(transformProcessingInformationData(formData));
           break;
         case 1:
-          await saveCurrentAddress(transformCurrentAddressData(formData));
+          await saveMainApplicantDetail(transformMainApplicantData(formData));
           break;
         case 2:
+          await saveCurrentAddress(transformCurrentAddressData(formData));
+          break;
+        case 3:
           await saveContactDetail(transformContactDetailsData(formData));
           break;
-        // case 3:
+        // case 4:
         //   await saveSponsorInformation(transformSponsorData(formData));
         //   break;
-        case 4:
+        case 5:
           await saveAcademicInformation(transformAcademicData(formData));
           break;
-        case 5:
+        case 6:
           await saveEnglishLanguage(transformEnglishProficiencyData(formData));
           break;
-        case 6:
+        case 7:
           await saveWorkExperiences(transformWorkExperienceData(formData));
           break;
-        case 7:
+        case 8:
           await saveDependentInformation(transformDependentData(formData));
           break;
-        case 8:
+        case 9:
           await saveMaritalStatus(transformMaritalStatusData(formData));
           break;
-        case 9:
+        case 10:
           await saveEmergencyContact(transformEmergencyContactData(formData));
           break;
-        case 10:
+        case 11:
           console.log("this is immigration ", formData);
           await saveImmigrationHistory(
             transformImmigrationHistoryData(formData)
           );
           break;
-        case 11:
+        case 12:
           await saveVisa(transformVisaData(formData));
           break;
-        case 12:
+        case 13:
           await saveVisaRejection(transformVisaRejectionData(formData));
           break;
-        case 13:
+        case 14:
           await saveImmigrationIncident(
             transformImmigrationIncidentData(formData)
           );
           break;
-        case 14:
+        case 15:
           await saveCriminalRecords(transformCriminalRecordData(formData));
           break;
-        case 15:
+        case 16:
           await saveInadmissibility(transformInadmissibilityData(formData));
           break;
-        case 16: {
+        case 17: {
           await saveHealth(transformHealthData(formData));
           const response = await saveFinalSubmit({
             is_draft: false,
@@ -1485,38 +1570,40 @@ export default function OnboardingLayout() {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <MainApplicantDetails country={country} />;
+        return <ProcessingInformation vacancyData={vacancyDetail} />;
       case 1:
-        return <CurrentAddress country={country} />;
+        return <MainApplicantDetails country={country} />;
       case 2:
-        return <ContactDetails />;
+        return <CurrentAddress country={country} />;
       case 3:
-        return <SponsorInformation />;
+        return <ContactDetails />;
       case 4:
-        return <AcademicInformation country={country} />;
+        return <SponsorInformation />;
       case 5:
-        return <EnglishLanguageProficiency />;
+        return <AcademicInformation country={country} />;
       case 6:
-        return <PastWorkExperiences />;
+        return <EnglishLanguageProficiency />;
       case 7:
-        return <DependentInformation />;
+        return <PastWorkExperiences />;
       case 8:
-        return <MaritalStatus />;
+        return <DependentInformation />;
       case 9:
-        return <EmergencyContactInformation />;
+        return <MaritalStatus />;
       case 10:
-        return <ImmigrationHistory />;
+        return <EmergencyContactInformation />;
       case 11:
-        return <Visa />;
+        return <ImmigrationHistory vacancyId={selectedVacancyId} />;
       case 12:
-        return <VisaRejection />;
+        return <Visa />;
       case 13:
-        return <ImmigrationIncident />;
+        return <VisaRejection />;
       case 14:
-        return <CriminalRecord />;
+        return <ImmigrationIncident />;
       case 15:
-        return <Inadmissibility />;
+        return <CriminalRecord />;
       case 16:
+        return <Inadmissibility />;
+      case 17:
         return <Health />;
       default:
         return null;
@@ -1558,6 +1645,111 @@ export default function OnboardingLayout() {
               maxHeight: "calc(100vh - 64px)",
             }}
           >
+            {/* Vacancy Details Card - Shown on all steps */}
+            {vacancyDetail && (
+              <Card
+                sx={{
+                  mb: 2,
+                  backgroundColor: "primary.light",
+                  color: "white",
+                  boxShadow: 2,
+                }}
+              >
+                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            opacity: 0.8,
+                            textTransform: "uppercase",
+                            fontSize: "0.7rem",
+                            display: "block",
+                          }}
+                        >
+                          Position
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, mt: 0.5 }}
+                        >
+                          {vacancyDetail?.title || "N/A"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            opacity: 0.8,
+                            textTransform: "uppercase",
+                            fontSize: "0.7rem",
+                            display: "block",
+                          }}
+                        >
+                          Location
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, mt: 0.5 }}
+                        >
+                          {vacancyDetail?.location || "N/A"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            opacity: 0.8,
+                            textTransform: "uppercase",
+                            fontSize: "0.7rem",
+                            display: "block",
+                          }}
+                        >
+                          Visa Type
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 600,
+                            mt: 0.5,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {vacancyDetail?.visa_category?.type || "N/A"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            opacity: 0.8,
+                            textTransform: "uppercase",
+                            fontSize: "0.7rem",
+                            display: "block",
+                          }}
+                        >
+                          Category
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, mt: 0.5 }}
+                        >
+                          {vacancyDetail?.visa_category?.name || "N/A"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            )}
+
             <Box
               sx={{
                 backgroundColor: "primary.light",

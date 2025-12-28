@@ -1,20 +1,16 @@
-import { useEffect } from "react";
-import { useGetVacancy } from "src/api/vacancy";
+import { useState } from "react";
+import { useGetVacancy, useGetCountryVisa } from "src/api/vacancy";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
 import { DashboardContent } from "src/layouts/dashboard";
-import { fetchVacancyRequest } from "src/redux/actions/vacancy-actions";
-import { useAppDispatch, useAppSelector } from "src/redux/hooks";
 import { paths } from "src/routes/paths";
 import { VacancyList } from "src/sections/app/view/vacancy-list";
 
 export function VacancyListView() {
-  const dispatch = useAppDispatch();
+  const [selectedCountry, setSelectedCountry] = useState("all");
+  const [selectedVisaCategory, setSelectedVisaCategory] = useState("all");
 
-  const { vacancy, isLoading } = useAppSelector((state) => state.vacancy);
-
-  useEffect(() => {
-    dispatch(fetchVacancyRequest());
-  }, [dispatch]);
+  const { vacancy, vacancyLoading } = useGetVacancy(selectedCountry, selectedVisaCategory);
+  const { visaCountry, visaCountryLoading } = useGetCountryVisa();
   return (
     <DashboardContent>
       <CustomBreadcrumbs
@@ -29,7 +25,14 @@ export function VacancyListView() {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      <VacancyList vacancyList={vacancy} />
+      <VacancyList 
+        vacancyList={vacancy} 
+        countryList={visaCountry}
+        selectedCountry={selectedCountry}
+        selectedVisaCategory={selectedVisaCategory}
+        onCountryChange={setSelectedCountry}
+        onVisaCategoryChange={setSelectedVisaCategory}
+      />
     </DashboardContent>
   );
 }

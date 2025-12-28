@@ -30,7 +30,7 @@ const academicLevels = [
 // ✅ Conditional academic schema
 export const academicInformationSchema = z
   .object({
-    hasFormalEducation: z.string().default("No"),
+    hasFormalEducation: z.boolean().default(false),
     ...Object.fromEntries(
       academicLevels.flatMap(({ key }) => [
         // yes/no field
@@ -58,7 +58,7 @@ export const academicInformationSchema = z
   })
   .superRefine((data, ctx) => {
     // Only validate academic levels if user has formal education
-    if (data.hasFormalEducation === "Yes") {
+    if (data.hasFormalEducation === true) {
       academicLevels.forEach(({ key }) => {
         const isYes = data[key] === "yes";
 
@@ -312,30 +312,46 @@ export const AcademicInformation = ({ country }) => {
             <Controller
               name="hasFormalEducation"
               control={control}
-              defaultValue="No"
+              defaultValue={false}
               render={({ field }) => (
                 <FormControl
                   component="fieldset"
                   error={!!errors.hasFormalEducation}
                 >
-                  <RadioGroup {...field} row sx={{ gap: { xs: 2, sm: 3 } }}>
-                    {yesNoOptions.map((option) => (
-                      <FormControlLabel
-                        key={option}
-                        value={option}
-                        control={
-                          <Radio
-                            sx={{
+                  <RadioGroup
+                    row
+                    sx={{ gap: { xs: 2, sm: 3 } }}
+                    value={field.value ? "Yes" : "No"}
+                    onChange={(e) => field.onChange(e.target.value === "Yes")}
+                  >
+                    <FormControlLabel
+                      value="Yes"
+                      control={
+                        <Radio
+                          sx={{
+                            color: "secondary.main",
+                            "&.Mui-checked": {
                               color: "secondary.main",
-                              "&.Mui-checked": {
-                                color: "secondary.main",
-                              },
-                            }}
-                          />
-                        }
-                        label={option}
-                      />
-                    ))}
+                            },
+                          }}
+                        />
+                      }
+                      label="Yes"
+                    />
+                    <FormControlLabel
+                      value="No"
+                      control={
+                        <Radio
+                          sx={{
+                            color: "secondary.main",
+                            "&.Mui-checked": {
+                              color: "secondary.main",
+                            },
+                          }}
+                        />
+                      }
+                      label="No"
+                    />
                   </RadioGroup>
                   {errors.hasFormalEducation && (
                     <FormHelperText>
@@ -350,7 +366,7 @@ export const AcademicInformation = ({ country }) => {
       </Box>
 
       {/* Show academic levels only if Yes */}
-      {hasFormalEducation === "Yes" && (
+      {hasFormalEducation === true && (
         <>
           {academicLevels.map((level, index) => (
             <Box key={level.key} sx={{ mb: 4 }}>

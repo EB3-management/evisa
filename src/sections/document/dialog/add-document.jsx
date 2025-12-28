@@ -8,14 +8,30 @@ import {
   IconButton,
   Box,
   Typography,
+  Select,
+  MenuItem,
+  FormControl,
 } from "@mui/material";
 import { Iconify } from "src/components/iconify";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useGetDocumentType } from "src/api/document";
 
-export function AddDocumentDialog({ open, onClose, onSave }) {
-  const [fileName, setFileName] = useState("");
+export function AddDocumentDialog({ open, onClose, onSave, editingDocument }) {
+  const [documentType, setDocumentType] = useState("");
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+
+  const { documentsType, documentTypeLoading } = useGetDocumentType();
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editingDocument) {
+      setDocumentType(editingDocument.document_type_id || editingDocument.document_type?.id || "");
+    } else {
+      setDocumentType("");
+      setFile(null);
+    }
+  }, [editingDocument, open]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -34,28 +50,22 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setFile(e.dataTransfer.files[0]);
-      if (!fileName) {
-        setFileName(e.dataTransfer.files[0].name);
-      }
     }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
-      if (!fileName) {
-        setFileName(e.target.files[0].name);
-      }
     }
   };
 
   const handleSave = () => {
-    onSave({ fileName, file });
+    onSave({ documentType, file });
     handleClose();
   };
 
   const handleClose = () => {
-    setFileName("");
+    setDocumentType("");
     setFile(null);
     setDragActive(false);
     onClose();
@@ -86,7 +96,7 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
         }}
       >
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Add Document
+          {editingDocument ? "Edit Document" : "Add Document"}
         </Typography>
         <IconButton
           onClick={handleClose}
@@ -103,7 +113,7 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
 
       {/* Content */}
       <DialogContent sx={{ px: 3 }}>
-        {/* File Name Input */}
+        {/* Document Type Dropdown */}
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="body2"
@@ -113,33 +123,61 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
               fontWeight: 500,
             }}
           >
-            File Name <span style={{ color: "#ff5252" }}>*</span>
+            Document Type <span style={{ color: "#ff5252" }}>*</span>
           </Typography>
-          <TextField
-            fullWidth
-            placeholder="Enter the file name"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
+          <FormControl fullWidth>
+            <Select
+              value={documentType}
+              onChange={(e) => setDocumentType(e.target.value)}
+              displayEmpty
+              sx={{
                 color: "#ffffff",
                 bgcolor: "rgba(255, 255, 255, 0.05)",
-                "& fieldset": {
+                "& .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#2BA597",
                 },
-                "&:hover fieldset": {
+                "&:hover .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#5DC8B9",
                 },
-                "&.Mui-focused fieldset": {
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#2BA597",
                 },
-              },
-              "& .MuiOutlinedInput-input::placeholder": {
-                color: "rgba(255, 255, 255, 0.5)",
-                opacity: 1,
-              },
-            }}
-          />
+                "& .MuiSelect-icon": {
+                  color: "#ffffff",
+                },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    bgcolor: "#114B46",
+                    "& .MuiMenuItem-root": {
+                      color: "#ffffff",
+                      "&:hover": {
+                        bgcolor: "rgba(43, 165, 151, 0.2)",
+                      },
+                      "&.Mui-selected": {
+                        bgcolor: "rgba(43, 165, 151, 0.3)",
+                        "&:hover": {
+                          bgcolor: "rgba(43, 165, 151, 0.4)",
+                        },
+                      },
+                    },
+                  },
+                },
+              }}
+            >
+              <MenuItem value="" disabled>
+                <em style={{ color: "rgba(255, 255, 255, 0.5)" }}>
+                  Select document type
+                </em>
+              </MenuItem>
+              {documentsType.map((docType) => (
+                <MenuItem key={docType.id} value={docType.id}>
+                  {docType.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         {/* Upload File */}
@@ -152,7 +190,7 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
               fontWeight: 500,
             }}
           >
-            Upload File <span style={{ color: "#ff5252" }}>*</span>
+            Upload File {!editingDocument && <span style={{ color: "#ff5252" }}>*</span>}
           </Typography>
           <Box
             onDragEnter={handleDrag}
@@ -184,29 +222,56 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
               onChange={handleFileChange}
               accept="image/*,.pdf,.doc,.docx"
             />
-            <Iconify
-              icon="eva:cloud-upload-outline"
-              width={48}
-              height={48}
-              sx={{ color: "#5DC8B9", mb: 1 }}
-            />
-            <Typography
-              variant="body1"
-              sx={{
-                color: "#ffffff",
-                mb: 0.5,
-              }}
-            >
-              {file ? file.name : "Drag or upload file"}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: "rgba(255, 255, 255, 0.6)",
-              }}
-            >
-              {file ? "Click to change file" : "Click to browse"}
-            </Typography>
+            {editingDocument && !file ? (
+              <>
+                <Box
+                  component="img"
+                  src={editingDocument.file_path}
+                  alt="Current document"
+                  sx={{
+                    maxWidth: "100%",
+                    maxHeight: 200,
+                    mb: 1,
+                    borderRadius: 1,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#ffffff",
+                    mb: 0.5,
+                  }}
+                >
+                  Click to change file
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Iconify
+                  icon="eva:cloud-upload-outline"
+                  width={48}
+                  height={48}
+                  sx={{ color: "#5DC8B9", mb: 1 }}
+                />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: "#ffffff",
+                    mb: 0.5,
+                  }}
+                >
+                  {file ? file.name : "Drag or upload file"}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.6)",
+                  }}
+                >
+                  {file ? "Click to change file" : "Click to browse"}
+                </Typography>
+              </>
+            )}
           </Box>
         </Box>
       </DialogContent>
@@ -233,7 +298,7 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={!fileName || !file}
+          disabled={!documentType || (!editingDocument && !file)}
           sx={{
             bgcolor: "#FFB74D",
             color: "#114B46",
@@ -249,7 +314,7 @@ export function AddDocumentDialog({ open, onClose, onSave }) {
             },
           }}
         >
-          Save
+          {editingDocument ? "Update" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

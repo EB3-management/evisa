@@ -3,8 +3,20 @@ import useSWR from "swr";
 import { endpoints } from "./endpoints";
 import { fetcher, poster } from "src/lib";
 
-export function useGetVacancy() {
-  const url = endpoints.vacancy.list;
+export function useGetVacancy(country = null, visaCategory = null) {
+  let url = endpoints.vacancy.list;
+  
+  const params = new URLSearchParams();
+  if (country && country !== "all") {
+    params.append("country", country);
+  }
+  if (visaCategory && visaCategory !== "all") {
+    params.append("visa_category", visaCategory);
+  }
+  
+  if (params.toString()) {
+    url = `${url}?${params.toString()}`;
+  }
 
   const { data, isLoading, error } = useSWR(url, fetcher);
 
@@ -43,6 +55,23 @@ export function useGetVacancyDetail(id) {
       vacancyLoading: isLoading,
       vacancyError: error,
       mutateVacancyDetail: mutate,
+    }),
+    [data?.data, isLoading, error]
+  );
+
+  return memoizedValue;
+}
+
+export function useGetCountryVisa() {
+  const url = endpoints.vacancy.visaCountry;
+
+  const { data, isLoading, error } = useSWR(url, fetcher);
+
+  const memoizedValue = useMemo(
+    () => ({
+      visaCountry: data?.data || [],
+      visaCountryLoading: isLoading,
+      visaCountryError: error,
     }),
     [data?.data, isLoading, error]
   );
