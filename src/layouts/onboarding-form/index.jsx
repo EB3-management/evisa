@@ -33,10 +33,6 @@ import {
 import { ONBOARDING_STEPS } from "src/constant/onboardingSteps";
 import { useGetCountryCode, useGetEligibilityData } from "src/api";
 import {
-  SponsorInformation,
-  sponsorInformationSchema,
-} from "src/components/onboarding/forms/SponsorInformation";
-import {
   AcademicInformation,
   academicInformationSchema,
 } from "src/components/onboarding/forms/AcademicInformation";
@@ -205,7 +201,6 @@ export default function OnboardingLayout() {
     mainApplicantSchema,
     currentAddressSchema,
     contactDetailsSchema,
-    sponsorInformationSchema,
     academicInformationSchema,
     englishLanguageProficiencySchema,
     pastWorkExperiencesSchema,
@@ -250,11 +245,6 @@ export default function OnboardingLayout() {
       //contact details
       email: "",
       phone: "",
-
-      //sponsor information
-      sponsor_name: "",
-      sponsor_position: "",
-      sponsor_location: "",
 
       //academic information
       hasFormalEducation: false,
@@ -513,6 +503,17 @@ export default function OnboardingLayout() {
       console.log("📋 Employee Rejection:", employeeRejection);
       console.log("📋 Dependent Rejection:", profile?.birth_country);
 
+      // Helper function to normalize gender value
+      const normalizeGender = (gender) => {
+        if (!gender) return "";
+        const normalized =
+          gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+        // Ensure it matches one of the valid options
+        return ["Male", "Female", "Other"].includes(normalized)
+          ? normalized
+          : "";
+      };
+
       // Populate form with all data
       methods.reset({
         // Main Applicant - Priority: onBoarding.employee > profile
@@ -521,7 +522,7 @@ export default function OnboardingLayout() {
         lastName: employee?.last_name || profile?.last_name || "",
         dob:
           employee?.dob || profile?.dob || eligibilityData?.employee?.dob || "",
-        gender: employee?.gender || profile?.gender || "",
+        gender: normalizeGender(employee?.gender || profile?.gender),
         countryOfBirth:
           employee?.birth_country ||
           eligibilityData?.employee?.birth_country ||
@@ -568,24 +569,6 @@ export default function OnboardingLayout() {
         listening: getEnglishProficiency("listening"),
         reading: getEnglishProficiency("reading"),
         speaking: getEnglishProficiency("speaking"),
-
-        // // English Language Proficiency
-        // writing:
-        //   englishProficiency?.writing === "Advance"
-        //     ? "Advanced"
-        //     : englishProficiency?.writing || "",
-        // listening:
-        //   englishProficiency?.listening === "Advance"
-        //     ? "Advanced"
-        //     : englishProficiency?.listening || "",
-        // reading:
-        //   englishProficiency?.reading === "Advance"
-        //     ? "Advanced"
-        //     : englishProficiency?.reading || "",
-        // speaking:
-        //   englishProficiency?.speaking === "Advance"
-        //     ? "Advanced"
-        //     : englishProficiency?.speaking || "",
 
         // Past Work Experience
         ...workFields,
@@ -786,13 +769,6 @@ export default function OnboardingLayout() {
   const transformContactDetailsData = (formData) => ({
     personal_email: formData.email,
     phone_number: formData.phone,
-  });
-
-  //sponsor
-  const transformSponsorData = (formData) => ({
-    sponsor_name: formData.sponsor_name,
-    sponsor_position: formData.sponsor_position,
-    sponsor_location: formData.sponsor_location,
   });
 
   //Academic form
@@ -1090,23 +1066,34 @@ export default function OnboardingLayout() {
     };
   };
 
-  const transformHealthData = (formData) => ({
-    health_records: {
-      std_employee: formData.hasSTD || "No",
-      std_employee_details: formData.stdDetails || "",
-      std_dependents: formData.hasStdDependent || "No",
-      std_dependents_details: formData.stdDependentDetails || "",
-      tb_employee: formData.hasTb || "No",
-      tb_employee_details: formData.tbDetails || "",
-      tb_dependents: formData.hasTbDependent || "No",
-      tb_dependents_details: formData.tbDependentDetails || "",
-      health_insurance_employee: formData.hasInsurance || "No",
-      health_insurance_employee_details: formData.insuranceDetails || "",
-      health_insurance_dependents: formData.hasInsuranceDependent || "No",
-      health_insurance_dependents_details:
-        formData.insuranceDependentDetails || "",
-    },
-  });
+  const transformHealthData = (formData) => {
+    // Helper function to convert "yes"/"no" to "Yes"/"No"
+    const capitalizeYesNo = (value) => {
+      if (value === "yes") return "Yes";
+      if (value === "no") return "No";
+      return "No"; // default
+    };
+
+    return {
+      health_records: {
+        std_employee: capitalizeYesNo(formData.hasSTD),
+        std_employee_details: formData.stdDetails || "",
+        std_dependents: capitalizeYesNo(formData.hasStdDependent),
+        std_dependents_details: formData.stdDependentDetails || "",
+        tb_employee: capitalizeYesNo(formData.hasTb),
+        tb_employee_details: formData.tbDetails || "",
+        tb_dependents: capitalizeYesNo(formData.hasTbDependent),
+        tb_dependents_details: formData.tbDependentDetails || "",
+        health_insurance_employee: capitalizeYesNo(formData.hasInsurance),
+        health_insurance_employee_details: formData.insuranceDetails || "",
+        health_insurance_dependents: capitalizeYesNo(
+          formData.hasInsuranceDependent
+        ),
+        health_insurance_dependents_details:
+          formData.insuranceDependentDetails || "",
+      },
+    };
+  };
 
   const { handleSubmit } = methods;
 
@@ -1142,51 +1129,48 @@ export default function OnboardingLayout() {
         case 3:
           await saveContactDetail(transformContactDetailsData(formData));
           break;
-        // case 4:
-        //   await saveSponsorInformation(transformSponsorData(formData));
-        //   break;
-        case 5:
+        case 4:
           await saveAcademicInformation(transformAcademicData(formData));
           break;
-        case 6:
+        case 5:
           await saveEnglishLanguage(transformEnglishProficiencyData(formData));
           break;
-        case 7:
+        case 6:
           await saveWorkExperiences(transformWorkExperienceData(formData));
           break;
-        case 8:
+        case 7:
           await saveDependentInformation(transformDependentData(formData));
           break;
-        case 9:
+        case 8:
           await saveMaritalStatus(transformMaritalStatusData(formData));
           break;
-        case 10:
+        case 9:
           await saveEmergencyContact(transformEmergencyContactData(formData));
           break;
-        case 11:
+        case 10:
           console.log("this is immigration ", formData);
           await saveImmigrationHistory(
             transformImmigrationHistoryData(formData)
           );
           break;
-        case 12:
+        case 11:
           await saveVisa(transformVisaData(formData));
           break;
-        case 13:
+        case 12:
           await saveVisaRejection(transformVisaRejectionData(formData));
           break;
-        case 14:
+        case 13:
           await saveImmigrationIncident(
             transformImmigrationIncidentData(formData)
           );
           break;
-        case 15:
+        case 14:
           await saveCriminalRecords(transformCriminalRecordData(formData));
           break;
-        case 16:
+        case 15:
           await saveInadmissibility(transformInadmissibilityData(formData));
           break;
-        case 17: {
+        case 16: {
           await saveHealth(transformHealthData(formData));
           const response = await saveFinalSubmit({
             is_draft: false,
@@ -1578,32 +1562,30 @@ export default function OnboardingLayout() {
       case 3:
         return <ContactDetails />;
       case 4:
-        return <SponsorInformation />;
-      case 5:
         return <AcademicInformation country={country} />;
-      case 6:
+      case 5:
         return <EnglishLanguageProficiency />;
-      case 7:
+      case 6:
         return <PastWorkExperiences />;
-      case 8:
+      case 7:
         return <DependentInformation />;
-      case 9:
+      case 8:
         return <MaritalStatus />;
-      case 10:
+      case 9:
         return <EmergencyContactInformation />;
-      case 11:
+      case 10:
         return <ImmigrationHistory vacancyId={selectedVacancyId} />;
-      case 12:
+      case 11:
         return <Visa />;
-      case 13:
+      case 12:
         return <VisaRejection />;
-      case 14:
+      case 13:
         return <ImmigrationIncident />;
-      case 15:
+      case 14:
         return <CriminalRecord />;
-      case 16:
+      case 15:
         return <Inadmissibility />;
-      case 17:
+      case 16:
         return <Health />;
       default:
         return null;
