@@ -20,9 +20,9 @@ export const ContactDetails = () => {
 
   return (
     <Box id="section-2" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Contact details
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {/* Personal Email */}

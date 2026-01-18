@@ -34,7 +34,7 @@ export function AuthSplitSection(props) {
 
   // Get appointments from Redux store
   const { appointments, isLoading } = useAppSelector(
-    (state) => state.appointment || { appointments: [], isLoading: false }
+    (state) => state.appointment || { appointments: [], isLoading: false },
   );
 
   // Fetch appointments when component mounts
@@ -63,10 +63,10 @@ export function AuthSplitSection(props) {
     };
   }, []); // Run once on mount
 
-  // Handle calendar event click
-  const handleEventClick = (date, timeSlots) => {
-    setSelectedDate(date);
-    setSelectedTimeSlots(timeSlots);
+  // Handle calendar event click: open dialog with no pre-selected data
+  const handleEventClick = (date) => {
+    setSelectedDate(null); // No pre-selected date
+    setSelectedTimeSlots([]); // No pre-selected slots
     setDialogOpen(true);
   };
 
@@ -173,9 +173,10 @@ export function AuthSplitSection(props) {
       <AppointmentBookingDialog
         open={dialogOpen}
         onClose={handleDialogClose}
-        selectedDate={selectedDate}
-        timeSlots={selectedTimeSlots}
+        selectedDate={null}
+        timeSlots={[]}
         onBookingSuccess={handleBookingSuccess}
+        allAppointments={appointments}
       />
 
       {!!methods?.length && method && (

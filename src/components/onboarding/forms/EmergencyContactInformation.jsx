@@ -47,7 +47,7 @@ export const EmergencyContactInformation = () => {
 
   return (
     <Box id="section-9" sx={{ mb: 6, p: { xs: 2, md: 3 } }}>
-      <Typography
+      {/* <Typography
         variant="h5"
         sx={{
           mb: 3,
@@ -57,7 +57,7 @@ export const EmergencyContactInformation = () => {
         }}
       >
         Emergency Contact Information
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {/* Full Name */}

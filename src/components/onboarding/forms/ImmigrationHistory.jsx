@@ -147,9 +147,9 @@ export const ImmigrationHistory = ({ vacancyId }) => {
 
   return (
     <Box id="section-10" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Immigration History
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {/* First Question: Do you have immigration history? */}

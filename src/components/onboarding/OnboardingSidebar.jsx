@@ -76,6 +76,7 @@ export const OnboardingSidebar = ({
                 position: "relative",
                 opacity: isAccessible ? 1 : 0.5,
                 cursor: isAccessible ? "pointer" : "not-allowed",
+                pr: 5, // Add padding-right to make room for the icon
               }}
             >
               <ListItemText
@@ -86,6 +87,11 @@ export const OnboardingSidebar = ({
                     ? theme.palette.primary.main
                     : theme.palette.text.primary,
                   fontWeight: isCurrentStep ? 600 : 400,
+                  noWrap: false, // Allow text wrapping
+                  sx: {
+                    wordBreak: "break-word",
+                    pr: 1, // Add padding to prevent overlap with icon
+                  },
                 }}
               />
               {isCompleted ? (

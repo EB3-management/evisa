@@ -81,7 +81,24 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
+    const message = error.response?.data?.message;
+    
     console.log("this is status code", status);
+    
+    // Check for 401 Unauthenticated error
+    if (status === 401 && message === "Unauthenticated.") {
+      console.error("❌ 401 Unauthenticated - Logging out user");
+      console.error("❌ URL:", error.config?.url);
+      console.error("❌ Backend Response:", error.response?.data);
+
+      if (store) {
+        store.dispatch(clearOrganization());
+      }
+
+      // Redirect to sign-in page
+      window.location.href = "/auth/sign-in";
+    }
+    
     return Promise.reject(
       (error.response && error.response.data) || "Something went wrong!" 
     );

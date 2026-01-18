@@ -13,7 +13,7 @@ export const themeConfig = {
    *************************************** */
   fontFamily: {
     primary: "Poppins, sans-serif",
-    secondary: "Barlow",
+    secondary: "Poppins, sans-serif",
   },
   /** **************************************
    * Palette

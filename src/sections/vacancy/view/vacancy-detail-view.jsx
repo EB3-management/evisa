@@ -63,40 +63,24 @@ export function VacancyDetailView({ id }) {
     : [];
 
   // Handle Apply Now click
-
   const handleApplyNow = async () => {
     try {
       setIsCheckingStatus(true);
 
-      const status = onBoarding?.status;
-
-      console.log("🔍 Onboarding Status:", status);
-
       // Set selected vacancy ID
       dispatch(setSelectedVacancyId(id));
 
-      // ✅ SCENARIO 1: Onboarding is "In Progress" - redirect to apply/complete onboarding
-      if (status === "In Progress") {
-        toast.info("Please complete your onboarding form");
-        navigate(`/apply`);
-        // navigate(`/apply/${id}`);
-
-        return;
-      }
-
-      // ✅ SCENARIO 2: Onboarding is "Completed" - go to plan page
-      if (status === "Completed") {
+      // Check if already applied
+      if (vacancyDetail?.is_applied) {
+        // Already applied - go to plan page
+        toast.info("You have already applied for this vacancy");
         router.push(paths.dashboard.plan(id));
-        return;
+      } else {
+        // Not applied yet - go to apply form
+        navigate(`/apply`);
       }
-
-      // ✅ SCENARIO 3: No clear status - default to apply form
-      toast.info("Please complete your onboarding form");
-      navigate(`/apply`);
-
-      // navigate(`/apply/${id}`);
     } catch (error) {
-      console.error("❌ Error checking onboarding status:", error);
+      console.error("❌ Error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsCheckingStatus(false);

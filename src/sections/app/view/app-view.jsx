@@ -89,7 +89,10 @@ export function AppView() {
   useEffect(() => {
     if (dashboardLoading) return; // Wait for data to load
 
-    if (dashboard?.eligibilityFormStatus === "Not Filled") {
+    if (
+      dashboard?.eligibilityFormStatus &&
+      dashboard.eligibilityFormStatus !== "Approved"
+    ) {
       hasCheckedEligibility.current = true;
       navigate("/auth/register-step-form", { replace: true });
     } else {
@@ -588,7 +591,7 @@ export function AppView() {
               }}
             >
               {steps.map((step, index) => {
-                const isCompleted = index <= activeStep;
+                const isCompleted = index < activeStep;
 
                 return (
                   <Step key={index} completed={isCompleted}>
@@ -601,15 +604,18 @@ export function AppView() {
                             borderRadius: "50%",
                             bgcolor: isCompleted
                               ? theme.palette.success.main
+                              : index === activeStep
+                              ? theme.palette.primary.main
                               : "transparent",
-                            border: !isCompleted
-                              ? `3px solid ${theme.palette.divider}`
-                              : "none",
+                            border:
+                              !isCompleted && index !== activeStep
+                                ? `3px solid ${theme.palette.divider}`
+                                : "none",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             transition: "all 0.3s",
-                            boxShadow: isCompleted ? 3 : 0,
+                            boxShadow: isCompleted || index === activeStep ? 3 : 0,
                           }}
                         >
                           {isCompleted ? (
@@ -624,7 +630,11 @@ export function AppView() {
                               icon={step.icon}
                               width={{ xs: 20, sm: 24 }}
                               height={{ xs: 20, sm: 24 }}
-                              color={theme.palette.text.disabled}
+                              color={
+                                index === activeStep
+                                  ? theme.palette.common.white
+                                  : theme.palette.text.disabled
+                              }
                             />
                           )}
                         </Box>

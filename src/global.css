@@ -3,11 +3,11 @@
 *************************************** */
 @import '@fontsource-variable/public-sans';
 
-/* @import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/400.css';
 @import '@fontsource/barlow/500.css';
 @import '@fontsource/barlow/600.css';
 @import '@fontsource/barlow/700.css';
-@import '@fontsource/barlow/800.css'; */
+@import '@fontsource/barlow/800.css';
 
 @import '@fontsource/poppins/300.css';
 @import '@fontsource/poppins/400.css';
@@ -36,6 +36,15 @@
 
 /* chart */
 @import './components/chart/styles.css';
+
+/* Force Poppins font */
+* {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
 
 /** **************************************
 * Baseline

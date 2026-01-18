@@ -116,7 +116,7 @@ export default function OnboardingLayout() {
   const { country } = useGetCountryCode();
   // const { id } = useParams();
   const selectedVacancyId = useAppSelector(
-    (state) => state.vacancy.selectedVacancyId
+    (state) => state.vacancy.selectedVacancyId,
   );
 
   // Use selectedVacancyId from Redux or fallback to id from params
@@ -133,11 +133,11 @@ export default function OnboardingLayout() {
 
   console.log("this is eligibility", eligibilityData);
   const { onBoarding, isLoading: isLoadingOnBoarding } = useAppSelector(
-    (state) => state.onBoarding || { onBoarding: {}, isLoading: false }
+    (state) => state.onBoarding || { onBoarding: {}, isLoading: false },
   );
 
   const { profile } = useAppSelector(
-    (state) => state.profile || { profile: null }
+    (state) => state.profile || { profile: null },
   );
 
   // Load user-specific progress when profile is available
@@ -162,10 +162,10 @@ export default function OnboardingLayout() {
       // Load this user's saved step (only once per user)
       if (!isInitialized || lastUserId !== userId) {
         const savedStep = localStorage.getItem(
-          `onboarding_current_step_${userId}`
+          `onboarding_current_step_${userId}`,
         );
         const savedCompleted = localStorage.getItem(
-          `onboarding_completed_steps_${userId}`
+          `onboarding_completed_steps_${userId}`,
         );
 
         console.log("📦 Loading from localStorage:", {
@@ -199,13 +199,13 @@ export default function OnboardingLayout() {
   const stepSchemas = [
     processingInformationSchema,
     mainApplicantSchema,
+    maritalStatusSchema,
+    dependentsSchema,
     currentAddressSchema,
     contactDetailsSchema,
     academicInformationSchema,
-    englishLanguageProficiencySchema,
     pastWorkExperiencesSchema,
-    dependentsSchema,
-    maritalStatusSchema,
+    englishLanguageProficiencySchema,
     emergencyContactSchema,
     immigrationHistorySchema,
     visaSchema,
@@ -358,7 +358,7 @@ export default function OnboardingLayout() {
       console.log("💾 Saving step to localStorage:", currentStep);
       localStorage.setItem(
         `onboarding_current_step_${userId}`,
-        currentStep.toString()
+        currentStep.toString(),
       );
     }
   }, [currentStep, profile?.id, isInitialized]);
@@ -369,11 +369,11 @@ export default function OnboardingLayout() {
       const userId = profile.id.toString();
       console.log(
         "💾 Saving completed steps to localStorage:",
-        Array.from(completedSteps)
+        Array.from(completedSteps),
       );
       localStorage.setItem(
         `onboarding_completed_steps_${userId}`,
-        JSON.stringify(Array.from(completedSteps))
+        JSON.stringify(Array.from(completedSteps)),
       );
     }
   }, [completedSteps, profile?.id, isInitialized]);
@@ -399,6 +399,15 @@ export default function OnboardingLayout() {
   useEffect(() => {
     if (profile || onBoarding || eligibilityData) {
       const employee = onBoarding?.employee;
+
+      console.log("🔍 Debug birth_country:", {
+        from_employee: employee?.birth_country,
+        from_eligibility: eligibilityData?.employee?.birth_country,
+        final_value:
+          employee?.birth_country ||
+          eligibilityData?.employee?.birth_country ||
+          "",
+      });
       const employeeAddress = onBoarding?.employeeAddress;
       const academicRecords = onBoarding?.academicRecords || [];
       const englishProficiency = onBoarding?.english_language_proficiency;
@@ -418,14 +427,14 @@ export default function OnboardingLayout() {
       const hasAcademicLevel = (programName) =>
         academicRecords.some(
           (record) =>
-            record.program_name?.toLowerCase() === programName.toLowerCase()
+            record.program_name?.toLowerCase() === programName.toLowerCase(),
         );
 
       // Helper function to get academic record data
       const getAcademicRecord = (programName) =>
         academicRecords.find(
           (record) =>
-            record.program_name?.toLowerCase() === programName.toLowerCase()
+            record.program_name?.toLowerCase() === programName.toLowerCase(),
         ) || {};
 
       // Populate Academic Information
@@ -447,7 +456,7 @@ export default function OnboardingLayout() {
             academicFields[`${level}_zipCode`] = record.zip_code || "";
             academicFields[`${level}_address`] = record.address || "";
           }
-        }
+        },
       );
 
       // Populate Work Experiences
@@ -479,6 +488,8 @@ export default function OnboardingLayout() {
           kinship: dep.dependent_relation || "",
           birth_country: dep.dependent_country_of_birth || "",
           citizenship_country: dep.dependent_country_of_citizenship || "",
+          highest_level_of_education:
+            dep.dependent_highest_level_of_education || "",
         })),
       };
 
@@ -494,10 +505,10 @@ export default function OnboardingLayout() {
       };
 
       const employeeRejection = visaRejection.find(
-        (r) => r.rejected_for === "Employee"
+        (r) => r.rejected_for === "Employee",
       );
       const dependentRejection = visaRejection.find(
-        (r) => r.rejected_for === "Dependent"
+        (r) => r.rejected_for === "Dependent",
       );
 
       console.log("📋 Employee Rejection:", employeeRejection);
@@ -682,7 +693,7 @@ export default function OnboardingLayout() {
         // Criminal Records
         criminal_record_employee: criminalRecords.length > 0 ? "Yes" : "No",
         criminal_record_dependents: criminalRecords.some(
-          (r) => r.related_to?.toLowerCase() === "dependent"
+          (r) => r.related_to?.toLowerCase() === "dependent",
         )
           ? "Yes"
           : "No",
@@ -799,7 +810,7 @@ export default function OnboardingLayout() {
       .filter((level) => {
         const isYes = formData[level]?.toLowerCase() === "yes";
         console.log(
-          `🔍 Filtering ${level}: ${formData[level]} === "yes"? ${isYes}`
+          `🔍 Filtering ${level}: ${formData[level]} === "yes"? ${isYes}`,
         );
         return isYes;
       })
@@ -863,6 +874,7 @@ export default function OnboardingLayout() {
       relation: dependent.kinship || "", // 👈 mapped to API's "relation"
       country_of_birth: dependent.birth_country || "",
       country_of_citizenship: dependent.citizenship_country || "",
+      highest_level_of_education: dependent.highest_level_of_education || "",
     }));
 
     return { dependents };
@@ -888,7 +900,7 @@ export default function OnboardingLayout() {
           ? formData.clarifyMaritalStatus || ""
           : "",
       legally_married_if_d_w_s: ["Divorced", "Widow", "Separated"].includes(
-        status
+        status,
       )
         ? formData.clarifyMaritalStatus || ""
         : "",
@@ -1087,7 +1099,7 @@ export default function OnboardingLayout() {
         health_insurance_employee: capitalizeYesNo(formData.hasInsurance),
         health_insurance_employee_details: formData.insuranceDetails || "",
         health_insurance_dependents: capitalizeYesNo(
-          formData.hasInsuranceDependent
+          formData.hasInsuranceDependent,
         ),
         health_insurance_dependents_details:
           formData.insuranceDependentDetails || "",
@@ -1124,25 +1136,25 @@ export default function OnboardingLayout() {
           await saveMainApplicantDetail(transformMainApplicantData(formData));
           break;
         case 2:
-          await saveCurrentAddress(transformCurrentAddressData(formData));
+          await saveMaritalStatus(transformMaritalStatusData(formData));
           break;
         case 3:
-          await saveContactDetail(transformContactDetailsData(formData));
-          break;
-        case 4:
-          await saveAcademicInformation(transformAcademicData(formData));
-          break;
-        case 5:
-          await saveEnglishLanguage(transformEnglishProficiencyData(formData));
-          break;
-        case 6:
-          await saveWorkExperiences(transformWorkExperienceData(formData));
-          break;
-        case 7:
           await saveDependentInformation(transformDependentData(formData));
           break;
+        case 4:
+          await saveCurrentAddress(transformCurrentAddressData(formData));
+          break;
+        case 5:
+          await saveContactDetail(transformContactDetailsData(formData));
+          break;
+        case 6:
+          await saveAcademicInformation(transformAcademicData(formData));
+          break;
+        case 7:
+          await saveWorkExperiences(transformWorkExperienceData(formData));
+          break;
         case 8:
-          await saveMaritalStatus(transformMaritalStatusData(formData));
+          await saveEnglishLanguage(transformEnglishProficiencyData(formData));
           break;
         case 9:
           await saveEmergencyContact(transformEmergencyContactData(formData));
@@ -1150,7 +1162,7 @@ export default function OnboardingLayout() {
         case 10:
           console.log("this is immigration ", formData);
           await saveImmigrationHistory(
-            transformImmigrationHistoryData(formData)
+            transformImmigrationHistoryData(formData),
           );
           break;
         case 11:
@@ -1161,7 +1173,7 @@ export default function OnboardingLayout() {
           break;
         case 13:
           await saveImmigrationIncident(
-            transformImmigrationIncidentData(formData)
+            transformImmigrationIncidentData(formData),
           );
           break;
         case 14:
@@ -1257,7 +1269,7 @@ export default function OnboardingLayout() {
     // For forward navigation, check if all previous steps are completed
     const canNavigateForward = Array.from(
       { length: targetStep },
-      (_, i) => i
+      (_, i) => i,
     ).every((step) => completedSteps.has(step));
 
     if (canNavigateForward) {
@@ -1268,289 +1280,6 @@ export default function OnboardingLayout() {
     }
   };
 
-  // const goNext = async () => {
-  //   const isValid = await methods.trigger(); // validate only this step
-  //   if (isValid) {
-  //     if (currentStep === 0) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const applicantData = transformMainApplicantData(formData);
-  //         console.log("📤 Sending main applicant data:", applicantData);
-
-  //         await saveMainApplicantDetail(applicantData);
-  //         console.log("✅ Main applicant saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save main applicant:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return; // stop proceeding if failed
-  //       }
-  //     }
-
-  //     if (currentStep === 1) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const currentAddress = transformCurrentAddressData(formData);
-  //         console.log("📤 Sending current address data:", currentAddress);
-
-  //         await saveCurrentAddress(currentAddress);
-  //         console.log("✅ Current address saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save current address:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return; // stop proceeding if failed
-  //       }
-  //     }
-
-  //     if (currentStep === 2) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const currentAddress = transformContactDetailsData(formData);
-  //         console.log("📤 Sending contact detail data:", currentAddress);
-
-  //         await saveContactDetail(currentAddress);
-  //         console.log("✅ Contact detail saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save contact detail:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return; // stop proceeding if failed
-  //       }
-  //     }
-
-  //     if (currentStep === 4) {
-  //       try {
-  //         const formData = methods.getValues(); // Get all form values
-  //         const academicData = transformAcademicData(formData);
-  //         console.log("this is data", formData);
-  //         // Only submit if there are academic records to send
-  //         // if (academicData.academic_records.length > 0) {
-  //         await saveAcademicInformation(academicData);
-  //         console.log("📤 Sent to API:", academicData);
-  //         // } else {
-  //         //   console.log('ℹ️ No academic records to submit (all "No")');
-  //         // }
-  //       } catch (error) {
-  //         console.error("Failed to submit academic info");
-  //         // Optionally show error to user
-  //         return; // Don't proceed to next step on error
-  //       }
-  //     }
-
-  //     if (currentStep === 5) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const englishLanguage = transformEnglishProficiencyData(formData);
-  //         console.log("📤 Sending english language data:", englishLanguage);
-
-  //         await saveEnglishLanguage(englishLanguage);
-  //         console.log("✅ English language saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save english language:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return; // stop proceeding if failed
-  //       }
-  //     }
-  //     if (currentStep === 6) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const workData = transformWorkExperienceData(formData);
-  //         // Call API
-  //         await saveWorkExperiences(workData);
-  //         console.log("📤 Work experience sent:", workData);
-  //         // Optional: show success message to user
-  //       } catch (error) {
-  //         console.error("❌ Failed to save work experience:", error);
-  //         // Optional: show error toast/snackbar
-  //         return; // stop proceeding to next step
-  //       }
-  //     }
-  //     if (currentStep === 7) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const dependentData = transformDependentData(formData);
-
-  //         await saveDependentInformation(dependentData);
-  //       } catch (error) {
-  //         console.error("❌ Failed to save dependents:", error);
-  //         return; // stop proceeding to next step
-  //       }
-  //     }
-
-  //     if (currentStep === 8) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         const maritalData = transformMaritalStatusData(formData);
-  //         console.log("📤 Sending marital data:", maritalData);
-  //         await saveMaritalStatus(maritalData);
-  //       } catch (error) {
-  //         console.error("❌ Failed to save marital status:", error);
-  //         return; // stop proceeding to next step
-  //       }
-  //     }
-
-  //     if (currentStep === 9) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw emergency contact data:", formData);
-
-  //         const emergencyData = transformEmergencyContactData(formData);
-  //         console.log("📤 Sending emergency contact data:", emergencyData);
-
-  //         await saveEmergencyContact(emergencyData);
-  //         console.log("✅ Emergency contact saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save emergency contact:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-
-  //     if (currentStep === 10) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw immigation history:", formData);
-
-  //         const immigrationData = transformImmigrationHistoryData(formData);
-  //         console.log("📤 Sending immigration history data:", immigrationData);
-
-  //         await saveImmigrationHistory(immigrationData);
-  //         console.log("✅ Immigration history saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save immigration history:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-
-  //     if (currentStep === 11) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw visas data:", formData);
-
-  //         const visaData = transformVisaData(formData);
-  //         console.log("📤 Sending visas data:", visaData);
-
-  //         await saveVisa(visaData);
-  //         console.log("✅ Visa data saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save visa data:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-  //     if (currentStep === 12) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw visas rejection data:", formData);
-
-  //         const visaRejectionData = transformVisaRejectionData(formData);
-  //         console.log("📤 Sending visas rejection data:", visaRejectionData);
-
-  //         await saveVisaRejection(visaRejectionData);
-  //         console.log("✅ Visa rejection data saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save visa rejection data:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-  //     if (currentStep === 13) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw immigration incident data:", formData);
-
-  //         const immigrationIncidentData =
-  //           transformImmigrationIncidentData(formData);
-  //         console.log(
-  //           "📤 Sending immigration incident data:",
-  //           immigrationIncidentData
-  //         );
-
-  //         await saveImmigrationIncident(immigrationIncidentData); // You'll need to create this API function
-  //         console.log("✅ Immigration incident data saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save immigration incident data:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-  //     if (currentStep === 14) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw criminal records data:", formData);
-
-  //         const criminalRecordsData = transformCriminalRecordData(formData);
-  //         console.log("📤 Sending criminal records data:", criminalRecordsData);
-
-  //         await saveCriminalRecords(criminalRecordsData); // You'll need to create this API function
-  //         console.log("✅ Criminal Records saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save criminalrecords data:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-
-  //     if (currentStep === 15) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw inadmissibility data:", formData);
-
-  //         const inadmissibilityData = transformInadmissibilityData(formData);
-  //         console.log("📤 Sending inadmissibility data:", inadmissibilityData);
-
-  //         await saveInadmissibility(inadmissibilityData); // You'll need to create this API function
-  //         console.log("✅ Inadmissibility saved successfully");
-  //       } catch (error) {
-  //         console.error("❌ Failed to save inadmissibility data:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         return;
-  //       }
-  //     }
-  //     if (currentStep === 16) {
-  //       try {
-  //         const formData = methods.getValues();
-  //         console.log("🔍 Raw health data:", formData);
-
-  //         // Step 1: Save health data
-  //         const healthData = transformHealthData(formData);
-  //         console.log("📤 Sending health data:", healthData);
-  //         await saveHealth(healthData);
-  //         console.log("✅ Health saved successfully");
-
-  //         // Step 2: Final submit
-  //         const finalSubmitData = {
-  //           is_draft: false,
-  //           status: "Pending",
-  //           agree_to_terms: formData.agree_to_terms,
-  //         };
-  //         console.log("📤 Sending final submit data:", finalSubmitData);
-  //         await saveFinalSubmit(finalSubmitData);
-  //         console.log("✅ Final submission successful");
-
-  //         alert("Form submitted successfully!");
-
-  //         router.push(paths.dashboard.plan);
-  //         // Optional: navigate to success page
-  //       } catch (error) {
-  //         console.error("❌ Failed to submit form:", error);
-  //         console.error("❌ Error response:", error.response?.data);
-  //         alert("Failed to submit form. Please try again.");
-  //         return;
-  //       }
-  //     }
-
-  //     if (currentStep < ONBOARDING_STEPS.length - 1) {
-  //       setCurrentStep((prev) => prev + 1);
-  //     } else {
-  //       handleSubmit(onSubmit)();
-  //     }
-  //   }
-  // };
-
-  // const goPrev = () => {
-  //   if (currentStep > 0) setCurrentStep((prev) => prev - 1);
-  // };
-
   const renderStep = () => {
     switch (currentStep) {
       case 0:
@@ -1558,25 +1287,25 @@ export default function OnboardingLayout() {
       case 1:
         return <MainApplicantDetails country={country} />;
       case 2:
-        return <CurrentAddress country={country} />;
-      case 3:
-        return <ContactDetails />;
-      case 4:
-        return <AcademicInformation country={country} />;
-      case 5:
-        return <EnglishLanguageProficiency />;
-      case 6:
-        return <PastWorkExperiences />;
-      case 7:
-        return <DependentInformation />;
-      case 8:
         return <MaritalStatus />;
+      case 3:
+        return <DependentInformation />;
+      case 4:
+        return <CurrentAddress country={country} />;
+      case 5:
+        return <ContactDetails />;
+      case 6:
+        return <AcademicInformation country={country} />;
+      case 7:
+        return <PastWorkExperiences />;
+      case 8:
+        return <EnglishLanguageProficiency />;
       case 9:
         return <EmergencyContactInformation />;
       case 10:
         return <ImmigrationHistory vacancyId={selectedVacancyId} />;
       case 11:
-        return <Visa />;
+        return <Visa vacancyId={selectedVacancyId} />;
       case 12:
         return <VisaRejection />;
       case 13:

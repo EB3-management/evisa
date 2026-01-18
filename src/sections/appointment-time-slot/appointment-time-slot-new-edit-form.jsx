@@ -67,6 +67,7 @@ export function AppointmentTimeSlotNewEditForm({
     (state) => state.profile || { profile: null }
   );
 
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -112,34 +113,66 @@ export function AppointmentTimeSlotNewEditForm({
     }
   }, [profile, showBookingForm, methods]);
 
-  // Get available dates from API response (filter out past dates)
-  const dateList = useMemo(() => {
+  // Get unique categories from API response
+  const categoryList = useMemo(() => {
     if (!appointments || appointments.length === 0) return [];
+
+    return appointments.map((item) => ({
+      id: item.category_id,
+      name: item.appointments[0]?.category?.title || `Category ${item.category_id}`,
+    }));
+  }, [appointments]);
+
+  // Get available dates for selected category (filter out past dates)
+  const dateList = useMemo(() => {
+    if (!appointments || appointments.length === 0 || !selectedCategory) return [];
 
     const today = dayjs().startOf('day');
 
-    return appointments
-      .filter((item) => {
-        const appointmentDate = dayjs(item.date).startOf('day');
-        return appointmentDate.isSame(today, 'day') || appointmentDate.isAfter(today);
-      })
-      .map((item) => ({
-        value: dayjs(item.date).format("YYYY-MM-DD"),
-        label: dayjs(item.date).format("dddd, MMMM D, YYYY"),
-        rawDate: item.date,
-      }));
-  }, [appointments]);
-
-  // Get time slots for selected date
-  const timeSlots = useMemo(() => {
-    if (!selectedDate || !appointments) return [];
-
-    const selectedAppointment = appointments.find(
-      (item) => dayjs(item.date).format("YYYY-MM-DD") === selectedDate
+    // Find the selected category data
+    const categoryData = appointments.find(
+      (item) => item.category_id === selectedCategory
     );
 
-    return selectedAppointment?.appointments || [];
-  }, [selectedDate, appointments]);
+    if (!categoryData || !categoryData.appointments) return [];
+
+    // Extract unique dates from appointments
+    const uniqueDates = new Map();
+    categoryData.appointments.forEach((appointment) => {
+      const dateKey = dayjs(appointment.date).format("YYYY-MM-DD");
+      const appointmentDate = dayjs(appointment.date).startOf('day');
+      
+      // Only include today or future dates
+      if (appointmentDate.isSame(today, 'day') || appointmentDate.isAfter(today)) {
+        if (!uniqueDates.has(dateKey)) {
+          uniqueDates.set(dateKey, {
+            value: dateKey,
+            label: dayjs(appointment.date).format("dddd, MMMM D, YYYY"),
+            rawDate: appointment.date,
+          });
+        }
+      }
+    });
+
+    return Array.from(uniqueDates.values());
+  }, [appointments, selectedCategory]);
+
+  // Get time slots for selected date and category
+  const timeSlots = useMemo(() => {
+    if (!selectedDate || !selectedCategory || !appointments) return [];
+
+    // Find the selected category data
+    const categoryData = appointments.find(
+      (item) => item.category_id === selectedCategory
+    );
+
+    if (!categoryData || !categoryData.appointments) return [];
+
+    // Filter appointments by selected date
+    return categoryData.appointments.filter(
+      (appointment) => dayjs(appointment.date).format("YYYY-MM-DD") === selectedDate
+    );
+  }, [selectedDate, selectedCategory, appointments]);
 
   const {
     handleSubmit,
@@ -151,10 +184,18 @@ export function AppointmentTimeSlotNewEditForm({
   const handleCloseAndReset = () => {
     onClose();
     reset();
+    setSelectedCategory("");
     setSelectedDate("");
     setSelectedTime(null);
     setShowBookingForm(false);
     onClearSelectedTimeSlot?.();
+  };
+
+  const handleCategoryChange = (event) => {
+    setSelectedCategory(event.target.value);
+    setSelectedDate("");
+    setSelectedTime(null);
+    setShowBookingForm(false);
   };
 
   const handleDateChange = (event) => {
@@ -205,7 +246,7 @@ export function AppointmentTimeSlotNewEditForm({
     }
   });
 
-  const renderDateSelection = () => (
+  const renderCategorySelection = () => (
     <Box
       sx={{
         p: { xs: 1.5, sm: 2 },
@@ -227,15 +268,15 @@ export function AppointmentTimeSlotNewEditForm({
           fontSize: { xs: "0.85rem", sm: "0.9rem" },
         }}
       >
-        <span style={{ fontSize: "1rem" }}>📆</span>
-        Select Date
+        <span style={{ fontSize: "1rem" }}>📋</span>
+        Select Category
       </Typography>
       <FormControl fullWidth size="small">
-        <InputLabel>Choose a date</InputLabel>
+        <InputLabel>Choose a category</InputLabel>
         <Select
-          value={selectedDate}
-          onChange={handleDateChange}
-          label="Choose a date"
+          value={selectedCategory}
+          onChange={handleCategoryChange}
+          label="Choose a category"
           disabled={isLoading}
           sx={{
             borderRadius: 1.5,
@@ -247,26 +288,93 @@ export function AppointmentTimeSlotNewEditForm({
             },
           }}
         >
-          {dateList.length === 0 ? (
+          {categoryList.length === 0 ? (
             <MenuItem value="">
-              <em>No dates available</em>
+              <em>No categories available</em>
             </MenuItem>
           ) : (
-            dateList.map((date) => (
-              <MenuItem key={date.value} value={date.value}>
-                {date.label}
+            categoryList.map((category) => (
+              <MenuItem key={category.id} value={category.id}>
+                {category.name}
               </MenuItem>
             ))
           )}
         </Select>
-        {!selectedDate && (
+        {!selectedCategory && (
           <FormHelperText sx={{ fontSize: "0.7rem", mt: 0.75 }}>
-            Please select a date to view available slots
+            Please select a category first
           </FormHelperText>
         )}
       </FormControl>
     </Box>
   );
+
+  const renderDateSelection = () => {
+    if (!selectedCategory) return null;
+
+    return (
+      <Box
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          bgcolor: "background.paper",
+          borderRadius: 2,
+          border: 1,
+          borderColor: "divider",
+          boxShadow: 1,
+        }}
+      >
+        <Typography
+          variant="subtitle2"
+          sx={{
+            mb: 1.5,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 0.75,
+            fontSize: { xs: "0.85rem", sm: "0.9rem" },
+          }}
+        >
+          <span style={{ fontSize: "1rem" }}>📆</span>
+          Select Date
+        </Typography>
+        <FormControl fullWidth size="small">
+          <InputLabel>Choose a date</InputLabel>
+          <Select
+            value={selectedDate}
+            onChange={handleDateChange}
+            label="Choose a date"
+            disabled={isLoading}
+            sx={{
+              borderRadius: 1.5,
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "divider",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "primary.main",
+              },
+            }}
+          >
+            {dateList.length === 0 ? (
+              <MenuItem value="">
+                <em>No dates available</em>
+              </MenuItem>
+            ) : (
+              dateList.map((date) => (
+                <MenuItem key={date.value} value={date.value}>
+                  {date.label}
+                </MenuItem>
+              ))
+            )}
+          </Select>
+          {!selectedDate && (
+            <FormHelperText sx={{ fontSize: "0.7rem", mt: 0.75 }}>
+              Please select a date to view available slots
+            </FormHelperText>
+          )}
+        </FormControl>
+      </Box>
+    );
+  };
 
   const renderTimeSlots = () => {
     if (!selectedDate) return null;
@@ -666,9 +774,11 @@ export function AppointmentTimeSlotNewEditForm({
               📅 Book an Appointment
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Select a date and time slot to continue
+              Select a category, date and time slot to continue
             </Typography>
           </Box>
+
+          {renderCategorySelection()}
 
           {renderDateSelection()}
 

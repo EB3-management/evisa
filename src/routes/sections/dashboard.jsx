@@ -6,6 +6,8 @@ import { DashboardLayout } from "src/layouts/dashboard";
 import { LoadingScreen } from "src/components/loading-screen";
 
 import { AuthGuard } from "src/auth/guard";
+import { PermissionGuard } from "src/components/onboarding/permission-guard";
+import { OnboardingRedirectGuard } from "src/components/onboarding/onboarding-redirect-guard";
 
 import { usePathname } from "../hooks";
 
@@ -69,46 +71,140 @@ const dashboardLayout = () => (
 export const dashboardRoutes = [
   {
     path: "dashboard",
-    element: <AuthGuard>{dashboardLayout()}</AuthGuard>,
+    element: (
+      <AuthGuard>
+        <OnboardingRedirectGuard>
+          {dashboardLayout()}
+        </OnboardingRedirectGuard>
+      </AuthGuard>
+    ),
     children: [
-      { index: true, element: <IndexPage /> },
+      { 
+        index: true, 
+        element: (
+          <PermissionGuard feature="dashboard">
+            <IndexPage />
+          </PermissionGuard>
+        ) 
+      },
 
       {
         path: "vacancy-detail",
-        children: [{ path: ":id", element: <VacancyDetailPage /> }],
+        children: [{ 
+          path: ":id", 
+          element: (
+            <PermissionGuard feature="job_selection">
+              <VacancyDetailPage />
+            </PermissionGuard>
+          ) 
+        }],
       },
       {
         path: "vacancy",
-        element: <VacancyPage />,
+        element: (
+          <PermissionGuard feature="job_selection">
+            <VacancyPage />
+          </PermissionGuard>
+        ),
       },
       {
         path: "plan",
-        children: [{ path: ":id", element: <PlanPage /> }],
-        // element: <PlanPage />,
+        children: [{ 
+          path: ":id", 
+          element: (
+            <PermissionGuard feature="financial_plan">
+              <PlanPage />
+            </PermissionGuard>
+          ) 
+        }],
       },
       {
         path: "payment-detail",
-        children: [{ path: ":id", element: <PlanDetailPage /> }],
+        children: [{ 
+          path: ":id", 
+          element: (
+            <PermissionGuard feature="financial_plan">
+              <PlanDetailPage />
+            </PermissionGuard>
+          ) 
+        }],
       },
       {
         path: "finance",
-        element: <FinancePage />,
+        element: (
+          <PermissionGuard feature="financial_plan">
+            <FinancePage />
+          </PermissionGuard>
+        ),
       },
       {
         path: "progress",
-        element: <ProgressPage />,
+        element: (
+          <PermissionGuard feature="dashboard">
+            <ProgressPage />
+          </PermissionGuard>
+        ),
       },
-      { path: "documents", element: <DocumentPage /> },
-      { path: "contracts", element: <ContractPage /> },
+      { 
+        path: "documents", 
+        element: (
+          <PermissionGuard feature="documents">
+            <DocumentPage />
+          </PermissionGuard>
+        ) 
+      },
+      { 
+        path: "contracts", 
+        element: (
+          <PermissionGuard feature="contract">
+            <ContractPage />
+          </PermissionGuard>
+        ) 
+      },
 
       {
         path: "payment",
-        children: [{ index: true, element: <PaymentListPage /> }],
+        children: [{ 
+          index: true, 
+          element: (
+            <PermissionGuard feature="payment">
+              <PaymentListPage />
+            </PermissionGuard>
+          ) 
+        }],
       },
-      { path: "faqs", element: <FaqsPage /> },
-      { path: "profile", element: <ProfilePage /> },
-      { path: "visa-status", element: <VisaStatusPage /> },
-      { path: "guide", element: <GuidePage /> },
+      { 
+        path: "faqs", 
+        element: (
+          <PermissionGuard feature="dashboard">
+            <FaqsPage />
+          </PermissionGuard>
+        ) 
+      },
+      { 
+        path: "profile", 
+        element: (
+          <PermissionGuard feature="dashboard">
+            <ProfilePage />
+          </PermissionGuard>
+        ) 
+      },
+      { 
+        path: "visa-status", 
+        element: (
+          <PermissionGuard feature="visa_status">
+            <VisaStatusPage />
+          </PermissionGuard>
+        ) 
+      },
+      { 
+        path: "guide", 
+        element: (
+          <PermissionGuard feature="dashboard">
+            <GuidePage />
+          </PermissionGuard>
+        ) 
+      },
     ],
   },
 ];

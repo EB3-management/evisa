@@ -72,9 +72,9 @@ export const ProcessingInformation = ({ vacancyData }) => {
   const adjustmentOfStatus = watch("adjustment_of_status");
   return (
     <Box id="section-0" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Processing Information
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {/* Adjustment of Status */}

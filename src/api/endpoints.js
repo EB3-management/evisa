@@ -115,4 +115,7 @@ export const endpoints = {
   termCondition: {
     list: "dashboard/terms-and-conditions",
   },
+  onBoardingAccess: {
+    access: "onboarding-access",
+  },
 };

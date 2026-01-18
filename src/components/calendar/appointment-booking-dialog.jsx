@@ -1,5 +1,5 @@
 import { z as zod } from "zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,10 @@ import {
   Typography,
   Chip,
   TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 
 import { Form } from "src/components/hook-form";
@@ -38,10 +42,13 @@ export const bookingSchema = zod.object({
 export function AppointmentBookingDialog({
   open,
   onClose,
-  selectedDate,
-  timeSlots,
+  selectedDate: _selectedDate, // unused, always null
+  timeSlots: _timeSlots, // unused, always []
   onBookingSuccess,
+  allAppointments = [],
 }) {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
   const methods = useForm({
@@ -65,6 +72,19 @@ export function AppointmentBookingDialog({
   const handleCloseAndReset = () => {
     onClose();
     reset();
+    setSelectedCategory(null);
+    setSelectedDate(null);
+    setSelectedTime(null);
+  };
+
+  const handleCategorySelect = (cat) => {
+    setSelectedCategory(cat);
+    setSelectedDate(null);
+    setSelectedTime(null);
+  };
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
     setSelectedTime(null);
   };
 
@@ -108,101 +128,233 @@ export function AppointmentBookingDialog({
       toast.error(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to book appointment. Please try again."
+          "Failed to book appointment. Please try again.",
       );
     }
   });
 
-  const renderTimeSlots = () => (
-    <Box
-      sx={{
-        p: { xs: 1.5, sm: 2 },
-        bgcolor: "background.neutral",
-        borderRadius: 2,
-        border: 1,
-        borderColor: "divider",
-      }}
-    >
-      <Typography
-        variant="subtitle2"
-        sx={{
-          mb: 1,
-          fontWeight: 600,
-          color: "text.primary",
-          fontSize: { xs: "0.85rem", sm: "0.9rem" },
-        }}
-      >
-        🕒 Available Slots
+  // Get all unique categories from allAppointments
+  const categories = Array.isArray(allAppointments)
+    ? allAppointments
+        .map((cat) => cat.category || cat.appointments?.[0]?.category)
+        .filter(Boolean)
+        .reduce((acc, cat) => {
+          if (!acc.find((c) => c.id === cat.id)) acc.push(cat);
+          return acc;
+        }, [])
+    : [];
+
+  // Get available dates for selected category
+  const availableDates = useMemo(() => {
+    if (!selectedCategory) return [];
+    const cat = allAppointments.find(
+      (c) => (c.category?.id || c.category_id) === selectedCategory.id,
+    );
+    if (!cat) return [];
+    // Only future/today dates with available slots
+    const today = dayjs().startOf("day");
+    const dateMap = new Map();
+    (cat.appointments || []).forEach((appt) => {
+      const apptDate = dayjs(appt.date).startOf("day");
+      if (
+        (apptDate.isSame(today, "day") || apptDate.isAfter(today)) &&
+        appt.status === "Available"
+      ) {
+        const key = apptDate.format("YYYY-MM-DD");
+        if (!dateMap.has(key)) dateMap.set(key, []);
+        dateMap.get(key).push(appt);
+      }
+    });
+    return Array.from(dateMap.entries()).map(([date, slots]) => ({
+      date,
+      slots,
+    }));
+  }, [selectedCategory, allAppointments]);
+
+  // Get available time slots for selected date
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedCategory || !selectedDate) return [];
+    const cat = allAppointments.find(
+      (c) => (c.category?.id || c.category_id) === selectedCategory.id,
+    );
+    if (!cat) return [];
+    return (cat.appointments || []).filter(
+      (appt) =>
+        appt.status === "Available" &&
+        dayjs(appt.date).format("YYYY-MM-DD") ===
+          selectedDate.format("YYYY-MM-DD"),
+    );
+  }, [selectedCategory, selectedDate, allAppointments]);
+
+  // Step 1: Select Category (Dropdown)
+  const renderCategoryStep = () => (
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+        1️⃣ Select Appointment Category
       </Typography>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ mb: 1.5, display: "block" }}
-      >
-        {selectedDate?.format("ddd, MMM D, YYYY")}
-      </Typography>
-      {timeSlots.length === 0 ? (
-        <Box
-          sx={{
-            textAlign: "center",
-            py: 3,
-            px: 2,
-            bgcolor: "background.paper",
-            borderRadius: 1.5,
+      <FormControl fullWidth size="small">
+        <InputLabel id="category-select-label">Category</InputLabel>
+        <Select
+          labelId="category-select-label"
+          id="category-select"
+          value={selectedCategory ? selectedCategory.id : ""}
+          label="Category"
+          onChange={(e) => {
+            const cat = categories.find((c) => c.id === e.target.value);
+            handleCategorySelect(cat);
           }}
         >
-          <Typography variant="body2" color="text.secondary" fontSize="0.85rem">
-            😔 No slots available
-          </Typography>
-        </Box>
-      ) : (
-        <Grid container spacing={{ xs: 0.75, sm: 1 }}>
-          {timeSlots.map((slot) => (
-            <Grid item xs={6} sm={6} key={slot.id}>
-              <Chip
-                label={`${slot.start_time} - ${slot.end_time}`}
-                onClick={() => handleTimeSlotClick(slot)}
-                color={selectedTime?.id === slot.id ? "primary" : "default"}
-                variant={selectedTime?.id === slot.id ? "filled" : "outlined"}
-                disabled={slot.status !== "Available"}
-                icon={
-                  selectedTime?.id === slot.id ? (
-                    <span style={{ fontSize: "0.9rem" }}>✓</span>
-                  ) : null
-                }
-                sx={{
-                  width: "100%",
-                  height: "auto",
-                  py: { xs: 1, sm: 1.2 },
-                  cursor:
-                    slot.status === "Available" ? "pointer" : "not-allowed",
-                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                  fontWeight: selectedTime?.id === slot.id ? 600 : 400,
-                  boxShadow: selectedTime?.id === slot.id ? 2 : 0,
-                  "&:hover": {
-                    backgroundColor:
-                      slot.status === "Available"
-                        ? selectedTime?.id === slot.id
-                          ? "primary.dark"
-                          : "action.hover"
-                        : "transparent",
-                    transform:
-                      slot.status === "Available" ? "scale(1.03)" : "none",
-                    boxShadow: slot.status === "Available" ? 3 : 0,
-                  },
-                  transition: "all 0.2s ease-in-out",
-                }}
-              />
-            </Grid>
+          {categories.map((cat) => (
+            <MenuItem key={cat.id} value={cat.id}>
+              {cat.title}
+            </MenuItem>
           ))}
-        </Grid>
-      )}
+        </Select>
+      </FormControl>
     </Box>
   );
 
-  const renderBookingForm = () => {
-    if (!selectedTime) return null;
+  // Step 2: Select Date
+  const renderDateStep = () => {
+    if (!selectedCategory) return null;
+    return (
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+          2️⃣ Select Date
+        </Typography>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          {availableDates.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No available dates for this category.
+            </Typography>
+          ) : (
+            availableDates.map(({ date, slots }) => (
+              <Chip
+                key={date}
+                label={`${dayjs(date).format("ddd, MMM D")}`}
+                color={
+                  selectedDate?.format("YYYY-MM-DD") === date
+                    ? "primary"
+                    : "default"
+                }
+                onClick={() => handleDateSelect(dayjs(date))}
+                sx={{
+                  mb: 1,
+                  fontWeight: 600,
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                }}
+                variant={
+                  selectedDate?.format("YYYY-MM-DD") === date
+                    ? "filled"
+                    : "outlined"
+                }
+              />
+            ))
+          )}
+        </Stack>
+      </Box>
+    );
+  };
 
+  // Step 3: Select Time Slot
+  const renderTimeSlots = () => {
+    if (!selectedCategory || !selectedDate) return null;
+    return (
+      <Box
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          bgcolor: "background.neutral",
+          borderRadius: 2,
+          border: 1,
+          borderColor: "divider",
+          mb: 2,
+        }}
+      >
+        <Typography
+          variant="subtitle2"
+          sx={{
+            mb: 1,
+            fontWeight: 600,
+            color: "text.primary",
+            fontSize: { xs: "0.85rem", sm: "0.9rem" },
+          }}
+        >
+          3️⃣ Select Time Slot
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mb: 1.5, display: "block" }}
+        >
+          {selectedDate?.format("ddd, MMM D, YYYY")}
+        </Typography>
+        {availableTimeSlots.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 3,
+              px: 2,
+              bgcolor: "background.paper",
+              borderRadius: 1.5,
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontSize="0.85rem"
+            >
+              😔 No slots available
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={{ xs: 0.75, sm: 1 }}>
+            {availableTimeSlots.map((slot) => (
+              <Grid item xs={6} sm={6} key={slot.id}>
+                <Chip
+                  label={`${slot.start_time} - ${slot.end_time}`}
+                  onClick={() => handleTimeSlotClick(slot)}
+                  color={selectedTime?.id === slot.id ? "primary" : "default"}
+                  variant={selectedTime?.id === slot.id ? "filled" : "outlined"}
+                  disabled={slot.status !== "Available"}
+                  icon={
+                    selectedTime?.id === slot.id ? (
+                      <span style={{ fontSize: "0.9rem" }}>✓</span>
+                    ) : null
+                  }
+                  sx={{
+                    width: "100%",
+                    height: "auto",
+                    py: { xs: 1, sm: 1.2 },
+                    cursor:
+                      slot.status === "Available" ? "pointer" : "not-allowed",
+                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                    fontWeight: selectedTime?.id === slot.id ? 600 : 400,
+                    boxShadow: selectedTime?.id === slot.id ? 2 : 0,
+                    "&:hover": {
+                      backgroundColor:
+                        slot.status === "Available"
+                          ? selectedTime?.id === slot.id
+                            ? "primary.dark"
+                            : "action.hover"
+                          : "transparent",
+                      transform:
+                        slot.status === "Available" ? "scale(1.03)" : "none",
+                      boxShadow: slot.status === "Available" ? 3 : 0,
+                    },
+                    transition: "all 0.2s ease-in-out",
+                  }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
+    );
+  };
+
+  const renderBookingForm = () => {
+    if (!selectedCategory || !selectedDate || !selectedTime) return null;
     return (
       <Box
         sx={{
@@ -512,21 +664,20 @@ export function AppointmentBookingDialog({
                 fontSize: { xs: "1.25rem", sm: "1.5rem" },
                 color: "primary.main",
                 WebkitBackgroundClip: "text",
-                // WebkitTextFillColor: "transparent",
                 mb: 0.5,
               }}
             >
               📅 Book Appointment
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Select a time slot and fill in your details
+              Please follow the steps to book your appointment
             </Typography>
           </Box>
 
+          {renderCategoryStep()}
+          {renderDateStep()}
           {renderTimeSlots()}
-
           {renderBookingForm()}
-
           {renderActions()}
         </Stack>
       </Form>

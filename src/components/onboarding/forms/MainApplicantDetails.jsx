@@ -170,7 +170,7 @@ export const MainApplicantDetails = ({ country }) => {
                 <Select
                   {...field}
                   displayEmpty
-                  error={!!errors.country}
+                  error={!!errors.countryOfBirth}
                   sx={{ backgroundColor: "#fff" }}
                 >
                   <MenuItem value="">
@@ -182,9 +182,9 @@ export const MainApplicantDetails = ({ country }) => {
                     </MenuItem>
                   ))}
                 </Select>
-                {errors.country && (
+                {errors.countryOfBirth && (
                   <Typography color="error" variant="caption">
-                    {errors.country.message}
+                    {errors.countryOfBirth.message}
                   </Typography>
                 )}
               </FormControl>

@@ -28,14 +28,17 @@ export const inadmissibilitySchema = z
           doctor: z.string().min(1, "Doctor name is required"),
           procedure: z.string().min(1, "Procedure is required"),
           date: z.string().min(1, "Date is required"),
-        })
+        }),
       )
       .optional()
       .default([]),
   })
   .superRefine((data, ctx) => {
     if (data.has_inadmissibility === "Yes") {
-      if (!data.inadmissibility_records || data.inadmissibility_records.length === 0) {
+      if (
+        !data.inadmissibility_records ||
+        data.inadmissibility_records.length === 0
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please add at least one inadmissibility record",
@@ -127,9 +130,9 @@ export const Inadmissibility = () => {
 
   return (
     <Box id="section-11" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Inadmissibility
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={4}>
         {/* Main Question */}

@@ -155,9 +155,9 @@ export const PastWorkExperiences = () => {
 
   return (
     <Box id="section-6" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Past Work Experiences
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={4}>
         {/* Main Question */}

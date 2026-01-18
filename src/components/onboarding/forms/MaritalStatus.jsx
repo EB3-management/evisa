@@ -84,7 +84,7 @@ export const MaritalStatus = () => {
         p: { xs: 2, md: 3 },
       }}
     >
-      <Typography
+      {/* <Typography
         variant="h5"
         sx={{
           mb: 3,
@@ -94,7 +94,7 @@ export const MaritalStatus = () => {
         }}
       >
         Marital Status
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {/* ✅ Marital Status Select */}

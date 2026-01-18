@@ -298,9 +298,9 @@ export const AcademicInformation = ({ country }) => {
 
   return (
     <Box id="section-4" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Academic Information
-      </Typography>
+      </Typography> */}
 
       {/* First Question: Do you have formal education? */}
       <Box sx={{ mb: 4 }}>

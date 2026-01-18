@@ -131,7 +131,10 @@ export function PlanItem({
           <Typography variant="caption" sx={{ color: "primary.main" }}>
             Total Fee
           </Typography>
-          <Typography variant="h4" sx={{ color: "secondary.dark", fontWeight: 700 }}>
+          <Typography
+            variant="h4"
+            sx={{ color: "secondary.dark", fontWeight: 700 }}
+          >
             {fCurrency(job.total_fee)} {job.currency}
           </Typography>
         </Box>
@@ -139,7 +142,10 @@ export function PlanItem({
           <Typography variant="caption" sx={{ color: "primary.main" }}>
             Installments
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "primary.dark" }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 600, color: "primary.dark" }}
+          >
             {job.installment_count} payments
           </Typography>
         </Box>
@@ -148,12 +154,11 @@ export function PlanItem({
   );
 
   const renderInstallments = () => {
-    let installments = [];
-    try {
-      const schedule = JSON.parse(job.installment_schedule);
-      installments = schedule.installments || [];
-    } catch (error) {
-      console.error("Failed to parse installment schedule:", error);
+    // Get installments directly from the API response
+    const installments = job.installments || [];
+
+    if (installments.length === 0) {
+      return null;
     }
 
     return (
@@ -165,19 +170,23 @@ export function PlanItem({
           Payment Schedule
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          {installments.slice(0, 3).map((installment, index) => (
+          {installments.map((installment, index) => (
             <Box
               key={index}
               sx={{
                 display: "flex",
                 alignItems: "center",
                 gap: 1.5,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: "#F7FDFC",
+                border: "1px solid #D2F3EE",
               }}
             >
               <Box
                 sx={{
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
                   borderRadius: "50%",
                   bgcolor: "#D2F3EE",
                   display: "flex",
@@ -187,8 +196,8 @@ export function PlanItem({
                 }}
               >
                 <Typography
-                  variant="caption"
-                  fontWeight={600}
+                  variant="body2"
+                  fontWeight={700}
                   sx={{ color: "#2BA597" }}
                 >
                   {installment.installment_no}
@@ -199,30 +208,42 @@ export function PlanItem({
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
+                    alignItems: "center",
                     mb: 0.5,
                   }}
                 >
                   <Typography
                     variant="body2"
-                    fontWeight={500}
+                    fontWeight={600}
                     sx={{ color: "#114B46" }}
                   >
                     {fCurrency(installment.amount)} {job.currency}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#4F8E88" }}>
-                    {installment.due_after_days === 0
-                      ? "Due now"
-                      : `After ${installment.due_after_days} days`}
-                  </Typography>
+                  <Chip
+                    label={
+                      installment.due_after_days === 0
+                        ? "Due now"
+                        : `After ${installment.due_after_days} days`
+                    }
+                    size="small"
+                    sx={{
+                      bgcolor:
+                        installment.due_after_days === 0
+                          ? "#FF9F43"
+                          : "#5DC8B9",
+                      color: "white",
+                      fontWeight: 500,
+                      fontSize: 11,
+                      height: 22,
+                    }}
+                  />
                 </Box>
                 <Typography
                   variant="caption"
                   sx={{
                     color: "#4F8E88",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 1,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
+                    display: "block",
+                    lineHeight: 1.4,
                   }}
                 >
                   {installment.description}

@@ -17,6 +17,7 @@ import { Controller, useFormContext, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import Grid from "@mui/material/Grid2";
 import { Icon } from "@iconify/react";
+import { useGetImmigrationTypes } from "src/api/onboardingform";
 
 // ------------------ Validation Schema ------------------
 export const visaSchema = z
@@ -26,10 +27,12 @@ export const visaSchema = z
       .array(
         z.object({
           visaName: z.string().min(1, "Name is required"),
-          visaType: z.string().min(1, "Visa type is required"),
+          visaType: z.union([z.string(), z.number()]).refine((val) => val !== "" && val !== null && val !== undefined, {
+            message: "Visa type is required",
+          }),
           visaExpeditionDate: z.string().min(1, "Expedition date is required"),
           visaExpirationDate: z.string().min(1, "Expiration date is required"),
-        })
+        }),
       )
       .optional()
       .default([]),
@@ -51,7 +54,7 @@ export const visaSchema = z
               path: ["visa_records", index, "visaName"],
             });
           }
-          if (!record.visaType?.trim()) {
+          if (!record.visaType && record.visaType !== 0) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Visa type is required",
@@ -78,7 +81,7 @@ export const visaSchema = z
   });
 
 // ------------------ Component ------------------
-export const Visa = () => {
+export const Visa = ({ vacancyId }) => {
   const {
     control,
     formState: { errors },
@@ -87,7 +90,8 @@ export const Visa = () => {
   } = useFormContext();
 
   const hasVisaRecords = watch("has_visa_records");
-
+  const { immigrationType, immigrationTypeLoading } =
+    useGetImmigrationTypes(vacancyId);
   const {
     fields: visaRecords,
     append,
@@ -118,64 +122,11 @@ export const Visa = () => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const visaTypes = [
-    { id: "E11", name: "EB-1 Extraordinary Ability" },
-    { id: "E12", name: "EB-1 Outstanding Professor/Researcher" },
-    { id: "E13", name: "EB-1 Multinational Executive/Manager" },
-    { id: "E21", name: "EB-2 Advanced Degree / Exceptional Ability" },
-    { id: "E31", name: "EB-3 Skilled Worker" },
-    { id: "E32", name: "EB-3 Professional" },
-    { id: "EW3", name: "EB-3 Other Worker" },
-    { id: "SD", name: "EB-4 Religious Worker" },
-    { id: "SR", name: "EB-4 Minister of Religion" },
-    { id: "T5", name: "EB-5 Investor (Regional Center)" },
-    { id: "I5", name: "EB-5 Investor (Direct Investment)" },
-    { id: "F11", name: "Unmarried Son/Daughter of U.S. Citizen" },
-    { id: "F21", name: "Spouse of Lawful Permanent Resident" },
-    { id: "F22", name: "Child of Lawful Permanent Resident" },
-    { id: "F23", name: "Unmarried Son/Daughter of LPR" },
-    { id: "F24", name: "Married Son/Daughter of U.S. Citizen" },
-    { id: "F41", name: "Brother/Sister of U.S. Citizen" },
-    { id: "F1", name: "Academic Student" },
-    { id: "F2", name: "Dependent of F1" },
-    { id: "M1", name: "Vocational Student" },
-    { id: "M2", name: "Dependent of M1" },
-    { id: "J1", name: "Exchange Visitor" },
-    { id: "J2", name: "Dependent of J1" },
-    { id: "H1B", name: "Specialty Occupation Worker" },
-    { id: "H1B1", name: "Singapore/Chile Specialty Worker" },
-    { id: "H2A", name: "Temporary Agricultural Worker" },
-    { id: "H2B", name: "Temporary Non-Agricultural Worker" },
-    { id: "L1A", name: "Intracompany Executive/Manager" },
-    { id: "L1B", name: "Intracompany Specialized Knowledge" },
-    { id: "O1", name: "Extraordinary Ability (Arts, Science, etc.)" },
-    { id: "O2", name: "Assistant to O1" },
-    { id: "P1", name: "Internationally Recognized Athlete/Performer" },
-    { id: "P2", name: "Artist/Entertainer in Exchange Program" },
-    { id: "P3", name: "Culturally Unique Artist/Entertainer" },
-    { id: "R1", name: "Religious Worker" },
-    { id: "K1", name: "Fiancé(e) of U.S. Citizen" },
-    { id: "K2", name: "Child of K1" },
-    { id: "K3", name: "Spouse of U.S. Citizen (awaiting immigrant visa)" },
-    { id: "K4", name: "Child of K3" },
-    { id: "U1", name: "Victim of Criminal Activity" },
-    { id: "T1", name: "Victim of Human Trafficking" },
-    { id: "Refugee", name: "Granted Abroad" },
-    { id: "Asylee", name: "Granted Inside U.S." },
-    { id: "TPS", name: "Temporary Protected Status" },
-    { id: "VAWA", name: "Violence Against Women Act Self-Petitioner" },
-    { id: "SIJ", name: "Special Immigrant Juvenile" },
-    { id: "DACA", name: "Deferred Action for Childhood Arrivals" },
-    { id: "DV1", name: "Diversity Immigrant (Principal Applicant)" },
-    { id: "DV2", name: "Spouse of DV1" },
-    { id: "DV3", name: "Child of DV1" },
-  ];
-
   return (
     <Box id="section-12" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         US Visa Records
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={4}>
         {/* Main Question */}
@@ -313,7 +264,27 @@ export const Visa = () => {
                               label="Type of Visa"
                               fullWidth
                               required
+                              disabled={immigrationTypeLoading}
                               error={!!errors.visa_records?.[index]?.visaType}
+                              onChange={(e) => {
+                                // Find the selected type and extract the code from the name
+                                const selectedType = immigrationType?.find(
+                                  (type) => type.id === e.target.value
+                                );
+                                if (selectedType) {
+                                  // Extract code from name (e.g., "E11-EB-1 Extraordinary Ability" -> "E11")
+                                  const typeCode = selectedType.name.split(/[-–\s]/)[0].trim();
+                                  field.onChange(typeCode);
+                                } else {
+                                  field.onChange(e.target.value);
+                                }
+                              }}
+                              value={
+                                // Find the ID that matches the stored code
+                                immigrationType?.find((type) => 
+                                  type.name.split(/[-–\s]/)[0].trim() === field.value
+                                )?.id || field.value || ""
+                              }
                               sx={{
                                 "& .MuiOutlinedInput-root": {
                                   backgroundColor: "#fff",
@@ -321,11 +292,15 @@ export const Visa = () => {
                               }}
                             >
                               <MenuItem value="">
-                                <em>Select Visa Type</em>
+                                <em>
+                                  {immigrationTypeLoading
+                                    ? "Loading..."
+                                    : "Select Visa Type"}
+                                </em>
                               </MenuItem>
-                              {visaTypes.map((type) => (
+                              {immigrationType?.map((type) => (
                                 <MenuItem key={type.id} value={type.id}>
-                                  {type.id} – {type.name}
+                                  {type.name}
                                 </MenuItem>
                               ))}
                             </TextField>

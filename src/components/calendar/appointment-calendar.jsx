@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import dayjs from "dayjs";
 import { Box, Card, IconButton, Typography, Stack, Chip } from "@mui/material";
 import { Iconify } from "src/components/iconify";
@@ -8,62 +8,46 @@ import { Iconify } from "src/components/iconify";
 export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
   const [currentDate, setCurrentDate] = useState(dayjs());
 
-  // Filter out past appointments (only show today and future dates)
-  const filteredAppointments = useMemo(() => {
-    if (!appointments || appointments.length === 0) return [];
-
+  // Flatten all appointments by date, across all categories
+  const availableDatesMap = useMemo(() => {
+    const map = new Map();
+    if (!appointments || appointments.length === 0) return map;
     const today = dayjs().startOf("day");
-
-    return appointments.filter((item) => {
-      const appointmentDate = dayjs(item.date).startOf("day");
-      return (
-        appointmentDate.isSame(today, "day") || appointmentDate.isAfter(today)
-      );
+    appointments.forEach((category) => {
+      (category.appointments || []).forEach((appt) => {
+        const apptDate = dayjs(appt.date).startOf("day");
+        if (
+          (apptDate.isSame(today, "day") || apptDate.isAfter(today)) &&
+          appt.status === "Available"
+        ) {
+          const key = apptDate.format("YYYY-MM-DD");
+          if (!map.has(key)) map.set(key, []);
+          map.get(key).push({ ...appt, category });
+        }
+      });
     });
+    return map;
   }, [appointments]);
 
-  // Get calendar data for current month
+  // Calendar grid for current month
   const calendarData = useMemo(() => {
     const startOfMonth = currentDate.startOf("month");
     const endOfMonth = currentDate.endOf("month");
     const startDate = startOfMonth.startOf("week");
     const endDate = endOfMonth.endOf("week");
-
     const days = [];
     let day = startDate;
-
     while (day.isBefore(endDate) || day.isSame(endDate, "day")) {
       days.push(day);
       day = day.add(1, "day");
     }
-
     return days;
   }, [currentDate]);
 
-  // Get events for a specific day
-  const getEventsForDay = (day) => {
-    if (!filteredAppointments || filteredAppointments.length === 0) return [];
-
-    const appointment = filteredAppointments.find(
-      (item) =>
-        dayjs(item.date).format("YYYY-MM-DD") === day.format("YYYY-MM-DD")
-    );
-
-    return appointment?.appointments || [];
-  };
-
-  const handlePrevMonth = () => {
+  const handlePrevMonth = () =>
     setCurrentDate(currentDate.subtract(1, "month"));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(currentDate.add(1, "month"));
-  };
-
-  const handleToday = () => {
-    setCurrentDate(dayjs());
-  };
-
+  const handleNextMonth = () => setCurrentDate(currentDate.add(1, "month"));
+  const handleToday = () => setCurrentDate(dayjs());
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
@@ -174,27 +158,24 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
         }}
       >
         {calendarData.map((day, index) => {
-          const events = getEventsForDay(day);
+          const key = day.format("YYYY-MM-DD");
+          const slots = availableDatesMap.get(key) || [];
           const isCurrentMonth = day.month() === currentDate.month();
           const isToday = day.isSame(dayjs(), "day");
-          const hasEvents = events.length > 0;
-          const availableSlots = events.filter(
-            (e) => e.status === "Available"
-          ).length;
-
+          const isAvailable = slots.length > 0;
           return (
             <Box
               key={index}
-              onClick={() => hasEvents && onEventClick(day, events)}
+              onClick={() => isAvailable && onEventClick(day)}
               sx={{
                 minHeight: { xs: 50, sm: 60, md: 70 },
                 p: { xs: 0.3, sm: 0.5 },
                 border: 2,
                 borderColor: isToday ? "primary.main" : "divider",
                 borderRadius: 1.5,
-                cursor: hasEvents ? "pointer" : "default",
+                cursor: isAvailable ? "pointer" : "default",
                 bgcolor: isCurrentMonth
-                  ? hasEvents
+                  ? isAvailable
                     ? "primary.lighter"
                     : "background.paper"
                   : "action.hover",
@@ -207,7 +188,7 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
                 position: "relative",
                 overflow: "hidden",
                 "&:hover": {
-                  ...(hasEvents && {
+                  ...(isAvailable && {
                     bgcolor: "primary.light",
                     transform: "scale(1.08)",
                     boxShadow: 3,
@@ -216,7 +197,7 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
                 },
                 ...(isToday && {
                   boxShadow: 2,
-                  bgcolor: hasEvents ? "primary.lighter" : "action.selected",
+                  bgcolor: isAvailable ? "primary.lighter" : "action.selected",
                 }),
               }}
             >
@@ -226,14 +207,14 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
                   fontWeight: isToday ? 800 : 600,
                   color: isToday ? "primary.main" : "text.primary",
                   fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.85rem" },
-                  mb: hasEvents && availableSlots > 0 ? 0.3 : 0,
+                  mb: isAvailable ? 0.3 : 0,
                 }}
               >
                 {day.format("D")}
               </Typography>
-              {hasEvents && availableSlots > 0 && (
+              {isAvailable && (
                 <Chip
-                  label={`${availableSlots} slots`}
+                  label={`${slots.length} slots`}
                   size="small"
                   sx={{
                     height: { xs: 16, sm: 18 },

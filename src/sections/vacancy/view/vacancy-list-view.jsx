@@ -32,6 +32,7 @@ export function VacancyListView() {
         selectedVisaCategory={selectedVisaCategory}
         onCountryChange={setSelectedCountry}
         onVisaCategoryChange={setSelectedVisaCategory}
+        isLoading={vacancyLoading || visaCountryLoading}
       />
     </DashboardContent>
   );

@@ -22,7 +22,7 @@ export const CONFIG = {
     skip: false,
     redirectPath: paths.dashboard.root,
 
-    assetsDir: "https://eb3api.walkershive.com/",
+    assetsDir: "https://api.abroadworld.com/",
     assetsDirHR: "https://app.sajilohr.com/",
   },
   /**

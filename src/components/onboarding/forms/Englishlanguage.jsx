@@ -45,9 +45,9 @@ export const EnglishLanguageProficiency = () => {
 
   return (
     <Box id="section-5" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         English Language Proficiency
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {skills.map((skill) => (

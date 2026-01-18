@@ -18,6 +18,9 @@ const EligibilityPage = lazy(() =>
 const VerifyEmailPage = lazy(() =>
   import("src/pages/auth/verify-email")
 );
+const VerifyEmailSuccessPage = lazy(() =>
+  import("src/pages/auth/verify-email-success")
+);
 
 const TermsAndConditionPage = lazy(() =>
   import("src/pages/auth/term-and-condition")
@@ -89,6 +92,11 @@ export const authRoutes = [
             </FormCenteredLayout>
           </AuthGuard>
         ),
+      },
+
+      {
+        path: "verify-email-success",
+        element: <VerifyEmailSuccessPage />,
       },
     ],
   },

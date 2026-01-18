@@ -10,6 +10,7 @@ import {
   FormControl,
   Typography,
   Pagination,
+  CircularProgress,
 } from "@mui/material";
 import { Iconify } from "src/components/iconify";
 import { VacancyItem } from "./vacancy-item";
@@ -20,7 +21,8 @@ export function VacancyList({
   selectedCountry,
   selectedVisaCategory,
   onCountryChange,
-  onVisaCategoryChange
+  onVisaCategoryChange,
+  isLoading = false
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,24 +135,37 @@ export function VacancyList({
       </Typography>
 
       {/* Job Grid */}
-      <Box
-        sx={{
-          gap: 3,
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(1, 1fr)",
-            sm: "repeat(2, 1fr)",
-            md: "repeat(3, 1fr)",
-          },
-        }}
-      >
-        {paginatedJobs.map((job) => (
-          <VacancyItem key={job.id} job={job} />
-        ))}
-      </Box>
+      {isLoading ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "400px",
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            gap: 3,
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(1, 1fr)",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+            },
+          }}
+        >
+          {paginatedJobs.map((job) => (
+            <VacancyItem key={job.id} job={job} />
+          ))}
+        </Box>
+      )}
 
       {/* Empty State */}
-      {filteredJobs.length === 0 && (
+      {!isLoading && filteredJobs.length === 0 && (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography variant="h6" color="text.secondary">
             No jobs found

@@ -27,9 +27,9 @@ export const CurrentAddress = ({ country }) => {
 
   return (
     <Box id="section-1" sx={{ mb: 6 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+      {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         Current Address
-      </Typography>
+      </Typography> */}
 
       <Grid container spacing={3}>
         {/* Country */}
