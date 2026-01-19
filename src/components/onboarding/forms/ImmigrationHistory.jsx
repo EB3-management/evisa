@@ -21,6 +21,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Grid from "@mui/material/Grid2";
 import { useGetImmigrationTypes } from "src/api/onboardingform";
+import { useGetVacancyDetail } from "src/api/vacancy";
 
 // ------------------ Validation Schema ------------------
 export const immigrationHistorySchema = z
@@ -135,7 +136,8 @@ export const ImmigrationHistory = ({ vacancyId }) => {
 
   const { immigrationType, immigrationTypeLoading } =
     useGetImmigrationTypes(vacancyId);
-  console.log("thisis vacancy id", vacancyId);
+  const { vacancyDetail } = useGetVacancyDetail(vacancyId);
+  console.log("thisis vacancy id immigration", vacancyId);
   const hasImmigrationHistory = watch("hasImmigrationHistory");
   const socialSecurity = watch("socialSecurity");
   const inUsaApplicant = watch("inUsaApplicant");
@@ -254,7 +256,10 @@ export const ImmigrationHistory = ({ vacancyId }) => {
             {/* Have you ever been to USA */}
             <Grid size={{ xs: 12 }}>
               <Typography sx={{ mb: 1 }}>
-                Have you ever been to the United States of America?
+                Have you ever been to{" "}
+                {vacancyDetail?.visa_category?.country?.name ||
+                  "the United States of America"}
+                ?
               </Typography>
               <Controller
                 name="beenToUsa"
@@ -388,7 +393,12 @@ export const ImmigrationHistory = ({ vacancyId }) => {
                 Please answer for the Principal Applicant and Dependents
               </Typography>
 
-              <Typography>Are you currently in the US?</Typography>
+              <Typography>
+                Are you currently in the{" "}
+                {vacancyDetail?.visa_category?.country?.name ||
+                  "the United States of America"}
+                ?
+              </Typography>
             </Grid>
 
             {/* Applicant */}

@@ -19,7 +19,7 @@ import Grid from "@mui/material/Grid2";
 // ------------------ Validation Schema ------------------
 export const processingInformationSchema = z
   .object({
-    adjustment_of_status: z.boolean().default(false),
+    adjustment_of_status: z.boolean().default(true),
     date_of_last_entry: z.string().optional(),
     i944_number: z.string().optional(),
     embassy_name: z.string().optional(),
@@ -69,7 +69,7 @@ export const ProcessingInformation = ({ vacancyData }) => {
     watch,
   } = useFormContext();
 
-  const adjustmentOfStatus = watch("adjustment_of_status");
+  const adjustmentOfStatus = watch("adjustment_of_status", true);
   return (
     <Box id="section-0" sx={{ mb: 6 }}>
       {/* <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
@@ -85,7 +85,8 @@ export const ProcessingInformation = ({ vacancyData }) => {
           <Controller
             name="adjustment_of_status"
             control={control}
-            defaultValue={false}
+            // eslint-disable-next-line react/jsx-boolean-value
+            defaultValue={true}
             render={({ field }) => (
               <FormControl error={!!errors.adjustment_of_status}>
                 <RadioGroup

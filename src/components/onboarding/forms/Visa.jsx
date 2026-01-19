@@ -18,6 +18,7 @@ import { z } from "zod";
 import Grid from "@mui/material/Grid2";
 import { Icon } from "@iconify/react";
 import { useGetImmigrationTypes } from "src/api/onboardingform";
+import { useGetVacancyDetail } from "src/api/vacancy";
 
 // ------------------ Validation Schema ------------------
 export const visaSchema = z
@@ -27,9 +28,11 @@ export const visaSchema = z
       .array(
         z.object({
           visaName: z.string().min(1, "Name is required"),
-          visaType: z.union([z.string(), z.number()]).refine((val) => val !== "" && val !== null && val !== undefined, {
-            message: "Visa type is required",
-          }),
+          visaType: z
+            .union([z.string(), z.number()])
+            .refine((val) => val !== "" && val !== null && val !== undefined, {
+              message: "Visa type is required",
+            }),
           visaExpeditionDate: z.string().min(1, "Expedition date is required"),
           visaExpirationDate: z.string().min(1, "Expiration date is required"),
         }),
@@ -92,6 +95,7 @@ export const Visa = ({ vacancyId }) => {
   const hasVisaRecords = watch("has_visa_records");
   const { immigrationType, immigrationTypeLoading } =
     useGetImmigrationTypes(vacancyId);
+  const { vacancyDetail } = useGetVacancyDetail(vacancyId);
   const {
     fields: visaRecords,
     append,
@@ -132,7 +136,10 @@ export const Visa = ({ vacancyId }) => {
         {/* Main Question */}
         <Grid size={{ xs: 12 }}>
           <Typography sx={{ mb: 2, fontWeight: 500 }}>
-            Do you or your dependent hold any US Visa?
+            Do you or your dependent hold any {" "}
+            {vacancyDetail?.visa_category?.country?.name ||
+              "the United States of America"} {" "}
+            Visa?
           </Typography>
 
           <Controller
@@ -269,11 +276,13 @@ export const Visa = ({ vacancyId }) => {
                               onChange={(e) => {
                                 // Find the selected type and extract the code from the name
                                 const selectedType = immigrationType?.find(
-                                  (type) => type.id === e.target.value
+                                  (type) => type.id === e.target.value,
                                 );
                                 if (selectedType) {
                                   // Extract code from name (e.g., "E11-EB-1 Extraordinary Ability" -> "E11")
-                                  const typeCode = selectedType.name.split(/[-–\s]/)[0].trim();
+                                  const typeCode = selectedType.name
+                                    .split(/[-–\s]/)[0]
+                                    .trim();
                                   field.onChange(typeCode);
                                 } else {
                                   field.onChange(e.target.value);
@@ -281,9 +290,13 @@ export const Visa = ({ vacancyId }) => {
                               }}
                               value={
                                 // Find the ID that matches the stored code
-                                immigrationType?.find((type) => 
-                                  type.name.split(/[-–\s]/)[0].trim() === field.value
-                                )?.id || field.value || ""
+                                immigrationType?.find(
+                                  (type) =>
+                                    type.name.split(/[-–\s]/)[0].trim() ===
+                                    field.value,
+                                )?.id ||
+                                field.value ||
+                                ""
                               }
                               sx={{
                                 "& .MuiOutlinedInput-root": {

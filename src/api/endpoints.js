@@ -44,6 +44,7 @@ export const endpoints = {
   },
 
   form: {
+    processingInformation: "onboarding-form/processing-information",
     mainApplicantDetail: "onboarding-form/main-applicant",
     currentAddress: "onboarding-form/current-address",
     contactDetail: "onboarding-form/contact-detail",

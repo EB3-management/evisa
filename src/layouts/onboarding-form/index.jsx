@@ -93,6 +93,7 @@ import {
   saveInadmissibility,
   saveMainApplicantDetail,
   saveMaritalStatus,
+  saveProcessingInformation,
   saveVisa,
   saveVisaRejection,
   saveWorkExperiences,
@@ -219,7 +220,7 @@ export default function OnboardingLayout() {
     resolver: zodResolver(stepSchemas[currentStep]),
     defaultValues: {
       //processing information
-      adjustment_of_status: false,
+      adjustment_of_status: true,
       date_of_last_entry: "",
       i944_number: "",
       embassy_name: "",
@@ -422,6 +423,7 @@ export default function OnboardingLayout() {
       const criminalRecords = onBoarding?.criminalRecords || [];
       const inadmissibilityRecords = onBoarding?.inadmissibilityRecords || [];
       const healthRecord = onBoarding?.healthRecord;
+      const processingInformation = onBoarding?.processing_information;
 
       // Helper function to check if academic level exists
       const hasAcademicLevel = (programName) =>
@@ -486,10 +488,13 @@ export default function OnboardingLayout() {
           last_name: dep.dependent_last_name || "",
           dob: dep.dependent_dob || "",
           kinship: dep.dependent_relation || "",
-          birth_country: dep.dependent_country_of_birth || "",
-          citizenship_country: dep.dependent_country_of_citizenship || "",
-          highest_level_of_education:
-            dep.dependent_highest_level_of_education || "",
+          birth_country: dep.dependent_country_of_birth
+            ? String(dep.dependent_country_of_birth)
+            : "",
+          citizenship_country: dep.dependent_country_of_citizenship
+            ? String(dep.dependent_country_of_citizenship)
+            : "",
+          highest_level_of_education: dep.education || "",
         })),
       };
 
@@ -527,6 +532,16 @@ export default function OnboardingLayout() {
 
       // Populate form with all data
       methods.reset({
+        // Processing Information
+        adjustment_of_status:
+          processingInformation?.adjustment_of_status ?? true,
+        date_of_last_entry: processingInformation?.date_of_last_entry
+          ? processingInformation.date_of_last_entry.split("T")[0]
+          : "",
+        i944_number: processingInformation?.i944_number || "",
+        embassy_name: processingInformation?.embassy_name || "",
+        embassy_location: processingInformation?.embassy_location || "",
+
         // Main Applicant - Priority: onBoarding.employee > profile
         firstName: employee?.first_name || profile?.first_name || "",
         middleName: employee?.middle_name || profile?.middle_name || "",
@@ -796,9 +811,8 @@ export default function OnboardingLayout() {
       "lowerSchool",
       "highSchool",
       "bachelor",
-      "postgraduate",
-      "master",
-      "phd",
+      "graduate",
+      "doctorate",
     ];
 
     // Log each level's value
@@ -868,15 +882,18 @@ export default function OnboardingLayout() {
   const transformDependentData = (formData) => {
     const dependents = (formData.dependents || []).map((dependent) => ({
       first_name: dependent.first_name || "",
-      middle_name: dependent.middle_name || "",
+      middle_name: dependent.middle_name || null,
       last_name: dependent.last_name || "",
       dob: dependent.dob || "",
-      relation: dependent.kinship || "", // 👈 mapped to API's "relation"
-      country_of_birth: dependent.birth_country || "",
-      country_of_citizenship: dependent.citizenship_country || "",
-      highest_level_of_education: dependent.highest_level_of_education || "",
+      relation: dependent.kinship || "",
+      country_of_birth: dependent.birth_country
+        ? parseInt(dependent.birth_country, 10)
+        : null,
+      country_of_citizenship: dependent.citizenship_country
+        ? parseInt(dependent.citizenship_country, 10)
+        : null,
+      education: dependent.highest_level_of_education || null,
     }));
-
     return { dependents };
   };
 
@@ -1130,7 +1147,9 @@ export default function OnboardingLayout() {
       switch (stepIndex) {
         case 0:
           // Processing Information - skip API call for now
-          // await saveProcessingInformation(transformProcessingInformationData(formData));
+          await saveProcessingInformation(
+            transformProcessingInformationData(formData),
+          );
           break;
         case 1:
           await saveMainApplicantDetail(transformMainApplicantData(formData));
@@ -1307,9 +1326,9 @@ export default function OnboardingLayout() {
       case 11:
         return <Visa vacancyId={selectedVacancyId} />;
       case 12:
-        return <VisaRejection />;
+        return <VisaRejection vacancyId={selectedVacancyId} />;
       case 13:
-        return <ImmigrationIncident />;
+        return <ImmigrationIncident vacancyId={selectedVacancyId} />;
       case 14:
         return <CriminalRecord />;
       case 15:
@@ -1421,7 +1440,7 @@ export default function OnboardingLayout() {
                             display: "block",
                           }}
                         >
-                          Visa Type
+                          Country
                         </Typography>
                         <Typography
                           variant="body2"
@@ -1431,7 +1450,7 @@ export default function OnboardingLayout() {
                             textTransform: "capitalize",
                           }}
                         >
-                          {vacancyDetail?.visa_category?.type || "N/A"}
+                          {vacancyDetail?.visa_category?.country?.name || "N/A"}
                         </Typography>
                       </Box>
                     </Grid>

@@ -14,60 +14,8 @@ import {
 import { Controller, useFormContext } from "react-hook-form";
 import { z } from "zod";
 import Grid from "@mui/material/Grid2";
-
-// ------------------ Visa Type Data ------------------
-const types = [
-  { id: "E11", name: "EB-1 Extraordinary Ability" },
-  { id: "E12", name: "EB-1 Outstanding Professor/Researcher" },
-  { id: "E13", name: "EB-1 Multinational Executive/Manager" },
-  { id: "E21", name: "EB-2 Advanced Degree / Exceptional Ability" },
-  { id: "E31", name: "EB-3 Skilled Worker" },
-  { id: "E32", name: "EB-3 Professional" },
-  { id: "EW3", name: "EB-3 Other Worker" },
-  { id: "SD", name: "EB-4 Religious Worker" },
-  { id: "SR", name: "EB-4 Minister of Religion" },
-  { id: "T5", name: "EB-5 Investor (Regional Center)" },
-  { id: "I5", name: "EB-5 Investor (Direct Investment)" },
-  { id: "F11", name: "Unmarried Son/Daughter of U.S. Citizen" },
-  { id: "F21", name: "Spouse of Lawful Permanent Resident" },
-  { id: "F22", name: "Child of Lawful Permanent Resident" },
-  { id: "F23", name: "Unmarried Son/Daughter of LPR" },
-  { id: "F24", name: "Married Son/Daughter of U.S. Citizen" },
-  { id: "F41", name: "Brother/Sister of U.S. Citizen" },
-  { id: "F1", name: "Academic Student" },
-  { id: "F2", name: "Dependent of F1" },
-  { id: "M1", name: "Vocational Student" },
-  { id: "M2", name: "Dependent of M1" },
-  { id: "J1", name: "Exchange Visitor" },
-  { id: "J2", name: "Dependent of J1" },
-  { id: "H1B", name: "Specialty Occupation Worker" },
-  { id: "H1B1", name: "Singapore/Chile Specialty Worker" },
-  { id: "H2A", name: "Temporary Agricultural Worker" },
-  { id: "H2B", name: "Temporary Non-Agricultural Worker" },
-  { id: "L1A", name: "Intracompany Executive/Manager" },
-  { id: "L1B", name: "Intracompany Specialized Knowledge" },
-  { id: "O1", name: "Extraordinary Ability (Arts, Science, etc.)" },
-  { id: "O2", name: "Assistant to O1" },
-  { id: "P1", name: "Internationally Recognized Athlete/Performer" },
-  { id: "P2", name: "Artist/Entertainer in Exchange Program" },
-  { id: "P3", name: "Culturally Unique Artist/Entertainer" },
-  { id: "R1", name: "Religious Worker" },
-  { id: "K1", name: "Fiancé(e) of U.S. Citizen" },
-  { id: "K2", name: "Child of K1" },
-  { id: "K3", name: "Spouse of U.S. Citizen (awaiting immigrant visa)" },
-  { id: "K4", name: "Child of K3" },
-  { id: "U1", name: "Victim of Criminal Activity" },
-  { id: "T1", name: "Victim of Human Trafficking" },
-  { id: "Refugee", name: "Granted Abroad" },
-  { id: "Asylee", name: "Granted Inside U.S." },
-  { id: "TPS", name: "Temporary Protected Status" },
-  { id: "VAWA", name: "Violence Against Women Act Self-Petitioner" },
-  { id: "SIJ", name: "Special Immigrant Juvenile" },
-  { id: "DACA", name: "Deferred Action for Childhood Arrivals" },
-  { id: "DV1", name: "Diversity Immigrant (Principal Applicant)" },
-  { id: "DV2", name: "Spouse of DV1" },
-  { id: "DV3", name: "Child of DV1" },
-];
+import { useGetImmigrationTypes } from "src/api/onboardingform";
+import { useGetVacancyDetail } from "src/api/vacancy";
 
 // ------------------ Validation Schema ------------------
 export const visaRejectionSchema = z
@@ -151,12 +99,17 @@ export const visaRejectionSchema = z
   });
 
 // ------------------ Component ------------------
-export const VisaRejection = () => {
+export const VisaRejection = ({vacancyId}) => {
   const {
     control,
     formState: { errors },
     watch,
   } = useFormContext();
+
+   const { immigrationType, immigrationTypeLoading } =
+      useGetImmigrationTypes(vacancyId);
+
+      const { vacancyDetail } = useGetVacancyDetail(vacancyId);
 
   const employee_visa_rejected = watch("employee_visa_rejected");
   const dependents_visa_rejected = watch("dependents_visa_rejected");
@@ -295,28 +248,53 @@ export const VisaRejection = () => {
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.types}>
+                  <FormControl fullWidth error={!!errors.employee_visa_type}>
                     <TextField
                       {...field}
                       select
                       fullWidth
-                      displayEmpty
-                      error={!!errors.types}
+                      disabled={immigrationTypeLoading}
+                      error={!!errors.employee_visa_type}
+                      onChange={(e) => {
+                        // Find the selected type and extract the code from the name
+                        const selectedType = immigrationType?.find(
+                          (type) => type.id === e.target.value,
+                        );
+                        if (selectedType) {
+                          // Extract code from name (e.g., "E11-EB-1 Extraordinary Ability" -> "E11")
+                          const typeCode = selectedType.name
+                            .split(/[-–\s]/)[0]
+                            .trim();
+                          field.onChange(typeCode);
+                        } else {
+                          field.onChange(e.target.value);
+                        }
+                      }}
+                      value={
+                        // Find the ID that matches the stored code
+                        immigrationType?.find(
+                          (type) =>
+                            type.name.split(/[-–\s]/)[0].trim() ===
+                            field.value,
+                        )?.id ||
+                        field.value ||
+                        ""
+                      }
                       sx={{
                         "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                       }}
                     >
                       <MenuItem value="">
-                        <em>Select Type</em>
+                        <em>{immigrationTypeLoading ? "Loading..." : "Select Visa Type"}</em>
                       </MenuItem>
-                      {types.map((option) => (
-                        <MenuItem key={option.id} value={option.id}>
-                          {option.id} – {option.name}
+                      {immigrationType?.map((type) => (
+                        <MenuItem key={type.id} value={type.id}>
+                          {type.name}
                         </MenuItem>
                       ))}
                     </TextField>
-                    {errors.types && (
-                      <FormHelperText>{errors.types?.message}</FormHelperText>
+                    {errors.employee_visa_type && (
+                      <FormHelperText>{errors.employee_visa_type?.message}</FormHelperText>
                     )}
                   </FormControl>
                 )}
@@ -498,28 +476,53 @@ export const VisaRejection = () => {
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.types}>
+                  <FormControl fullWidth error={!!errors.dependent_visa_type}>
                     <TextField
                       {...field}
                       select
                       fullWidth
-                      displayEmpty
-                      error={!!errors.types}
+                      disabled={immigrationTypeLoading}
+                      error={!!errors.dependent_visa_type}
+                      onChange={(e) => {
+                        // Find the selected type and extract the code from the name
+                        const selectedType = immigrationType?.find(
+                          (type) => type.id === e.target.value,
+                        );
+                        if (selectedType) {
+                          // Extract code from name (e.g., "E11-EB-1 Extraordinary Ability" -> "E11")
+                          const typeCode = selectedType.name
+                            .split(/[-–\s]/)[0]
+                            .trim();
+                          field.onChange(typeCode);
+                        } else {
+                          field.onChange(e.target.value);
+                        }
+                      }}
+                      value={
+                        // Find the ID that matches the stored code
+                        immigrationType?.find(
+                          (type) =>
+                            type.name.split(/[-–\s]/)[0].trim() ===
+                            field.value,
+                        )?.id ||
+                        field.value ||
+                        ""
+                      }
                       sx={{
                         "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                       }}
                     >
                       <MenuItem value="">
-                        <em>Select Type</em>
+                        <em>{immigrationTypeLoading ? "Loading..." : "Select Visa Type"}</em>
                       </MenuItem>
-                      {types.map((option) => (
-                        <MenuItem key={option.id} value={option.id}>
-                          {option.id} – {option.name}
+                      {immigrationType?.map((type) => (
+                        <MenuItem key={type.id} value={type.id}>
+                          {type.name}
                         </MenuItem>
                       ))}
                     </TextField>
-                    {errors.types && (
-                      <FormHelperText>{errors.types?.message}</FormHelperText>
+                    {errors.dependent_visa_type && (
+                      <FormHelperText>{errors.dependent_visa_type?.message}</FormHelperText>
                     )}
                   </FormControl>
                 )}

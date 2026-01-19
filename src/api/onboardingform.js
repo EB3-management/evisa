@@ -3,6 +3,19 @@ import useSWR from "swr";
 import { fetcher, poster } from "src/lib";
 import { endpoints } from "./endpoints";
 
+export const saveProcessingInformation = async (data) => {
+  try {
+    const response = await poster(endpoints.form.processingInformation, data);
+
+    return response;
+  } catch (error) {
+    console.error(error);
+
+    throw error;
+  }
+};
+
+
 export const saveMainApplicantDetail = async (data) => {
   try {
     const response = await poster(endpoints.form.mainApplicantDetail, data);

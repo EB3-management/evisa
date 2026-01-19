@@ -23,12 +23,11 @@ import { Icon } from "@iconify/react";
 /* ---------------------- ✅ CONSTANTS ---------------------- */
 const kinshipOptions = ["Fiancee", "Daughter", "Son", "Spouse"];
 const educationOptions = [
-  { value: "low_level", label: "Low Level" },
   { value: "high_school", label: "High School" },
   { value: "bachelor", label: "Bachelor" },
-  { value: "postgraduate", label: "Postgraduate" },
-  { value: "master", label: "Master" },
-  { value: "phd", label: "PhD" },
+  { value: "graduate", label: "Graduate" },
+  { value: "doctorate", label: "Doctorate" },
+  { value: "none", label: "None" },
 ];
 
 /* ---------------------- ✅ ZOD SCHEMA ---------------------- */
@@ -43,13 +42,9 @@ export const dependentsSchema = z
           middle_name: z.string().optional(),
           last_name: z.string().min(1, "Last name is required"),
           dob: z.string().min(1, "Date of birth is required"),
-          birth_country: z.string().min(1, "Country of birth is required"),
-          citizenship_country: z
-            .string()
-            .min(1, "Country of citizenship is required"),
-          highest_level_of_education: z
-            .string()
-            .min(1, "Highest level of education is required"),
+          birth_country: z.string().optional(),
+          citizenship_country: z.string().optional(),
+          highest_level_of_education: z.string().optional(),
         }),
       )
       .optional()
@@ -86,32 +81,11 @@ export const dependentsSchema = z
               path: ["dependents", index, "dob"],
             });
           }
-          if (!dependent.birth_country) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Country of birth is required",
-              path: ["dependents", index, "birth_country"],
-            });
-          }
-          if (!dependent.citizenship_country) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Country of citizenship is required",
-              path: ["dependents", index, "citizenship_country"],
-            });
-          }
           if (!dependent.kinship) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Degree of kinship is required",
               path: ["dependents", index, "kinship"],
-            });
-          }
-          if (!dependent.highest_level_of_education) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Highest level of education is required",
-              path: ["dependents", index, "highest_level_of_education"],
             });
           }
         });
@@ -129,7 +103,7 @@ export const DependentInformation = () => {
   } = useFormContext();
   const { country } = useGetCountryCode();
 
-  const hasDependents = watch("has_dependents");
+  const hasDependents = watch("has_dependents", "No");
 
   const {
     fields: dependents,
@@ -419,6 +393,9 @@ export const DependentInformation = () => {
                             fullWidth
                             error={!!errors.dependents?.[index]?.birth_country}
                           >
+                            <Typography sx={{ mb: 1, fontWeight: 500, color: "text.primary" }}>
+                              Country of Birth (Optional)
+                            </Typography>
                             <Select
                               {...field}
                               displayEmpty
@@ -429,8 +406,8 @@ export const DependentInformation = () => {
                               </MenuItem>
                               {country?.map((option) => (
                                 <MenuItem
-                                  key={option.value}
-                                  value={String(option.value)}
+                                  key={option.id}
+                                  value={String(option.id)}
                                 >
                                   {option.label}
                                 </MenuItem>
@@ -461,6 +438,9 @@ export const DependentInformation = () => {
                               !!errors.dependents?.[index]?.citizenship_country
                             }
                           >
+                            <Typography sx={{ mb: 1, fontWeight: 500, color: "text.primary" }}>
+                              Country of Citizenship (Optional)
+                            </Typography>
                             <Select
                               {...field}
                               displayEmpty
@@ -471,8 +451,8 @@ export const DependentInformation = () => {
                               </MenuItem>
                               {country?.map((option) => (
                                 <MenuItem
-                                  key={option.value}
-                                  value={String(option.value)}
+                                  key={option.id}
+                                  value={String(option.id)}
                                 >
                                   {option.label}
                                 </MenuItem>
@@ -506,23 +486,29 @@ export const DependentInformation = () => {
                                 ?.highest_level_of_education
                             }
                           >
-                            <Select
-                              {...field}
-                              displayEmpty
-                              sx={{ backgroundColor: "#fff" }}
-                            >
-                              <MenuItem value="">
-                                <em>Select Highest Level of Education</em>
-                              </MenuItem>
+                            <Typography sx={{ mb: 1, fontWeight: 500, color: "text.primary" }}>
+                              Highest Level of Education (Optional)
+                            </Typography>
+                            <RadioGroup {...field} row>
                               {educationOptions.map((option) => (
-                                <MenuItem
+                                <FormControlLabel
                                   key={option.value}
                                   value={option.value}
-                                >
-                                  {option.label}
-                                </MenuItem>
+                                  control={
+                                    <Radio
+                                      sx={{
+                                        color: "secondary.main",
+                                        "&.Mui-checked": {
+                                          color: "secondary.main",
+                                        },
+                                      }}
+                                    />
+                                  }
+                                  label={option.label}
+                                  sx={{ color: "text.primary" }}
+                                />
                               ))}
-                            </Select>
+                            </RadioGroup>
                             {errors.dependents?.[index]
                               ?.highest_level_of_education && (
                               <FormHelperText>

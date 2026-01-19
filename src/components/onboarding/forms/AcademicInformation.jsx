@@ -21,9 +21,8 @@ const academicLevels = [
   { key: "lowerSchool", label: "Lower School" },
   { key: "highSchool", label: "High School" },
   { key: "bachelor", label: "Bachelor" },
-  { key: "postgraduate", label: "Postgraduate" },
-  { key: "master", label: "Master" },
-  { key: "phd", label: "PhD" },
+  { key: "graduate", label: "Graduate" },
+  { key: "doctorate", label: "Doctorate" },
 ];
 
 // ✅ Complete schema with conditional validation
@@ -53,7 +52,7 @@ export const academicInformationSchema = z
         ...(key === "lowerSchool"
           ? [["lowerSchool_grade", z.string().optional()]]
           : []),
-      ])
+      ]),
     ),
   })
   .superRefine((data, ctx) => {

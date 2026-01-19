@@ -919,8 +919,14 @@ export function VacancyDetailView({ id }) {
                         <Button
                           variant="contained"
                           fullWidth
-                          href={vacancyDetail.employer.website}
+                          component="a"
+                          href={
+                            vacancyDetail.employer.website.startsWith("http")
+                              ? vacancyDetail.employer.website
+                              : `https://${vacancyDetail.employer.website}`
+                          }
                           target="_blank"
+                          rel="noopener noreferrer"
                           startIcon={<Iconify icon="mdi:web" />}
                           sx={{
                             borderRadius: 1,

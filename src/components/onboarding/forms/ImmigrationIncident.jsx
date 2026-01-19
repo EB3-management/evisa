@@ -12,6 +12,7 @@ import {
 import { Controller, useFormContext } from "react-hook-form";
 import { z } from "zod";
 import Grid from "@mui/material/Grid2";
+import { useGetVacancyDetail } from "src/api/vacancy";
 
 // ------------------ Validation Schema ------------------
 export const immigrationIncidentSchema = z
@@ -164,7 +165,8 @@ export const immigrationIncidentSchema = z
   });
 
 // ------------------ Component ------------------
-export const ImmigrationIncident = () => {
+export const ImmigrationIncident = ({ vacancyId }) => {
+  const { vacancyDetail } = useGetVacancyDetail(vacancyId);
   const {
     control,
     formState: { errors },
@@ -188,7 +190,10 @@ export const ImmigrationIncident = () => {
         {/* over stayed */}
         <Grid size={{ xs: 12 }}>
           <Typography sx={{ mb: 1 }}>
-            Have you ever over stayed in the USA?
+            Have you ever over stayed in the{" "}
+            {vacancyDetail?.visa_category?.country?.name ||
+              "the United States of America"}{" "}
+            ?
           </Typography>
 
           {/* Applicant */}
@@ -347,7 +352,10 @@ export const ImmigrationIncident = () => {
         {/* Unlawfull */}
         <Grid size={{ xs: 12 }}>
           <Typography sx={{ mb: 1 }}>
-            Have you ever been Unlawfull Present in United States ?
+            Have you ever been Unlawfull Present in{" "}
+            {vacancyDetail?.visa_category?.country?.name ||
+              "the United States of America"}{" "}
+            ?
           </Typography>
 
           {/* Applicant */}
@@ -506,7 +514,10 @@ export const ImmigrationIncident = () => {
         {/* denied */}
         <Grid size={{ xs: 12 }}>
           <Typography sx={{ mb: 1 }}>
-            Have you ever been denied entry to the United States?
+            Have you ever been denied entry to{" "}
+            {vacancyDetail?.visa_category?.country?.name ||
+              "the United States of America"}{" "}
+            ?
           </Typography>
 
           {/* Applicant */}
