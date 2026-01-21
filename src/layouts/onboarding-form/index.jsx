@@ -441,7 +441,7 @@ export default function OnboardingLayout() {
 
       // Populate Academic Information
       const academicFields = {};
-      ["highSchool", "bachelor", "postgraduate", "master", "phd"].forEach(
+      ["lowerSchool", "highSchool", "bachelor", "graduate", "doctorate"].forEach(
         (level) => {
           const hasLevel = hasAcademicLevel(level);
           academicFields[level] = hasLevel ? "Yes" : "No";
@@ -457,6 +457,10 @@ export default function OnboardingLayout() {
             academicFields[`${level}_city`] = record.city || "";
             academicFields[`${level}_zipCode`] = record.zip_code || "";
             academicFields[`${level}_address`] = record.address || "";
+            // Add grade field for lower school
+            if (level === "lowerSchool") {
+              academicFields[`${level}_grade`] = record.grade || "";
+            }
           }
         },
       );
@@ -550,17 +554,19 @@ export default function OnboardingLayout() {
           employee?.dob || profile?.dob || eligibilityData?.employee?.dob || "",
         gender: normalizeGender(employee?.gender || profile?.gender),
         countryOfBirth:
-          employee?.birth_country ||
-          eligibilityData?.employee?.birth_country ||
+          employee?.birth_country?.id ||
+          eligibilityData?.employee?.birth_country?.id ||
           "",
-        citizenship1: employee?.nationality || profile?.nationality || "",
+        citizenship1:
+          employee?.country_of_citizenship?.id || profile?.country_of_citizenship?.id || "",
 
-        citizenship2: "",
+        citizenship2:
+          employee?.country_of_citizenship2?.id || profile?.country_of_citizenship2?.id || "",
 
         // Current Address - from employeeAddress
         country:
-          employeeAddress?.current_country ||
-          eligibilityData?.employee?.employee_address?.current_country ||
+          employeeAddress?.current_country?.id ||
+          eligibilityData?.employee?.employee_address?.current_country?.id ||
           "",
         state:
           employeeAddress?.current_province_state ||
@@ -588,6 +594,7 @@ export default function OnboardingLayout() {
         // sponsor_location: onBoarding?.sponsor?.sponsor_location || "",
 
         // Academic Information
+        hasFormalEducation: onBoarding?.has_formal_education ?? false,
         ...academicFields,
 
         // ✅ English Language Proficiency - Clean implementation
@@ -1146,10 +1153,15 @@ export default function OnboardingLayout() {
     try {
       switch (stepIndex) {
         case 0:
-          // Processing Information - skip API call for now
+          // Processing Information + Visa Records if adjustment = Yes
           await saveProcessingInformation(
             transformProcessingInformationData(formData),
           );
+          
+          // Save visa records if adjustment of status is Yes
+          if (formData.adjustment_of_status === true) {
+            await saveVisa(transformVisaData(formData));
+          }
           break;
         case 1:
           await saveMainApplicantDetail(transformMainApplicantData(formData));
@@ -1185,7 +1197,10 @@ export default function OnboardingLayout() {
           );
           break;
         case 11:
-          await saveVisa(transformVisaData(formData));
+          // Only save visa if adjustment of status is No
+          if (formData.adjustment_of_status === false) {
+            await saveVisa(transformVisaData(formData));
+          }
           break;
         case 12:
           await saveVisaRejection(transformVisaRejectionData(formData));
@@ -1246,9 +1261,18 @@ export default function OnboardingLayout() {
     // Mark current step as completed
     setCompletedSteps((prev) => new Set([...prev, currentStep]));
 
+    // Check if we should skip step 11 (Visa)
+    const adjustmentOfStatus = methods.getValues("adjustment_of_status");
+    let nextStep = currentStep + 1;
+    
+    // Skip step 11 if adjustment of status is Yes
+    if (nextStep === 11 && adjustmentOfStatus === true) {
+      nextStep = 12; // Jump to step 12 (Visa Rejection)
+    }
+
     // Move to next step or submit
-    if (currentStep < ONBOARDING_STEPS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
+    if (nextStep < ONBOARDING_STEPS.length) {
+      setCurrentStep(nextStep);
     } else {
       // Clear this user's localStorage after final submission
       if (profile?.id) {
@@ -1262,7 +1286,15 @@ export default function OnboardingLayout() {
 
   const goPrev = () => {
     if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
+      const adjustmentOfStatus = methods.getValues("adjustment_of_status");
+      let prevStep = currentStep - 1;
+      
+      // Skip step 11 when going back if adjustment of status is Yes
+      if (prevStep === 11 && adjustmentOfStatus === true) {
+        prevStep = 10; // Jump to step 10 (Immigration History)
+      }
+      
+      setCurrentStep(prevStep);
     }
   };
 

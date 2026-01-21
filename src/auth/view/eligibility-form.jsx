@@ -55,11 +55,11 @@ export const EligibilityFormSchema = zod
     gender: zod.string().min(1, { message: "Gender is required!" }),
 
     birth_country: zod
-      .string()
+      .number()
       .min(1, { message: "Birth country is required!" }),
 
     current_country: zod
-      .string()
+      .number()
       .min(1, { message: "Current country is required!" }),
     current_province_state: zod
       .string()
@@ -76,7 +76,7 @@ export const EligibilityFormSchema = zod
 
     same_address: zod.boolean(),
 
-    permanent_country: zod.string(),
+    permanent_country: zod.number().nullable(),
     permanent_province_state: zod.string(),
     permanent_city_town: zod.string(),
     permanent_street: zod.string(),
@@ -130,11 +130,12 @@ export const EligibilityFormSchema = zod
     (data) => {
       if (!data.same_address) {
         return (
-          data.permanent_country &&
-          data.permanent_province_state &&
-          data.permanent_city_town &&
-          data.permanent_street &&
-          data.permanent_zip_code
+          data.permanent_country !== null &&
+          data.permanent_country !== undefined &&
+          data.permanent_province_state?.trim() &&
+          data.permanent_city_town?.trim() &&
+          data.permanent_street?.trim() &&
+          data.permanent_zip_code?.trim()
         );
       }
       return true;
@@ -143,7 +144,7 @@ export const EligibilityFormSchema = zod
       message:
         "All permanent address fields are required when addresses are different",
       path: ["permanent_country"],
-    }
+    },
   );
 
 // ----------------------------------------------------------------------
@@ -158,14 +159,14 @@ export function EligibilityFormView() {
   const defaultValues = {
     date_of_birth: "",
     gender: "",
-    birth_country: "",
-    current_country: "",
+    birth_country: null,
+    current_country: null,
     current_province_state: "",
     current_city_town: "",
     current_street: "",
     current_zip_code: "",
     same_address: false,
-    permanent_country: "",
+    permanent_country: null,
     permanent_province_state: "",
     permanent_city_town: "",
     permanent_street: "",
@@ -258,7 +259,7 @@ export function EligibilityFormView() {
 
       if (data.passport_front && data.passport_front instanceof File) {
         submitData.passport_image = await convertFileToBase64(
-          data.passport_front
+          data.passport_front,
         );
       }
 
@@ -273,7 +274,7 @@ export function EligibilityFormView() {
       const errorMessages = Object.values(error.message).flat();
       toast.error(
         // errorMessages[0] || "Something went wrong. Please try again."
-        error.message || "Something went wrong. Please try again."
+        error.message || "Something went wrong. Please try again.",
       );
     }
   });
@@ -383,7 +384,7 @@ export function EligibilityFormView() {
                 <em>Select country</em>
               </MenuItem>
               {country.map((option) => (
-                <MenuItem key={option.label} value={String(option.label)}>
+                <MenuItem key={option.id} value={option.id}>
                   {option.label}
                 </MenuItem>
               ))}
@@ -413,7 +414,7 @@ export function EligibilityFormView() {
                 <em>Select country</em>
               </MenuItem>
               {country.map((option) => (
-                <MenuItem key={option.label} value={String(option.label)}>
+                <MenuItem key={option.id} value={option.id}>
                   {option.label}
                 </MenuItem>
               ))}
@@ -472,7 +473,7 @@ export function EligibilityFormView() {
                   onChange={(e) => {
                     setValue("same_address", e.target.checked);
                     if (e.target.checked) {
-                      setValue("permanent_country", "");
+                      setValue("permanent_country", null);
                       setValue("permanent_province_state", "");
                       setValue("permanent_city_town", "");
                       setValue("permanent_street", "");
@@ -522,7 +523,7 @@ export function EligibilityFormView() {
                   <em>Select country</em>
                 </MenuItem>
                 {country.map((option) => (
-                  <MenuItem key={option.label} value={String(option.label)}>
+                  <MenuItem key={option.id} value={option.id}>
                     {option.label}
                   </MenuItem>
                 ))}

@@ -132,11 +132,13 @@ export function PermissionGuard({
             </Typography>
             <Button
               variant="contained"
-              startIcon={<Iconify icon="mdi:arrow-left" />}
-              onClick={() => window.history.back()}
+              startIcon={<Iconify icon="mdi:web" />}
+              href="https://www.abroadworld.com/"
+              target="_blank"
+              rel="noopener noreferrer"
               sx={{ mt: 2 }}
             >
-              Go Back
+              Go to Website
             </Button>
             <Button variant="text" href={redirectTo} sx={{ mt: 2, ml: 2 }}>
               Go to Dashboard

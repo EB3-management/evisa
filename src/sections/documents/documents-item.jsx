@@ -14,6 +14,8 @@ import { useAppDispatch } from "src/redux/hooks";
 import { signContract } from "src/api/document";
 import { toast } from "sonner";
 import { fetchDocumentsRequest } from "src/redux/actions";
+import { useRouter } from "src/routes/hooks";
+import { paths } from "src/routes/paths";
 
 // ----------------------------------------------------------------------
 
@@ -26,6 +28,7 @@ export function DocumentsTableRow({
   const [openSigning, setOpenSigning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useAppDispatch();
+  const router = useRouter();
 
   const getStatusChipColor = (status) => {
     switch (status) {
@@ -41,6 +44,10 @@ export function DocumentsTableRow({
 
   const handleViewPdf = (url) => {
     window.open(url, "_blank");
+  };
+
+  const handleContractView = (id) => {
+    router.push(paths.dashboard.contract.detail(id));
   };
 
   const handleSubmitSignature = async (contractId, signatureData) => {
@@ -91,12 +98,24 @@ export function DocumentsTableRow({
         </TableCell>
 
         <TableCell
+          onClick={() => handleContractView(row.id)}
           sx={{
             whiteSpace: "nowrap",
             minWidth: { xs: 120, sm: 150 },
             maxWidth: { xs: 150, sm: 200 },
             overflow: "hidden",
             textOverflow: "ellipsis",
+            cursor: "pointer",
+            color: "primary.main",
+            fontWeight: 600,
+            textDecoration: "underline",
+            textDecorationColor: "transparent",
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              color: "primary.dark",
+              textDecorationColor: "primary.dark",
+              backgroundColor: "action.hover",
+            },
           }}
         >
           {row.vacancy?.title || "-"}

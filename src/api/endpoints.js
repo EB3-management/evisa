@@ -37,6 +37,7 @@ export const endpoints = {
     show: "employee-contract/show",
     upload: "employee-contract/upload",
     sign: (id) => `contracts/sign/${id}`,
+    detail: (id) => `contracts/${id}`,
   },
 
   profile: {

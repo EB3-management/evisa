@@ -7,6 +7,7 @@ import { SplashScreen } from "src/components/loading-screen";
 
 import { AuthGuard, GuestGuard } from "src/auth/guard";
 import { FormCenteredLayout } from "src/layouts/auth-centered/form-layout";
+import { PermissionGuard } from "src/components/onboarding/permission-guard";
 
 // ----------------------------------------------------------------------
 
@@ -76,9 +77,11 @@ export const authRoutes = [
         path: "register-step-form",
         element: (
           <AuthGuard>
-            <FormCenteredLayout>
-              <EligibilityPage />
-            </FormCenteredLayout>
+            <PermissionGuard feature="eligibility_form">
+              <FormCenteredLayout>
+                <EligibilityPage />
+              </FormCenteredLayout>
+            </PermissionGuard>
           </AuthGuard>
         ),
       },

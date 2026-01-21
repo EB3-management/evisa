@@ -61,14 +61,14 @@ export function ContractList() {
     isLoading,
     error,
   } = useAppSelector(
-    (state) => state.documents || { documents: [], isLoading: false }
+    (state) => state.documents || { documents: [], isLoading: false },
   );
 
   const filters = useSetState({
     vacancy_id: "",
     status: "",
   });
-
+  console.log("thi sis filwer", filters);
   // Fetch contracts on mount or when filters change
   useEffect(() => {
     const payload = {};
@@ -86,7 +86,7 @@ export function ContractList() {
       filters.setState({ vacancy_id: event.target.value });
       table.onResetPage();
     },
-    [filters, table]
+    [filters, table],
   );
 
   const handleFilterStatus = useCallback(
@@ -94,7 +94,7 @@ export function ContractList() {
       filters.setState({ status: event.target.value });
       table.onResetPage();
     },
-    [filters, table]
+    [filters, table],
   );
 
   const dataFiltered = documents;
@@ -170,7 +170,7 @@ export function ContractList() {
                   {dataFiltered
                     .slice(
                       table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
+                      table.page * table.rowsPerPage + table.rowsPerPage,
                     )
                     .map((row, index) => (
                       <DocumentsTableRow
@@ -185,7 +185,7 @@ export function ContractList() {
                     emptyRows={emptyRows(
                       table.page,
                       table.rowsPerPage,
-                      dataFiltered.length
+                      dataFiltered.length,
                     )}
                   />
 

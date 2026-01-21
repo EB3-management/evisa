@@ -16,7 +16,7 @@ export function useGetDocument() {
       documentError: error,
       mutateDocument: mutate,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -69,7 +69,7 @@ export function useGetContract() {
       contractLoading: isLoading,
       contractError: error,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -87,7 +87,7 @@ export function useGetContractList() {
       contractListError: error,
       contractMutate: mutate,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -149,7 +149,25 @@ export function useGetDocumentType() {
       documentTypeError: error,
       mutateDocumentType: mutate,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
+  );
+
+  return memoizedValue;
+}
+
+export function useGetContractDetail(id) {
+  const url = endpoints.contract.detail(id);
+
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher);
+
+  const memoizedValue = useMemo(
+    () => ({
+      contractDetail: data?.data || [],
+      contractDetailLoading: isLoading,
+      contractDetailError: error,
+      contractDetailMutate: mutate,
+    }),
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;

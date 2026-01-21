@@ -43,7 +43,9 @@ export const academicInformationSchema = z
         // optional extra fields (conditionally required)
         [`${key}_instituteName`, z.string().optional()],
         [`${key}_graduationYear`, z.string().optional()],
-        [`${key}_country`, z.string().optional()],
+        [`${key}_country`, z.union([z.number(), z.string()]).transform((val) => 
+          val === "" || val === null || val === undefined ? undefined : Number(val)
+        ).optional()],
         [`${key}_state`, z.string().optional()],
         [`${key}_city`, z.string().optional()],
         [`${key}_zipCode`, z.string().optional()],
@@ -199,7 +201,7 @@ export const AcademicInformation = ({ country }) => {
                   <em>Select Country</em>
                 </MenuItem>
                 {country?.map((option) => (
-                  <MenuItem key={option.value} value={String(option.value)}>
+                  <MenuItem key={option.id} value={option.id}>
                     {option.label}
                   </MenuItem>
                 ))}
@@ -378,7 +380,7 @@ export const AcademicInformation = ({ country }) => {
                   <Controller
                     name={level.key}
                     control={control}
-                    defaultValue="no"
+                    defaultValue="No"
                     render={({ field }) => (
                       <FormControl
                         component="fieldset"

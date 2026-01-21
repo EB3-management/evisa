@@ -61,7 +61,7 @@ const getStepIndexFromStatus = (status) => {
   if (!status) return 0;
 
   const stepIndex = steps.findIndex(
-    (step) => step.status.toLowerCase() === status.toLowerCase()
+    (step) => step.status.toLowerCase() === status.toLowerCase(),
   );
 
   return stepIndex !== -1 ? stepIndex : 0;
@@ -160,6 +160,19 @@ export function AppView() {
     } else {
       // If selected vacancy has no status data, default to Eligibility
       setActiveStep(0);
+    }
+  };
+
+  // Handle step click to navigate
+  const handleStepClick = (stepStatus) => {
+    const statusLower = stepStatus.toLowerCase();
+
+    if (statusLower === "contract") {
+      navigate(paths.dashboard.contract.root);
+    } else if (statusLower === "payment") {
+      navigate(paths.dashboard.payment.root);
+    } else if (statusLower === "visa_wait") {
+      navigate(paths.dashboard.visaStatus.root);
     }
   };
 
@@ -592,12 +605,21 @@ export function AppView() {
             >
               {steps.map((step, index) => {
                 const isCompleted = index < activeStep;
+                const isReached = isCompleted || index === activeStep;
+                const isClickable =
+                  isReached &&
+                  (step.status === "contract" ||
+                    step.status === "payment" ||
+                    step.status === "visa_wait");
 
                 return (
                   <Step key={index} completed={isCompleted}>
                     <StepLabel
                       StepIconComponent={() => (
                         <Box
+                          onClick={() =>
+                            isClickable && handleStepClick(step.status)
+                          }
                           sx={{
                             width: { xs: 40, sm: 48 },
                             height: { xs: 40, sm: 48 },
@@ -605,8 +627,8 @@ export function AppView() {
                             bgcolor: isCompleted
                               ? theme.palette.success.main
                               : index === activeStep
-                              ? theme.palette.primary.main
-                              : "transparent",
+                                ? theme.palette.primary.main
+                                : "transparent",
                             border:
                               !isCompleted && index !== activeStep
                                 ? `3px solid ${theme.palette.divider}`
@@ -615,7 +637,15 @@ export function AppView() {
                             alignItems: "center",
                             justifyContent: "center",
                             transition: "all 0.3s",
-                            boxShadow: isCompleted || index === activeStep ? 3 : 0,
+                            boxShadow:
+                              isCompleted || index === activeStep ? 3 : 0,
+                            cursor: isClickable ? "pointer" : "default",
+                            "&:hover": isClickable
+                              ? {
+                                  transform: "scale(1.1)",
+                                  boxShadow: 4,
+                                }
+                              : {},
                           }}
                         >
                           {isCompleted ? (

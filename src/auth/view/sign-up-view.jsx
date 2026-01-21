@@ -47,7 +47,7 @@ export const SignUpSchema = zod
       .string()
       .min(1, { message: "User email is required!" })
       .email({ message: "Email must be a valid email address!" }),
-    country_code: zod.string().min(1, { message: "Country code is required!" }),
+    country_code: zod.number().min(1, { message: "Country code is required!" }),
     phone: zod
       .string()
       .min(1, { message: "Contact number is required!" })
@@ -90,7 +90,7 @@ export function SignUpView() {
     last_name: "",
     email: "",
     phone: "",
-    country_code: "",
+    country_code: null,
     password: "",
     password_confirmation: "",
     agreed_to_terms: false,
@@ -114,11 +114,10 @@ export function SignUpView() {
       const response = await signUp(data);
 
       dispatch(setOrganization(response.data));
-
       reset();
 
       toast.success(
-        response.message || "Registration successful! Welcome aboard."
+        response.message || "Registration successful! Welcome aboard.",
       );
       router.push("/auth/verify-email");
 
@@ -156,7 +155,6 @@ export function SignUpView() {
         label="Email"
         placeholder="Please enter a valid email address"
         slotProps={{ inputLabel: { shrink: true } }}
-        
       />
 
       <Box
@@ -173,7 +171,7 @@ export function SignUpView() {
         >
           {country.map((option) => (
             //  <MenuItem key={option.label} value={String(option.label)}></MenuItem>
-            <MenuItem key={option.label} value={option.label}>
+            <MenuItem key={option.id} value={option.id}>
               {option.label}
             </MenuItem>
           ))}

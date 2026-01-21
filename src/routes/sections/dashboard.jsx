@@ -17,8 +17,8 @@ import { usePathname } from "../hooks";
 const IndexPage = lazy(() => import("src/pages/dashboard"));
 
 //vacancy
-const VacancyDetailPage = lazy(() =>
-  import("src/pages/dashboard/vacancy/detail")
+const VacancyDetailPage = lazy(
+  () => import("src/pages/dashboard/vacancy/detail"),
 );
 
 const VacancyPage = lazy(() => import("src/pages/dashboard/vacancy/list"));
@@ -33,6 +33,9 @@ const DocumentPage = lazy(() => import("src/pages/dashboard/document/list"));
 
 //contract
 const ContractPage = lazy(() => import("src/pages/dashboard/contract/list"));
+const ContractDetailPage = lazy(
+  () => import("src/pages/dashboard/contract/detail"),
+);
 
 // Appointment
 const PaymentListPage = lazy(() => import("src/pages/dashboard/payment/list"));
@@ -41,8 +44,8 @@ const PaymentListPage = lazy(() => import("src/pages/dashboard/payment/list"));
 const ProfilePage = lazy(() => import("src/pages/dashboard/profile/profile"));
 
 // visastatus
-const VisaStatusPage = lazy(() =>
-  import("src/pages/dashboard/visa-status/list")
+const VisaStatusPage = lazy(
+  () => import("src/pages/dashboard/visa-status/list"),
 );
 
 // faqs
@@ -73,31 +76,31 @@ export const dashboardRoutes = [
     path: "dashboard",
     element: (
       <AuthGuard>
-        <OnboardingRedirectGuard>
-          {dashboardLayout()}
-        </OnboardingRedirectGuard>
+        <OnboardingRedirectGuard>{dashboardLayout()}</OnboardingRedirectGuard>
       </AuthGuard>
     ),
     children: [
-      { 
-        index: true, 
+      {
+        index: true,
         element: (
           <PermissionGuard feature="dashboard">
             <IndexPage />
           </PermissionGuard>
-        ) 
+        ),
       },
 
       {
         path: "vacancy-detail",
-        children: [{ 
-          path: ":id", 
-          element: (
-            <PermissionGuard feature="job_selection">
-              <VacancyDetailPage />
-            </PermissionGuard>
-          ) 
-        }],
+        children: [
+          {
+            path: ":id",
+            element: (
+              <PermissionGuard feature="job_selection">
+                <VacancyDetailPage />
+              </PermissionGuard>
+            ),
+          },
+        ],
       },
       {
         path: "vacancy",
@@ -109,25 +112,29 @@ export const dashboardRoutes = [
       },
       {
         path: "plan",
-        children: [{ 
-          path: ":id", 
-          element: (
-            <PermissionGuard feature="financial_plan">
-              <PlanPage />
-            </PermissionGuard>
-          ) 
-        }],
+        children: [
+          {
+            path: ":id",
+            element: (
+              <PermissionGuard feature="financial_plan">
+                <PlanPage />
+              </PermissionGuard>
+            ),
+          },
+        ],
       },
       {
         path: "payment-detail",
-        children: [{ 
-          path: ":id", 
-          element: (
-            <PermissionGuard feature="financial_plan">
-              <PlanDetailPage />
-            </PermissionGuard>
-          ) 
-        }],
+        children: [
+          {
+            path: ":id",
+            element: (
+              <PermissionGuard feature="financial_plan">
+                <PlanDetailPage />
+              </PermissionGuard>
+            ),
+          },
+        ],
       },
       {
         path: "finance",
@@ -145,65 +152,81 @@ export const dashboardRoutes = [
           </PermissionGuard>
         ),
       },
-      { 
-        path: "documents", 
+      {
+        path: "documents",
         element: (
           <PermissionGuard feature="documents">
             <DocumentPage />
           </PermissionGuard>
-        ) 
+        ),
       },
-      { 
-        path: "contracts", 
+      {
+        path: "contracts",
         element: (
           <PermissionGuard feature="contract">
             <ContractPage />
           </PermissionGuard>
-        ) 
+        ),
+      },
+
+      {
+        path: "contract",
+        children: [
+          {
+            path: ":id",
+            element: (
+              // <PermissionGuard feature="contract">
+                <ContractDetailPage />
+              // </PermissionGuard>
+            ),
+          },
+        ],
       },
 
       {
         path: "payment",
-        children: [{ 
-          index: true, 
-          element: (
-            <PermissionGuard feature="payment">
-              <PaymentListPage />
-            </PermissionGuard>
-          ) 
-        }],
+        children: [
+          {
+            index: true,
+            element: (
+              <PermissionGuard feature="payment">
+                <PaymentListPage />
+              </PermissionGuard>
+            ),
+          },
+        ],
       },
-      { 
-        path: "faqs", 
+      {
+        path: "faqs",
         element: (
           <PermissionGuard feature="dashboard">
             <FaqsPage />
           </PermissionGuard>
-        ) 
+        ),
       },
-      { 
-        path: "profile", 
+      {
+        path: "profile",
         element: (
           <PermissionGuard feature="dashboard">
             <ProfilePage />
           </PermissionGuard>
-        ) 
+        ),
       },
-      { 
-        path: "visa-status", 
+      {
+        path: "visa-status",
         element: (
           <PermissionGuard feature="visa_status">
             <VisaStatusPage />
           </PermissionGuard>
-        ) 
+        ),
       },
-      { 
-        path: "guide", 
+      {
+        path: "guide",
         element: (
           <PermissionGuard feature="dashboard">
             <GuidePage />
           </PermissionGuard>
-        ) 
+        ),
       },
     ],
   },

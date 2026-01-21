@@ -12,7 +12,7 @@ import { z } from "zod";
 
 // ✅ Step-specific Zod schema
 export const currentAddressSchema = z.object({
-  country: z.string().min(1, "Country is required"),
+  country: z.number().min(1, "Country is required"),
   state: z.string().min(1, "State is required"),
   city: z.string().min(1, "City is required"),
   zipCode: z.string().min(1, "Zip Code is required"),
@@ -50,7 +50,7 @@ export const CurrentAddress = ({ country }) => {
                     <em>Select Country</em>
                   </MenuItem>
                   {country?.map((option) => (
-                    <MenuItem key={option.value} value={option.label}>
+                    <MenuItem key={option.id} value={option.id}>
                       {option.label}
                     </MenuItem>
                   ))}

@@ -27,7 +27,7 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
-    // plan: `${ROOTS.DASHBOARD}/plan`,
+    plana: `${ROOTS.DASHBOARD}/plan`,
     plan: (id) => `${ROOTS.DASHBOARD}/plan/${id}`,
     detail: (id) => `${ROOTS.DASHBOARD}/payment-detail/${id}`,
     finance: `${ROOTS.DASHBOARD}/finance`,
@@ -39,6 +39,7 @@ export const paths = {
 
     contract: {
       root: `${ROOTS.DASHBOARD}/contracts`,
+      detail: (id) => `${ROOTS.DASHBOARD}/contract/${id}`,
     },
 
     progress: {

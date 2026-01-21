@@ -22,9 +22,11 @@ export const mainApplicantSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   dob: z.string().min(1, "Date of birth is required"),
   gender: z.string().min(1, "Gender is required"),
-  countryOfBirth: z.string().min(1, "Country of birth is required"),
-  citizenship1: z.string().min(1, "Citizenship country is required"),
-  citizenship2: z.string().optional(),
+  countryOfBirth: z.number().min(1, "Country of birth is required"),
+  citizenship1: z.number().min(1, "Citizenship country is required"),
+  citizenship2: z.union([z.number(), z.string()]).transform((val) => 
+    val === "" || val === null || val === undefined ? undefined : Number(val)
+  ).optional(),
 });
 
 export const MainApplicantDetails = ({ country }) => {
@@ -177,7 +179,7 @@ export const MainApplicantDetails = ({ country }) => {
                     <em>Select Country</em>
                   </MenuItem>
                   {country?.map((option) => (
-                    <MenuItem key={option.value} value={option.label}>
+                    <MenuItem key={option.id} value={option.id}>
                       {option.label}
                     </MenuItem>
                   ))}
@@ -199,14 +201,28 @@ export const MainApplicantDetails = ({ country }) => {
             name="citizenship1"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                placeholder="Nepal"
-                error={!!errors.citizenship1}
-                helperText={errors.citizenship1?.message}
-                sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-              />
+              <FormControl fullWidth>
+                <Select
+                  {...field}
+                  displayEmpty
+                  error={!!errors.citizenship1}
+                  sx={{ backgroundColor: "#fff" }}
+                >
+                  <MenuItem value="">
+                    <em>Select Country</em>
+                  </MenuItem>
+                  {country?.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.citizenship1 && (
+                  <Typography color="error" variant="caption">
+                    {errors.citizenship1.message}
+                  </Typography>
+                )}
+              </FormControl>
             )}
           />
         </Grid>
@@ -218,14 +234,28 @@ export const MainApplicantDetails = ({ country }) => {
             name="citizenship2"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                placeholder="Nepal"
-                error={!!errors.citizenship2}
-                helperText={errors.citizenship2?.message}
-                sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#fff" } }}
-              />
+              <FormControl fullWidth>
+                <Select
+                  {...field}
+                  displayEmpty
+                  error={!!errors.citizenship2}
+                  sx={{ backgroundColor: "#fff" }}
+                >
+                  <MenuItem value="">
+                    <em>Select Country</em>
+                  </MenuItem>
+                  {country?.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.citizenship2 && (
+                  <Typography color="error" variant="caption">
+                    {errors.citizenship2.message}
+                  </Typography>
+                )}
+              </FormControl>
             )}
           />
         </Grid>
