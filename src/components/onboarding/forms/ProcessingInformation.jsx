@@ -61,7 +61,7 @@ export const processingInformationSchema = z
           path: ["i944_number"],
         });
       }
-      
+
       // Validate visa records when adjustment of status is Yes
       if (data.has_visa_records === "Yes") {
         if (!data.visa_records || data.visa_records.length === 0) {
@@ -133,9 +133,11 @@ export const ProcessingInformation = ({ vacancyData }) => {
 
   const adjustmentOfStatus = watch("adjustment_of_status", true);
   const hasVisaRecords = watch("has_visa_records");
-  const { immigrationType, immigrationTypeLoading } =
-    useGetImmigrationTypes(vacancyData?.id);
-  
+
+  const { immigrationType, immigrationTypeLoading } = useGetImmigrationTypes(
+    vacancyData?.id,
+  );
+
   const {
     fields: visaRecords,
     append,
@@ -147,7 +149,7 @@ export const ProcessingInformation = ({ vacancyData }) => {
 
   const showVisaForm = adjustmentOfStatus === true && hasVisaRecords === "Yes";
 
-  // Auto-add first visa record when "Yes" is selected, clear when "No"
+  // Auto-add first visa record when "Yes" is selected for visa records
   useEffect(() => {
     if (showVisaForm && visaRecords.length === 0) {
       append({
@@ -156,10 +158,22 @@ export const ProcessingInformation = ({ vacancyData }) => {
         visaExpeditionDate: "",
         visaExpirationDate: "",
       });
-    } else if (!showVisaForm && visaRecords.length > 0 && adjustmentOfStatus === true) {
+    } else if (hasVisaRecords === "No" && visaRecords.length > 0) {
       setValue("visa_records", []);
     }
-  }, [showVisaForm, visaRecords.length, setValue, append, adjustmentOfStatus]);
+  }, [showVisaForm, hasVisaRecords, visaRecords.length, setValue, append]);
+  useEffect(() => {
+    if (showVisaForm && visaRecords.length === 0) {
+      append({
+        visaName: "",
+        visaType: "",
+        visaExpeditionDate: "",
+        visaExpirationDate: "",
+      });
+    } else if (hasVisaRecords === "No" && visaRecords.length > 0) {
+      setValue("visa_records", []);
+    }
+  }, [showVisaForm, hasVisaRecords, visaRecords.length, setValue, append]);
 
   return (
     <Box id="section-0" sx={{ mb: 6 }}>
@@ -299,7 +313,7 @@ export const ProcessingInformation = ({ vacancyData }) => {
             {/* Visa Records Section - Only when adjustment = Yes */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
-                Visa Records
+                US Visa Records
               </Typography>
             </Grid>
 
@@ -356,7 +370,10 @@ export const ProcessingInformation = ({ vacancyData }) => {
             {showVisaForm && (
               <Grid size={{ xs: 12 }}>
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ mb: 2, fontWeight: 600 }}
+                  >
                     Please provide your visa record details
                   </Typography>
 
@@ -382,7 +399,9 @@ export const ProcessingInformation = ({ vacancyData }) => {
                           fontWeight={600}
                           color="primary"
                         >
-                          {index === 0 ? "Visa Record" : `Visa Record ${index + 1}`}
+                          {index === 0
+                            ? "Visa Record"
+                            : `Visa Record ${index + 1}`}
                         </Typography>
                         {visaRecords.length > 1 && (
                           <IconButton
@@ -411,7 +430,8 @@ export const ProcessingInformation = ({ vacancyData }) => {
                                 placeholder="Enter name"
                                 error={!!errors.visa_records?.[index]?.visaName}
                                 helperText={
-                                  errors.visa_records?.[index]?.visaName?.message
+                                  errors.visa_records?.[index]?.visaName
+                                    ?.message
                                 }
                                 sx={{
                                   "& .MuiOutlinedInput-root": {
@@ -441,7 +461,9 @@ export const ProcessingInformation = ({ vacancyData }) => {
                                   fullWidth
                                   required
                                   disabled={immigrationTypeLoading}
-                                  error={!!errors.visa_records?.[index]?.visaType}
+                                  error={
+                                    !!errors.visa_records?.[index]?.visaType
+                                  }
                                   onChange={(e) => {
                                     const selectedType = immigrationType?.find(
                                       (type) => type.id === e.target.value,
@@ -511,11 +533,12 @@ export const ProcessingInformation = ({ vacancyData }) => {
                                 required
                                 InputLabelProps={{ shrink: true }}
                                 error={
-                                  !!errors.visa_records?.[index]?.visaExpeditionDate
+                                  !!errors.visa_records?.[index]
+                                    ?.visaExpeditionDate
                                 }
                                 helperText={
-                                  errors.visa_records?.[index]?.visaExpeditionDate
-                                    ?.message
+                                  errors.visa_records?.[index]
+                                    ?.visaExpeditionDate?.message
                                 }
                                 sx={{
                                   "& .MuiOutlinedInput-root": {
@@ -542,11 +565,12 @@ export const ProcessingInformation = ({ vacancyData }) => {
                                 required
                                 InputLabelProps={{ shrink: true }}
                                 error={
-                                  !!errors.visa_records?.[index]?.visaExpirationDate
+                                  !!errors.visa_records?.[index]
+                                    ?.visaExpirationDate
                                 }
                                 helperText={
-                                  errors.visa_records?.[index]?.visaExpirationDate
-                                    ?.message
+                                  errors.visa_records?.[index]
+                                    ?.visaExpirationDate?.message
                                 }
                                 sx={{
                                   "& .MuiOutlinedInput-root": {

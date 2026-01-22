@@ -441,29 +441,33 @@ export default function OnboardingLayout() {
 
       // Populate Academic Information
       const academicFields = {};
-      ["lowerSchool", "highSchool", "bachelor", "graduate", "doctorate"].forEach(
-        (level) => {
-          const hasLevel = hasAcademicLevel(level);
-          academicFields[level] = hasLevel ? "Yes" : "No";
+      [
+        "lowerSchool",
+        "highSchool",
+        "bachelor",
+        "graduate",
+        "doctorate",
+      ].forEach((level) => {
+        const hasLevel = hasAcademicLevel(level);
+        academicFields[level] = hasLevel ? "Yes" : "No";
 
-          if (hasLevel) {
-            const record = getAcademicRecord(level);
-            academicFields[`${level}_instituteName`] =
-              record.institution_name || "";
-            academicFields[`${level}_graduationYear`] =
-              record.graduation_year || "";
-            academicFields[`${level}_country`] = record.country || "";
-            academicFields[`${level}_state`] = record.state || "";
-            academicFields[`${level}_city`] = record.city || "";
-            academicFields[`${level}_zipCode`] = record.zip_code || "";
-            academicFields[`${level}_address`] = record.address || "";
-            // Add grade field for lower school
-            if (level === "lowerSchool") {
-              academicFields[`${level}_grade`] = record.grade || "";
-            }
+        if (hasLevel) {
+          const record = getAcademicRecord(level);
+          academicFields[`${level}_instituteName`] =
+            record.institution_name || "";
+          academicFields[`${level}_graduationYear`] =
+            record.graduation_year || "";
+          academicFields[`${level}_country`] = record.country || "";
+          academicFields[`${level}_state`] = record.state || "";
+          academicFields[`${level}_city`] = record.city || "";
+          academicFields[`${level}_zipCode`] = record.zip_code || "";
+          academicFields[`${level}_address`] = record.address || "";
+          // Add grade field for lower school
+          if (level === "lowerSchool") {
+            academicFields[`${level}_grade`] = record.grade || "";
           }
-        },
-      );
+        }
+      });
 
       // Populate Work Experiences
       const workFields = {
@@ -558,10 +562,14 @@ export default function OnboardingLayout() {
           eligibilityData?.employee?.birth_country?.id ||
           "",
         citizenship1:
-          employee?.country_of_citizenship?.id || profile?.country_of_citizenship?.id || "",
+          employee?.country_of_citizenship?.id ||
+          profile?.country_of_citizenship?.id ||
+          "",
 
         citizenship2:
-          employee?.country_of_citizenship2?.id || profile?.country_of_citizenship2?.id || "",
+          employee?.country_of_citizenship2?.id ||
+          profile?.country_of_citizenship2?.id ||
+          "",
 
         // Current Address - from employeeAddress
         country:
@@ -1153,14 +1161,27 @@ export default function OnboardingLayout() {
     try {
       switch (stepIndex) {
         case 0:
-          // Processing Information + Visa Records if adjustment = Yes
+          // Processing Information
           await saveProcessingInformation(
             transformProcessingInformationData(formData),
           );
-          
-          // Save visa records if adjustment of status is Yes
+
+          // Handle data based on adjustment_of_status choice
           if (formData.adjustment_of_status === true) {
-            await saveVisa(transformVisaData(formData));
+            // Adjustment of Status: Save visa records if exists
+            if (formData.has_visa_records === "Yes") {
+              await saveVisa(transformVisaData(formData));
+            }
+
+            // Clear consular processing data from form
+            methods.setValue("embassy_name", "");
+            methods.setValue("embassy_location", "");
+          } else {
+            // Consular Processing: Clear adjustment of status data
+            methods.setValue("date_of_last_entry", "");
+            methods.setValue("i944_number", "");
+            methods.setValue("has_visa_records", "No");
+            methods.setValue("visa_records", []);
           }
           break;
         case 1:
@@ -1197,9 +1218,13 @@ export default function OnboardingLayout() {
           );
           break;
         case 11:
-          // Only save visa if adjustment of status is No
+          // Only save visa if consular processing (adjustment of status is false)
           if (formData.adjustment_of_status === false) {
             await saveVisa(transformVisaData(formData));
+          } else {
+            console.log(
+              "⚠️ Skipping visa save - adjustment of status is enabled",
+            );
           }
           break;
         case 12:
@@ -1264,7 +1289,7 @@ export default function OnboardingLayout() {
     // Check if we should skip step 11 (Visa)
     const adjustmentOfStatus = methods.getValues("adjustment_of_status");
     let nextStep = currentStep + 1;
-    
+
     // Skip step 11 if adjustment of status is Yes
     if (nextStep === 11 && adjustmentOfStatus === true) {
       nextStep = 12; // Jump to step 12 (Visa Rejection)
@@ -1288,12 +1313,12 @@ export default function OnboardingLayout() {
     if (currentStep > 0) {
       const adjustmentOfStatus = methods.getValues("adjustment_of_status");
       let prevStep = currentStep - 1;
-      
+
       // Skip step 11 when going back if adjustment of status is Yes
       if (prevStep === 11 && adjustmentOfStatus === true) {
         prevStep = 10; // Jump to step 10 (Immigration History)
       }
-      
+
       setCurrentStep(prevStep);
     }
   };
