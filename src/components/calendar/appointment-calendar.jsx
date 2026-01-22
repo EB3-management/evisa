@@ -166,7 +166,7 @@ export function AppointmentCalendar({ appointments, onEventClick, isLoading }) {
           return (
             <Box
               key={index}
-              onClick={() => isAvailable && onEventClick(day)}
+              onClick={() => isAvailable && onEventClick(day, slots)}
               sx={{
                 minHeight: { xs: 50, sm: 60, md: 70 },
                 p: { xs: 0.3, sm: 0.5 },

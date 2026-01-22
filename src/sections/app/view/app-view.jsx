@@ -819,11 +819,11 @@ export function AppView() {
                       //   milestone.status === "current"
                       //     ? `${milestone.color}.lighter`
                       //     : "transparent",
-                      transition: "all 0.3s",
-                      "&:hover": {
-                        borderColor: `${milestone.color}.main`,
-                        bgcolor: `${milestone.color}.lighter`,
-                      },
+                      // transition: "all 0.3s",
+                      // "&:hover": {
+                      //   borderColor: `${milestone.color}.main`,
+                      //   bgcolor: `${milestone.color}.lighter`,
+                      // },
                     }}
                   >
                     <Stack

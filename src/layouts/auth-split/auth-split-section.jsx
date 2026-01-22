@@ -63,10 +63,10 @@ export function AuthSplitSection(props) {
     };
   }, []); // Run once on mount
 
-  // Handle calendar event click: open dialog with no pre-selected data
-  const handleEventClick = (date) => {
-    setSelectedDate(null); // No pre-selected date
-    setSelectedTimeSlots([]); // No pre-selected slots
+  // Handle calendar event click: open dialog with selected date and slots
+  const handleEventClick = (date, slots) => {
+    setSelectedDate(date); // Pass the selected date
+    setSelectedTimeSlots(slots || []); // Pass the available slots
     setDialogOpen(true);
   };
 
@@ -173,8 +173,8 @@ export function AuthSplitSection(props) {
       <AppointmentBookingDialog
         open={dialogOpen}
         onClose={handleDialogClose}
-        selectedDate={null}
-        timeSlots={[]}
+        selectedDate={selectedDate}
+        timeSlots={selectedTimeSlots}
         onBookingSuccess={handleBookingSuccess}
         allAppointments={appointments}
       />

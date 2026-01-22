@@ -1,5 +1,5 @@
 import { z as zod } from "zod";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import dayjs from "dayjs";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,13 +42,12 @@ export const bookingSchema = zod.object({
 export function AppointmentBookingDialog({
   open,
   onClose,
-  selectedDate: _selectedDate, // unused, always null
-  timeSlots: _timeSlots, // unused, always []
+  selectedDate,
+  timeSlots,
   onBookingSuccess,
   allAppointments = [],
 }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
   const methods = useForm({
@@ -73,18 +72,11 @@ export function AppointmentBookingDialog({
     onClose();
     reset();
     setSelectedCategory(null);
-    setSelectedDate(null);
     setSelectedTime(null);
   };
 
   const handleCategorySelect = (cat) => {
     setSelectedCategory(cat);
-    setSelectedDate(null);
-    setSelectedTime(null);
-  };
-
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
     setSelectedTime(null);
   };
 
@@ -133,43 +125,40 @@ export function AppointmentBookingDialog({
     }
   });
 
-  // Get all unique categories from allAppointments
-  const categories = Array.isArray(allAppointments)
-    ? allAppointments
-        .map((cat) => cat.category || cat.appointments?.[0]?.category)
-        .filter(Boolean)
-        .reduce((acc, cat) => {
-          if (!acc.find((c) => c.id === cat.id)) acc.push(cat);
-          return acc;
-        }, [])
-    : [];
+  // Get categories that have appointments on the selected date
+  const categoriesForSelectedDate = useMemo(() => {
+    if (!selectedDate || !Array.isArray(allAppointments)) return [];
 
-  // Get available dates for selected category
-  const availableDates = useMemo(() => {
-    if (!selectedCategory) return [];
-    const cat = allAppointments.find(
-      (c) => (c.category?.id || c.category_id) === selectedCategory.id,
-    );
-    if (!cat) return [];
-    // Only future/today dates with available slots
-    const today = dayjs().startOf("day");
-    const dateMap = new Map();
-    (cat.appointments || []).forEach((appt) => {
-      const apptDate = dayjs(appt.date).startOf("day");
-      if (
-        (apptDate.isSame(today, "day") || apptDate.isAfter(today)) &&
-        appt.status === "Available"
-      ) {
-        const key = apptDate.format("YYYY-MM-DD");
-        if (!dateMap.has(key)) dateMap.set(key, []);
-        dateMap.get(key).push(appt);
+    const dateKey = dayjs(selectedDate).format("YYYY-MM-DD");
+
+    const categoriesWithAppointments = allAppointments
+      .filter((item) => {
+        const hasAppointmentOnDate = item.appointments?.some(
+          (appt) =>
+            dayjs(appt.date).format("YYYY-MM-DD") === dateKey &&
+            appt.status === "Available",
+        );
+        return hasAppointmentOnDate;
+      })
+      .map((item) => ({
+        id: item.category?.id || item.category_id,
+        title:
+          item.category?.title || item.category_name || item.category?.name,
+      }))
+      .filter((cat) => cat.id && cat.title);
+
+    return categoriesWithAppointments;
+  }, [selectedDate, allAppointments]);
+
+  // Auto-select category and date when modal opens
+  useEffect(() => {
+    if (open && selectedDate && categoriesForSelectedDate.length > 0) {
+      // If only one category, auto-select it
+      if (categoriesForSelectedDate.length === 1) {
+        setSelectedCategory(categoriesForSelectedDate[0]);
       }
-    });
-    return Array.from(dateMap.entries()).map(([date, slots]) => ({
-      date,
-      slots,
-    }));
-  }, [selectedCategory, allAppointments]);
+    }
+  }, [open, selectedDate, categoriesForSelectedDate]);
 
   // Get available time slots for selected date
   const availableTimeSlots = useMemo(() => {
@@ -182,84 +171,115 @@ export function AppointmentBookingDialog({
       (appt) =>
         appt.status === "Available" &&
         dayjs(appt.date).format("YYYY-MM-DD") ===
-          selectedDate.format("YYYY-MM-DD"),
+          dayjs(selectedDate).format("YYYY-MM-DD"),
     );
   }, [selectedCategory, selectedDate, allAppointments]);
 
-  // Step 1: Select Category (Dropdown)
-  const renderCategoryStep = () => (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-        1️⃣ Select Appointment Category
-      </Typography>
-      <FormControl fullWidth size="small">
-        <InputLabel id="category-select-label">Category</InputLabel>
-        <Select
-          labelId="category-select-label"
-          id="category-select"
-          value={selectedCategory ? selectedCategory.id : ""}
-          label="Category"
-          onChange={(e) => {
-            const cat = categories.find((c) => c.id === e.target.value);
-            handleCategorySelect(cat);
-          }}
-        >
-          {categories.map((cat) => (
-            <MenuItem key={cat.id} value={cat.id}>
-              {cat.title}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    </Box>
-  );
-
-  // Step 2: Select Date
-  const renderDateStep = () => {
-    if (!selectedCategory) return null;
+  // Show Selected Date
+  const renderSelectedDate = () => {
+    if (!selectedDate) return null;
     return (
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-          2️⃣ Select Date
+      <Box
+        sx={{
+          mb: 2,
+          p: 2,
+          bgcolor: "primary.lighter",
+          borderRadius: 1.5,
+          border: 1.5,
+          borderColor: "primary.main",
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          fontWeight={500}
+          fontSize="0.7rem"
+        >
+          📅 SELECTED DATE
         </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          {availableDates.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No available dates for this category.
-            </Typography>
-          ) : (
-            availableDates.map(({ date, slots }) => (
-              <Chip
-                key={date}
-                label={`${dayjs(date).format("ddd, MMM D")}`}
-                color={
-                  selectedDate?.format("YYYY-MM-DD") === date
-                    ? "primary"
-                    : "default"
-                }
-                onClick={() => handleDateSelect(dayjs(date))}
-                sx={{
-                  mb: 1,
-                  fontWeight: 600,
-                  fontSize: "0.9rem",
-                  cursor: "pointer",
-                }}
-                variant={
-                  selectedDate?.format("YYYY-MM-DD") === date
-                    ? "filled"
-                    : "outlined"
-                }
-              />
-            ))
-          )}
-        </Stack>
+        <Typography
+          variant="body1"
+          fontWeight={700}
+          color="primary.main"
+          sx={{ mt: 0.5 }}
+        >
+          {dayjs(selectedDate).format("dddd, MMMM D, YYYY")}
+        </Typography>
       </Box>
     );
   };
 
-  // Step 3: Select Time Slot
+  // Step 1: Select Category (only if multiple categories)
+  const renderCategoryStep = () => {
+    if (!selectedDate) return null;
+
+    // If only one category, show it as selected
+    if (categoriesForSelectedDate.length === 1 && selectedCategory) {
+      return (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            📋 Category
+          </Typography>
+          <Box
+            sx={{
+              p: 1.5,
+              bgcolor: "background.neutral",
+              borderRadius: 1.5,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="body2" fontWeight={600}>
+              {selectedCategory.title}
+            </Typography>
+          </Box>
+        </Box>
+      );
+    }
+
+    // If multiple categories, show dropdown
+    if (categoriesForSelectedDate.length > 1) {
+      return (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            1️⃣ Select Appointment Category
+          </Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel id="category-select-label">Category</InputLabel>
+            <Select
+              labelId="category-select-label"
+              id="category-select"
+              value={selectedCategory ? selectedCategory.id : ""}
+              label="Category"
+              onChange={(e) => {
+                const cat = categoriesForSelectedDate.find(
+                  (c) => c.id === e.target.value,
+                );
+                handleCategorySelect(cat);
+              }}
+            >
+              {categoriesForSelectedDate.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      );
+    }
+
+    return null;
+  };
+
+  // Date step is removed - date comes from calendar click
+
+  // Step 2 or 3: Select Time Slot (depends on if category selection is shown)
   const renderTimeSlots = () => {
     if (!selectedCategory || !selectedDate) return null;
+
+    const stepNumber = categoriesForSelectedDate.length === 1 ? "1️⃣" : "2️⃣";
+
     return (
       <Box
         sx={{
@@ -280,14 +300,14 @@ export function AppointmentBookingDialog({
             fontSize: { xs: "0.85rem", sm: "0.9rem" },
           }}
         >
-          3️⃣ Select Time Slot
+          {stepNumber} Select Time Slot
         </Typography>
         <Typography
           variant="caption"
           color="text.secondary"
           sx={{ mb: 1.5, display: "block" }}
         >
-          {selectedDate?.format("ddd, MMM D, YYYY")}
+          {dayjs(selectedDate).format("ddd, MMM D, YYYY")}
         </Typography>
         {availableTimeSlots.length === 0 ? (
           <Box
@@ -409,7 +429,7 @@ export function AppointmentBookingDialog({
                 color="primary.dark"
                 sx={{ fontSize: { xs: "0.8rem", sm: "0.85rem" } }}
               >
-                {selectedDate?.format("ddd, MMM D, YYYY")}
+                {dayjs(selectedDate).format("ddd, MMM D, YYYY")}
               </Typography>
               <Typography
                 variant="body1"
@@ -674,8 +694,8 @@ export function AppointmentBookingDialog({
             </Typography>
           </Box>
 
+          {renderSelectedDate()}
           {renderCategoryStep()}
-          {renderDateStep()}
           {renderTimeSlots()}
           {renderBookingForm()}
           {renderActions()}
