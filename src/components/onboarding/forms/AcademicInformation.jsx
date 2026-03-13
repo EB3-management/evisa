@@ -21,8 +21,8 @@ const academicLevels = [
   { key: "lowerSchool", label: "Lower School" },
   { key: "highSchool", label: "High School" },
   { key: "bachelor", label: "Bachelor" },
-  { key: "graduate", label: "Graduate" },
-  { key: "doctorate", label: "Doctorate" },
+  { key: "graduate", label: "Master" },
+  { key: "doctorate", label: "PhD" },
 ];
 
 // ✅ Complete schema with conditional validation
@@ -43,9 +43,17 @@ export const academicInformationSchema = z
         // optional extra fields (conditionally required)
         [`${key}_instituteName`, z.string().optional()],
         [`${key}_graduationYear`, z.string().optional()],
-        [`${key}_country`, z.union([z.number(), z.string()]).transform((val) => 
-          val === "" || val === null || val === undefined ? undefined : Number(val)
-        ).optional()],
+        [
+          `${key}_country`,
+          z
+            .union([z.number(), z.string()])
+            .transform((val) =>
+              val === "" || val === null || val === undefined
+                ? undefined
+                : Number(val),
+            )
+            .optional(),
+        ],
         [`${key}_state`, z.string().optional()],
         [`${key}_city`, z.string().optional()],
         [`${key}_zipCode`, z.string().optional()],
@@ -285,7 +293,7 @@ export const AcademicInformation = ({ country }) => {
               {...field}
               fullWidth
               multiline
-              rows={2}
+              // rows={2}
               placeholder="Enter full address"
               error={!!errors[`${levelKey}_address`]}
               helperText={errors[`${levelKey}_address`]?.message}
@@ -307,7 +315,7 @@ export const AcademicInformation = ({ country }) => {
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <Typography sx={{ mb: 1, fontWeight: 500 }}>
+            <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
               Do you have any formal education background?
             </Typography>
             <Controller
@@ -374,7 +382,7 @@ export const AcademicInformation = ({ country }) => {
               {/* Radio buttons for each level */}
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12 }}>
-                  <Typography sx={{ mb: 1, fontWeight: 500 }}>
+                  <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
                     {level.label}
                   </Typography>
                   <Controller

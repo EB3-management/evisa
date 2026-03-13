@@ -3,7 +3,6 @@ import {
   Box,
   Card,
   CardContent,
-  Grid,
   Chip,
   Button,
   Divider,
@@ -13,16 +12,24 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
+import { useState } from "react";
 import { DashboardContent } from "src/layouts/dashboard";
 import { useGetContractDetail } from "src/api/document";
 import { Iconify } from "src/components/iconify";
 import { fDateTime } from "src/utils/format-time";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
 import { paths } from "src/routes/paths";
+import Grid from "@mui/material/Grid2";
+import { Markdown } from "src/components/markdown";
+import { ContractSigningDialog } from "../dialog/contract-signing-dialog";
+import { toast } from "sonner";
+import { signContract } from "src/api/document";
 
 export function ContractDetailView({ id }) {
-  const { contractDetail, contractDetailLoading, contractDetailError } =
+  const { contractDetail, contractDetailLoading, contractDetailError, refetch } =
     useGetContractDetail(id);
+  const [openSigning, setOpenSigning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (contractDetailLoading) {
     return (
@@ -40,6 +47,7 @@ export function ContractDetailView({ id }) {
       </DashboardContent>
     );
   }
+  
 
   if (contractDetailError) {
     return (
@@ -65,6 +73,33 @@ export function ContractDetailView({ id }) {
 
   const handleViewPdf = (url) => {
     window.open(url, "_blank");
+  };
+
+  const handleSubmitSignature = async (contractId, signatureData) => {
+    setIsSubmitting(true);
+    try {
+      const response = await signContract(contractId, {
+        signature: signatureData,
+      });
+      toast.success(response.message || "Contract signed successfully!");
+
+      // Refresh the contract details
+      if (refetch) {
+        refetch();
+      }
+
+      setOpenSigning(false);
+    } catch (error) {
+      console.error("Sign contract error:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to sign contract";
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -128,6 +163,16 @@ export function ContractDetailView({ id }) {
                   onClick={() => handleViewPdf(contractDetail.signed_pdf_url)}
                 >
                   Signed PDF
+                </Button>
+              )}
+              {contractDetail?.status !== "signed" && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Iconify icon="eva:edit-outline" />}
+                  onClick={() => setOpenSigning(true)}
+                >
+                  Sign Contract
                 </Button>
               )}
             </Stack>
@@ -294,46 +339,229 @@ export function ContractDetailView({ id }) {
                   )}
                 </Grid>
                 <Grid item xs={12} md={9}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <InfoRow
-                        label="Company"
-                        value={contractDetail?.vacancy?.employer?.company_name}
-                      />
+                  <Stack spacing={3}>
+                    {/* Company Name */}
+                    <Box>
+                      <Typography
+                        variant="h5"
+                        fontWeight={700}
+                        color="text.primary"
+                        gutterBottom
+                      >
+                        {contractDetail?.vacancy?.employer?.company_name}
+                      </Typography>
+                    </Box>
+
+                    <Divider />
+
+                    {/* Contact & General Info */}
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} sm={6}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            bgcolor: "background.neutral",
+                            borderRadius: 2,
+                            height: "100%",
+                          }}
+                        >
+                          <Stack spacing={1.5}>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon="mdi:email"
+                                width={20}
+                                sx={{ color: "primary.main" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Email
+                              </Typography>
+                            </Stack>
+                            <Typography variant="body2" fontWeight={500}>
+                              {contractDetail?.vacancy?.employer?.email || "-"}
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      </Grid>
+
+                      <Grid item xs={12} sm={6}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            bgcolor: "background.neutral",
+                            borderRadius: 2,
+                            height: "100%",
+                          }}
+                        >
+                          <Stack spacing={1.5}>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon="mdi:web"
+                                width={20}
+                                sx={{ color: "primary.main" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Website
+                              </Typography>
+                            </Stack>
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{
+                                wordBreak: "break-word",
+                                color: "primary.main",
+                                cursor: "pointer",
+                                "&:hover": { textDecoration: "underline" },
+                              }}
+                              onClick={() =>
+                                contractDetail?.vacancy?.employer?.website &&
+                                window.open(
+                                  contractDetail.vacancy.employer.website.startsWith(
+                                    "http",
+                                  )
+                                    ? contractDetail.vacancy.employer.website
+                                    : `https://${contractDetail.vacancy.employer.website}`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              {contractDetail?.vacancy?.employer?.website ||
+                                "-"}
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      </Grid>
+
+                      <Grid item xs={12} sm={6}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            bgcolor: "background.neutral",
+                            borderRadius: 2,
+                            height: "100%",
+                          }}
+                        >
+                          <Stack spacing={1.5}>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon="mdi:account-group"
+                                width={20}
+                                sx={{ color: "primary.main" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Number of Employees
+                              </Typography>
+                            </Stack>
+                            <Typography variant="body2" fontWeight={500}>
+                              {contractDetail?.vacancy?.employer
+                                ?.number_of_employees || "-"}
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      </Grid>
+
+                      <Grid item xs={12} sm={6}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            bgcolor: "background.neutral",
+                            borderRadius: 2,
+                            height: "100%",
+                          }}
+                        >
+                          <Stack spacing={1.5}>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon="mdi:map-marker"
+                                width={20}
+                                sx={{ color: "primary.main" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Location
+                              </Typography>
+                            </Stack>
+                            <Typography variant="body2" fontWeight={500}>
+                              {contractDetail?.vacancy?.employer?.city &&
+                              contractDetail?.vacancy?.employer?.state &&
+                              contractDetail?.vacancy?.employer?.country
+                                ? `${contractDetail.vacancy.employer.city}, ${contractDetail.vacancy.employer.state}, ${contractDetail.vacancy.employer.country}`
+                                : "-"}
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      </Grid>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <InfoRow
-                        label="Email"
-                        value={contractDetail?.vacancy?.employer?.email}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <InfoRow
-                        label="Website"
-                        value={contractDetail?.vacancy?.employer?.website}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <InfoRow
-                        label="Employees"
-                        value={
-                          contractDetail?.vacancy?.employer?.number_of_employees
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <InfoRow
-                        label="Location"
-                        value={`${contractDetail?.vacancy?.employer?.city}, ${contractDetail?.vacancy?.employer?.state}, ${contractDetail?.vacancy?.employer?.country}`}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <InfoRow
-                        label="Description"
-                        value={contractDetail?.vacancy?.employer?.description}
-                      />
-                    </Grid>
-                  </Grid>
+
+                    {/* Description */}
+                    {contractDetail?.vacancy?.employer?.description && (
+                      <>
+                        <Divider />
+                        <Box>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            mb={2}
+                          >
+                            <Iconify
+                              icon="mdi:information"
+                              width={20}
+                              sx={{ color: "primary.main" }}
+                            />
+                            <Typography
+                              variant="subtitle2"
+                              color="text.secondary"
+                            >
+                              About the Company
+                            </Typography>
+                          </Stack>
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 2.5,
+                              bgcolor: "background.neutral",
+                              borderRadius: 2,
+                            }}
+                          >
+                            <Markdown>
+                              {contractDetail.vacancy.employer.description}
+                            </Markdown>
+                          </Paper>
+                        </Box>
+                      </>
+                    )}
+                  </Stack>
                 </Grid>
               </Grid>
             </CardContent>
@@ -352,14 +580,20 @@ export function ContractDetailView({ id }) {
                 />
                 <Typography variant="h6">Job Duties</Typography>
               </Stack>
-              <Typography
+              {/* <Typography
                 variant="body2"
                 color="text.secondary"
                 sx={{ whiteSpace: "pre-line" }}
               >
                 {contractDetail?.vacancy?.job_duties ||
                   "No job duties specified"}
-              </Typography>
+              </Typography> */}
+              <Markdown
+                children={
+                  contractDetail?.vacancy?.job_duties ||
+                  "No job duties specified"
+                }
+              />
             </CardContent>
           </Card>
         </Grid>
@@ -376,13 +610,18 @@ export function ContractDetailView({ id }) {
                 />
                 <Typography variant="h6">Benefits</Typography>
               </Stack>
-              <Typography
+              {/* <Typography
                 variant="body2"
                 color="text.secondary"
                 sx={{ whiteSpace: "pre-line" }}
               >
                 {contractDetail?.vacancy?.benefits || "No benefits specified"}
-              </Typography>
+              </Typography> */}
+              <Markdown
+                children={
+                  contractDetail?.vacancy?.benefits || "No benefits specified"
+                }
+              />
             </CardContent>
           </Card>
         </Grid>
@@ -499,6 +738,14 @@ export function ContractDetailView({ id }) {
           </Grid>
         )}
       </Grid>
+
+      <ContractSigningDialog
+        open={openSigning}
+        onClose={() => setOpenSigning(false)}
+        contract={contractDetail}
+        onSubmitSignature={handleSubmitSignature}
+        isSubmitting={isSubmitting}
+      />
     </DashboardContent>
   );
 }

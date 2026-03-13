@@ -26,6 +26,7 @@ import { fetchOnBoardingRequest } from "src/redux/actions";
 import { useRouter } from "src/routes/hooks";
 import { setSelectedVacancyId } from "src/redux/actions/vacancy-actions";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
+import { Markdown } from "src/components/markdown";
 
 export function VacancyDetailView({ id }) {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export function VacancyDetailView({ id }) {
     useGetVacancyDetail(id);
 
   const { onBoarding, isLoading: isLoadingOnBoarding } = useAppSelector(
-    (state) => state.onBoarding || { onBoarding: {}, isLoading: false }
+    (state) => state.onBoarding || { onBoarding: {}, isLoading: false },
   );
 
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
@@ -452,7 +453,7 @@ export function VacancyDetailView({ id }) {
                           icon: "mdi:calendar",
                           label: "LC Filing Date",
                           value: formatDate(
-                            vacancyDetail?.estimated_lc_filling_date
+                            vacancyDetail?.estimated_lc_filling_date,
                           ),
                           color: "#FFAB00",
                           bgcolor: "#FFF5CC",
@@ -692,8 +693,8 @@ export function VacancyDetailView({ id }) {
                     {isLoadingOnBoarding
                       ? "Loading..."
                       : vacancyDetail?.is_applied
-                      ? "View Application"
-                      : "Apply Now"}
+                        ? "View Application"
+                        : "Apply Now"}
                   </Button>
                 </Box>
               </Grid>
@@ -736,7 +737,7 @@ export function VacancyDetailView({ id }) {
                   Job Duties & Responsibilities
                 </Typography>
                 <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                  {jobDutiesList.map((duty, index) => (
+                  {/* {jobDutiesList.map((duty, index) => (
                     <Box component="li" key={index} sx={{ mb: 1.5 }}>
                       <Typography
                         variant="body2"
@@ -746,7 +747,8 @@ export function VacancyDetailView({ id }) {
                         {duty}
                       </Typography>
                     </Box>
-                  ))}
+                  ))} */}
+                  <Markdown children={vacancyDetail?.job_duties} />
                 </Box>
               </CardContent>
             </Card>

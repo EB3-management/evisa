@@ -253,7 +253,7 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: theme.palette.primary.main,
+                backgroundColor: "primary.main",
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
                 height: "100%",
@@ -326,7 +326,7 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: theme.palette.secondary.main,
+                backgroundColor: "secondary.main",
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
                 height: "100%",
@@ -394,7 +394,7 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: theme.palette.primary.main,
+                backgroundColor: "primary.main",
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
                 height: "100%",
@@ -462,7 +462,7 @@ export function AppView() {
               elevation={0}
               sx={{
                 p: { xs: 2, sm: 3 },
-                background: theme.palette.secondary.main,
+                backgroundColor: "secondary.main",
                 color: "white",
                 borderRadius: { xs: 2, md: 3 },
                 height: "100%",

@@ -99,17 +99,17 @@ export const visaRejectionSchema = z
   });
 
 // ------------------ Component ------------------
-export const VisaRejection = ({vacancyId}) => {
+export const VisaRejection = ({ vacancyId }) => {
   const {
     control,
     formState: { errors },
     watch,
   } = useFormContext();
 
-   const { immigrationType, immigrationTypeLoading } =
-      useGetImmigrationTypes(vacancyId);
+  const { immigrationType, immigrationTypeLoading } =
+    useGetImmigrationTypes(vacancyId);
 
-      const { vacancyDetail } = useGetVacancyDetail(vacancyId);
+  const { vacancyDetail } = useGetVacancyDetail(vacancyId);
 
   const employee_visa_rejected = watch("employee_visa_rejected");
   const dependents_visa_rejected = watch("dependents_visa_rejected");
@@ -119,58 +119,16 @@ export const VisaRejection = ({vacancyId}) => {
       <Grid container spacing={3}>
         {/* Recent Record */}
         <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
             Have you ever been rejected for the visa ?{" "}
           </Typography>
-          {/* <Controller
-            name="employee_visa_rejected"
-            control={control}
-            defaultValue="no"
-            render={({ field }) => (
-              <FormControl error={!!errors.recentRecord}>
-                <RadioGroup row {...field}>
-                  <FormControlLabel
-                    value="yes"
-                    control={
-                      <Radio
-                        sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      />
-                    }
-                    label="Yes"
-                  />
-                  <FormControlLabel
-                    value="no"
-                    control={
-                      <Radio
-                        sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      />
-                    }
-                    label="No"
-                  />
-                </RadioGroup>
-                {errors.recentRecord && (
-                  <FormHelperText>
-                    {errors.recentRecord?.message}
-                  </FormHelperText>
-                )}
-              </FormControl>
-            )}
-          /> */}
         </Grid>
 
         {/* Applicant */}
         <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>Applicant</Typography>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
+            Applicant
+          </Typography>
           <Controller
             name="employee_visa_rejected"
             control={control}
@@ -274,8 +232,7 @@ export const VisaRejection = ({vacancyId}) => {
                         // Find the ID that matches the stored code
                         immigrationType?.find(
                           (type) =>
-                            type.name.split(/[-–\s]/)[0].trim() ===
-                            field.value,
+                            type.name.split(/[-–\s]/)[0].trim() === field.value,
                         )?.id ||
                         field.value ||
                         ""
@@ -285,7 +242,11 @@ export const VisaRejection = ({vacancyId}) => {
                       }}
                     >
                       <MenuItem value="">
-                        <em>{immigrationTypeLoading ? "Loading..." : "Select Visa Type"}</em>
+                        <em>
+                          {immigrationTypeLoading
+                            ? "Loading..."
+                            : "Select Visa Type"}
+                        </em>
                       </MenuItem>
                       {immigrationType?.map((type) => (
                         <MenuItem key={type.id} value={type.id}>
@@ -294,7 +255,9 @@ export const VisaRejection = ({vacancyId}) => {
                       ))}
                     </TextField>
                     {errors.employee_visa_type && (
-                      <FormHelperText>{errors.employee_visa_type?.message}</FormHelperText>
+                      <FormHelperText>
+                        {errors.employee_visa_type?.message}
+                      </FormHelperText>
                     )}
                   </FormControl>
                 )}
@@ -348,57 +311,16 @@ export const VisaRejection = ({vacancyId}) => {
         )}
 
         {/* Record 2 */}
-        <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>
+        {/* <Grid size={{ xs: 12 }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500, mt: 4 }}>
             Have your dependent ever been rejected for the visa ?
           </Typography>
-          {/* <Controller
-            name="dependents_visa_rejected"
-            control={control}
-            defaultValue="no"
-            render={({ field }) => (
-              <FormControl error={!!errors.record2}>
-                <RadioGroup row {...field}>
-                  <FormControlLabel
-                    value="yes"
-                    control={
-                      <Radio
-                        sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      />
-                    }
-                    label="Yes"
-                  />
-                  <FormControlLabel
-                    value="no"
-                    control={
-                      <Radio
-                        sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      />
-                    }
-                    label="No"
-                  />
-                </RadioGroup>
-                {errors.record2 && (
-                  <FormHelperText>{errors.record2?.message}</FormHelperText>
-                )}
-              </FormControl>
-            )}
-          /> */}
-        </Grid>
+         
+        </Grid> */}
 
         {/* Dependent */}
         <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1 }}>Dependents</Typography>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500, mt: 4 }}>Dependents</Typography>
           <Controller
             name="dependents_visa_rejected"
             control={control}
@@ -502,8 +424,7 @@ export const VisaRejection = ({vacancyId}) => {
                         // Find the ID that matches the stored code
                         immigrationType?.find(
                           (type) =>
-                            type.name.split(/[-–\s]/)[0].trim() ===
-                            field.value,
+                            type.name.split(/[-–\s]/)[0].trim() === field.value,
                         )?.id ||
                         field.value ||
                         ""
@@ -513,7 +434,11 @@ export const VisaRejection = ({vacancyId}) => {
                       }}
                     >
                       <MenuItem value="">
-                        <em>{immigrationTypeLoading ? "Loading..." : "Select Visa Type"}</em>
+                        <em>
+                          {immigrationTypeLoading
+                            ? "Loading..."
+                            : "Select Visa Type"}
+                        </em>
                       </MenuItem>
                       {immigrationType?.map((type) => (
                         <MenuItem key={type.id} value={type.id}>
@@ -522,7 +447,9 @@ export const VisaRejection = ({vacancyId}) => {
                       ))}
                     </TextField>
                     {errors.dependent_visa_type && (
-                      <FormHelperText>{errors.dependent_visa_type?.message}</FormHelperText>
+                      <FormHelperText>
+                        {errors.dependent_visa_type?.message}
+                      </FormHelperText>
                     )}
                   </FormControl>
                 )}

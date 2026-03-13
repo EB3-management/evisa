@@ -1,13 +1,10 @@
-import { usePopover } from "minimal-shared/hooks";
+import { useMemo, useState } from "react";
 
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import Card from "@mui/material/Card";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
-import MenuList from "@mui/material/MenuList";
-import MenuItem from "@mui/material/MenuItem";
-import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import ListItemText from "@mui/material/ListItemText";
 import Button from "@mui/material/Button";
@@ -15,10 +12,8 @@ import Button from "@mui/material/Button";
 import { RouterLink } from "src/routes/components";
 
 import { fDate } from "src/utils/format-time";
-import { fCurrency } from "src/utils/format-number";
 
 import { Iconify } from "src/components/iconify";
-import { CustomPopover } from "src/components/custom-popover";
 import { paths } from "src/routes/paths";
 import { useRouter } from "src/routes/hooks";
 
@@ -32,8 +27,24 @@ export function VacancyItem({
   sx,
   ...other
 }) {
-  const menuActions = usePopover();
   const router = useRouter();
+  const [logoError, setLogoError] = useState(false);
+
+  const employerName =
+    job?.employer_name || job?.employer?.company_name || "Employer";
+  const employerLogo = job?.employer?.logo || null;
+
+  const employerInitials = useMemo(() => {
+    const parts = employerName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "");
+
+    return parts.join("") || "E";
+  }, [employerName]);
+
+  const avatarSrc = !logoError && employerLogo ? employerLogo : undefined;
 
   const handleClick = () => {
     router.push(paths.dashboard.vacancy.detail(job.id));
@@ -43,13 +54,46 @@ export function VacancyItem({
     <>
       <Card sx={sx} {...other}>
         <Box sx={{ p: 3, pb: 2 }}>
-          <Avatar
-            alt={job.employer_name}
-            // src={job.company_logo || "https://via.placeholder.com/48"}
-            src={job.employer_name}
-            variant="rounded"
-            sx={{ width: 48, height: 48, mb: 2, bgcolor: "secondary.main" }}
-          />
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              mb: 2,
+              p: 0.75,
+              borderRadius: 2.5,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "action.hover",
+              boxShadow: (theme) => theme.customShadows?.z8,
+            }}
+          >
+            <Avatar
+              alt={employerName}
+              src={avatarSrc}
+              variant="rounded"
+              imgProps={{
+                loading: "lazy",
+                referrerPolicy: "no-referrer",
+                onError: () => setLogoError(true),
+              }}
+              sx={{
+                width: "100%",
+                height: "100%",
+                borderRadius: 2,
+                // bgcolor: avatarSrc ? "common.white" : "secondary.main",
+                // color: "secondary.contrastText",
+                fontWeight: 700,
+                fontSize: 24,
+                letterSpacing: 0.5,
+                ".MuiAvatar-img": {
+                  objectFit: "contain",
+                  p: 0.5,
+                },
+              }}
+            >
+              {!avatarSrc ? employerInitials : null}
+            </Avatar>
+          </Box>
 
           <ListItemText
             sx={{ mb: 1 }}
@@ -145,7 +189,14 @@ export function VacancyItem({
               }}
             >
               {item.icon}
-              <Typography variant="caption" noWrap>
+              <Typography
+                variant="caption"
+                noWrap
+                sx={{
+                  color: "text.primary",
+                  fontWeight: 500,
+                }}
+              >
                 {item.label}
               </Typography>
             </Box>

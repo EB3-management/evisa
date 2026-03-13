@@ -37,11 +37,11 @@ export const dependentsSchema = z
     dependents: z
       .array(
         z.object({
-          kinship: z.string().min(1, "Degree of kinship is required"),
-          first_name: z.string().min(1, "First name is required"),
+          kinship: z.string().optional(),
+          first_name: z.string().optional(),
           middle_name: z.string().optional(),
-          last_name: z.string().min(1, "Last name is required"),
-          dob: z.string().min(1, "Date of birth is required"),
+          last_name: z.string().optional(),
+          dob: z.string().optional(),
           birth_country: z.string().optional(),
           citizenship_country: z.string().optional(),
           highest_level_of_education: z.string().optional(),
@@ -91,6 +91,7 @@ export const dependentsSchema = z
         });
       }
     }
+    // When "No" is selected, no validation errors will be added
   });
 
 /* ---------------------- ✅ MAIN COMPONENT ---------------------- */
@@ -130,11 +131,12 @@ export const DependentInformation = () => {
         citizenship_country: "",
         highest_level_of_education: "",
       });
-    } else if (!showForm && dependents.length > 0) {
-      // Clear all records when "No" is selected
-      setValue("dependents", []);
-      console.log("🗑️ Cleared dependents");
     }
+    // else if (!showForm && dependents.length > 0) {
+    //   // Clear all records when "No" is selected
+    //   setValue("dependents", []);
+    //   console.log("🗑️ Cleared dependents");
+    // }
   }, [showForm, dependents.length, setValue, append]);
 
   const today = new Date().toISOString().split("T")[0];
@@ -393,7 +395,13 @@ export const DependentInformation = () => {
                             fullWidth
                             error={!!errors.dependents?.[index]?.birth_country}
                           >
-                            <Typography sx={{ mb: 1, fontWeight: 500, color: "text.primary" }}>
+                            <Typography
+                              sx={{
+                                mb: 1,
+                                fontWeight: 500,
+                                color: "text.primary",
+                              }}
+                            >
                               Country of Birth (Optional)
                             </Typography>
                             <Select
@@ -438,7 +446,13 @@ export const DependentInformation = () => {
                               !!errors.dependents?.[index]?.citizenship_country
                             }
                           >
-                            <Typography sx={{ mb: 1, fontWeight: 500, color: "text.primary" }}>
+                            <Typography
+                              sx={{
+                                mb: 1,
+                                fontWeight: 500,
+                                color: "text.primary",
+                              }}
+                            >
                               Country of Citizenship (Optional)
                             </Typography>
                             <Select
@@ -486,7 +500,13 @@ export const DependentInformation = () => {
                                 ?.highest_level_of_education
                             }
                           >
-                            <Typography sx={{ mb: 1, fontWeight: 500, color: "text.primary" }}>
+                            <Typography
+                              sx={{
+                                mb: 1,
+                                fontWeight: 500,
+                                color: "text.primary",
+                              }}
+                            >
                               Highest Level of Education (Optional)
                             </Typography>
                             <RadioGroup {...field} row>

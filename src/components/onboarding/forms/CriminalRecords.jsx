@@ -25,14 +25,12 @@ export const criminalRecordSchema = z
     criminal_records: z
       .array(
         z.object({
-          related_to: z.enum(["employee", "dependent", "both"], {
-            required_error: "Please select who this record is related to",
-          }),
-          name: z.string().min(1, "Name is required"),
-          type_of_record: z.string().min(1, "Type of record is required"),
-          date: z.string().min(1, "Date is required"),
-          outcome: z.string().min(1, "Outcome is required"),
-        })
+          related_to: z.string().optional(),
+          name: z.string().optional(),
+          type_of_record: z.string().optional(),
+          date: z.string().optional(),
+          outcome: z.string().optional(),
+        }),
       )
       .optional()
       .default([]),
@@ -41,7 +39,6 @@ export const criminalRecordSchema = z
     const hasEmployee = data.criminal_record_employee === "Yes";
     const hasDependent = data.criminal_record_dependents === "Yes";
 
-    // If either employee or dependent has criminal record, require at least one entry
     // ✅ Only validate if Yes is selected
     if (hasEmployee || hasDependent) {
       if (!data.criminal_records || data.criminal_records.length === 0) {
@@ -51,37 +48,37 @@ export const criminalRecordSchema = z
           path: ["criminal_records"],
         });
       } else {
-        // ✅ Validate each record only if records exist
+        // ✅ Validate each record only when Yes is selected
         data.criminal_records.forEach((record, index) => {
-          if (!record.related_to) {
+          if (!record.related_to || record.related_to.trim() === "") {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Please select who this record is related to",
               path: ["criminal_records", index, "related_to"],
             });
           }
-          if (!record.name?.trim()) {
+          if (!record.name || record.name.trim() === "") {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Name is required",
               path: ["criminal_records", index, "name"],
             });
           }
-          if (!record.type_of_record?.trim()) {
+          if (!record.type_of_record || record.type_of_record.trim() === "") {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Type of record is required",
               path: ["criminal_records", index, "type_of_record"],
             });
           }
-          if (!record.date) {
+          if (!record.date || record.date.trim() === "") {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Date is required",
               path: ["criminal_records", index, "date"],
             });
           }
-          if (!record.outcome?.trim()) {
+          if (!record.outcome || record.outcome.trim() === "") {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: "Outcome is required",
@@ -91,10 +88,7 @@ export const criminalRecordSchema = z
         });
       }
     }
-    // ✅ If both are "No", clear any existing criminal records
-    else {
-      // No validation needed when both are "No"
-    }
+    // ✅ If both are "No", skip validation entirely (keep data but don't validate)
   });
 
 // ------------------ Component ------------------
@@ -104,6 +98,7 @@ export const CriminalRecord = () => {
     formState: { errors },
     watch,
     setValue,
+    clearErrors,
   } = useFormContext();
 
   const employeeAnswer = watch("criminal_record_employee");
@@ -120,7 +115,7 @@ export const CriminalRecord = () => {
 
   const showForm = employeeAnswer === "Yes" || dependentAnswer === "Yes";
 
-  // ✅ Auto-add first record when "Yes" is selected, clear when both are "No"
+  // ✅ Auto-add first record when "Yes" is selected
   useEffect(() => {
     if (showForm && criminalRecords.length === 0) {
       // Add first record when switching to "Yes"
@@ -131,11 +126,12 @@ export const CriminalRecord = () => {
         date: "",
         outcome: "",
       });
-    } else if (!showForm && criminalRecords.length > 0) {
-      // Clear all records when both answers are "No"
-      setValue("criminal_records", []);
     }
-  }, [showForm, criminalRecords.length, append, setValue]);
+    // ✅ Clear validation errors when switching to "No"
+    if (!showForm) {
+      clearErrors("criminal_records");
+    }
+  }, [showForm, criminalRecords.length, append, clearErrors]);
 
   // Get available options based on selections
   const getRelatedToOptions = () => {

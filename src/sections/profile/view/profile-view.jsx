@@ -47,7 +47,7 @@ export function ProfileView() {
         heading="Profile"
         links={[
           { name: "Dashboard", href: paths.dashboard.root },
-          { name: "Profile" },
+          { name: "Profilefff" },
         ]}
         action={
           <Button

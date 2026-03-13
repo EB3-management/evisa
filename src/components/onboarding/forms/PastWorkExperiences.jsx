@@ -25,12 +25,12 @@ export const pastWorkExperiencesSchema = z
     work_experiences: z
       .array(
         z.object({
-          company_name: z.string().min(1, "Company name is required"),
-          job_title: z.string().min(1, "Job title is required"),
-          start_date: z.string().min(1, "Start date is required"),
+          company_name: z.string().optional(),
+          job_title: z.string().optional(),
+          start_date: z.string().optional(),
           end_date: z.string().optional(),
           currently_employed: z.boolean().optional(),
-          job_description: z.string().min(1, "Job description is required"),
+          job_description: z.string().optional(),
           city: z.string().optional(),
           state: z.string().optional(),
           zip_code: z.string().optional(),
@@ -42,6 +42,7 @@ export const pastWorkExperiencesSchema = z
       .default([]),
   })
   .superRefine((data, ctx) => {
+    // Only validate when "Yes" is selected
     if (data.has_work_experience === "Yes") {
       if (!data.work_experiences || data.work_experiences.length === 0) {
         ctx.addIssue({
@@ -104,6 +105,7 @@ export const pastWorkExperiencesSchema = z
         });
       }
     }
+    // When "No" is selected, validation is skipped entirely
   });
 
 export const PastWorkExperiences = () => {
@@ -144,11 +146,12 @@ export const PastWorkExperiences = () => {
         supervisor_name: "",
         job_duty: "",
       });
-    } else if (!showForm && workExperiences.length > 0) {
-      // Clear all records when "No" is selected
-      setValue("work_experiences", []);
-      console.log("🗑️ Cleared work experiences");
     }
+    //  else if (!showForm && workExperiences.length > 0) {
+    //   // Clear all records when "No" is selected
+    //   setValue("work_experiences", []);
+    //   console.log("🗑️ Cleared work experiences");
+    // }
   }, [showForm, workExperiences.length, setValue, append]);
 
   const today = new Date().toISOString().split("T")[0];
@@ -162,7 +165,7 @@ export const PastWorkExperiences = () => {
       <Grid container spacing={4}>
         {/* Main Question */}
         <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 2, fontWeight: 500 }}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>
             Do you have any work experience?
           </Typography>
 

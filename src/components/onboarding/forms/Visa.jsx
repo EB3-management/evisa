@@ -27,20 +27,17 @@ export const visaSchema = z
     visa_records: z
       .array(
         z.object({
-          visaName: z.string().min(1, "Name is required"),
-          visaType: z
-            .union([z.string(), z.number()])
-            .refine((val) => val !== "" && val !== null && val !== undefined, {
-              message: "Visa type is required",
-            }),
-          visaExpeditionDate: z.string().min(1, "Expedition date is required"),
-          visaExpirationDate: z.string().min(1, "Expiration date is required"),
+          visaName: z.string().optional(),
+          visaType: z.union([z.string(), z.number()]).optional(),
+          visaExpeditionDate: z.string().optional(),
+          visaExpirationDate: z.string().optional(),
         }),
       )
       .optional()
       .default([]),
   })
   .superRefine((data, ctx) => {
+    // Only validate when "Yes" is selected
     if (data.has_visa_records === "Yes") {
       if (!data.visa_records || data.visa_records.length === 0) {
         ctx.addIssue({
@@ -81,6 +78,7 @@ export const visaSchema = z
         });
       }
     }
+    // When "No" is selected, validation is skipped entirely
   });
 
 // ------------------ Component ------------------
@@ -117,11 +115,12 @@ export const Visa = ({ vacancyId }) => {
         visaExpeditionDate: "",
         visaExpirationDate: "",
       });
-    } else if (!showForm && visaRecords.length > 0) {
-      // Clear all records when "No" is selected
-      setValue("visa_records", []);
-      console.log("🗑️ Cleared visa records");
-    }
+    } 
+    // else if (!showForm && visaRecords.length > 0) {
+    //   // Clear all records when "No" is selected
+    //   setValue("visa_records", []);
+    //   console.log("🗑️ Cleared visa records");
+    // }
   }, [showForm, visaRecords.length, setValue, append]);
 
   const today = new Date().toISOString().split("T")[0];

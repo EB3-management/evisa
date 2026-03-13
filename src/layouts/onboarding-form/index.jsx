@@ -198,23 +198,23 @@ export default function OnboardingLayout() {
   }, [profile?.id, isInitialized, lastUserId]);
 
   const stepSchemas = [
-    processingInformationSchema,
-    mainApplicantSchema,
-    maritalStatusSchema,
-    dependentsSchema,
-    currentAddressSchema,
-    contactDetailsSchema,
-    academicInformationSchema,
-    pastWorkExperiencesSchema,
-    englishLanguageProficiencySchema,
-    emergencyContactSchema,
-    immigrationHistorySchema,
-    visaSchema,
-    visaRejectionSchema,
-    immigrationIncidentSchema,
-    criminalRecordSchema,
-    inadmissibilitySchema,
-    healthSchema,
+    processingInformationSchema, // Step 0
+    mainApplicantSchema, // Step 1 - includes marital status now
+    // maritalStatusSchema, // Step 2 - REMOVED: marital status now in step 1
+    // dependentsSchema, // Step 3 - REMOVED: dependents now in step 0
+    // currentAddressSchema, // Step 4 - REMOVED: address now in step 1
+    // contactDetailsSchema, // Step 5 - REMOVED: contact now in step 1
+    academicInformationSchema, // Step 2
+    pastWorkExperiencesSchema, // Step 3
+    englishLanguageProficiencySchema, // Step 4
+    emergencyContactSchema, // Step 5
+    // immigrationHistorySchema, // Removed
+    // visaSchema, // Removed
+    visaRejectionSchema, // Step 6
+    immigrationIncidentSchema, // Step 7
+    criminalRecordSchema, // Step 8
+    inadmissibilitySchema, // Step 9
+    healthSchema, // Step 10
   ];
   const methods = useForm({
     resolver: zodResolver(stepSchemas[currentStep]),
@@ -246,6 +246,12 @@ export default function OnboardingLayout() {
       //contact details
       email: "",
       phone: "",
+
+      //marital status
+      maritalStatus: "",
+      clarifyMaritalStatus: "",
+      countryOfMarriage: "",
+      dateOfMarriage: "",
 
       //academic information
       hasFormalEducation: false,
@@ -415,13 +421,14 @@ export default function OnboardingLayout() {
       const workExperiences = onBoarding?.workExperiences || [];
       const dependents = onBoarding?.dependents || [];
       const maritalStatus = onBoarding?.maritalStatus;
+      console.log("🔍 Debug maritalStatus from API:", maritalStatus);
       const emergencyContact = onBoarding?.emergencyContact;
       const immigrationHistory = onBoarding?.immigrationHistories?.[0]; // Take first item from array
       const visaRecords = onBoarding?.visaRecords || [];
       const visaRejection = onBoarding?.visaRejections || []; // Take first item from array
       const immigrationIncidents = onBoarding?.immigrationIncidents?.[0]; // Take first item from array
       const criminalRecords = onBoarding?.criminalRecords || [];
-      const inadmissibilityRecords = onBoarding?.inadmissibilityRecords || [];
+      const inadmissibilityRecords = onBoarding?.inadmissibilityRecord || [];
       const healthRecord = onBoarding?.healthRecord;
       const processingInformation = onBoarding?.processing_information;
 
@@ -490,20 +497,26 @@ export default function OnboardingLayout() {
       // Populate Dependents
       const dependentFields = {
         has_dependents: dependents.length > 0 ? "Yes" : "No",
-        dependents: dependents.map((dep) => ({
-          first_name: dep.dependent_first_name || "",
-          middle_name: dep.dependent_middle_name || "",
-          last_name: dep.dependent_last_name || "",
-          dob: dep.dependent_dob || "",
-          kinship: dep.dependent_relation || "",
-          birth_country: dep.dependent_country_of_birth
-            ? String(dep.dependent_country_of_birth)
-            : "",
-          citizenship_country: dep.dependent_country_of_citizenship
-            ? String(dep.dependent_country_of_citizenship)
-            : "",
-          highest_level_of_education: dep.education || "",
-        })),
+        dependents: dependents.map((dep) => {
+          const birthCountry =
+            dep.dependent_country_of_birth || dep.country_of_birth?.id || "";
+          const citizenshipCountry =
+            dep.dependent_country_of_citizenship ||
+            dep.country_of_citizenship?.id ||
+            "";
+          return {
+            first_name: dep.dependent_first_name || "",
+            middle_name: dep.dependent_middle_name || "",
+            last_name: dep.dependent_last_name || "",
+            dob: dep.dependent_dob || "",
+            kinship: dep.dependent_relation || "",
+            birth_country: birthCountry ? birthCountry.toString() : "",
+            citizenship_country: citizenshipCountry
+              ? citizenshipCountry.toString()
+              : "",
+            highest_level_of_education: dep.education || "",
+          };
+        }),
       };
 
       // Populate Visa Records
@@ -538,6 +551,25 @@ export default function OnboardingLayout() {
           : "";
       };
 
+      // Helper function to normalize marital status from API to form
+      const normalizeMaritalStatus = (legallyMarried, maritalStatusField) => {
+        // Check both possible field names from API
+        const statusValue = legallyMarried || maritalStatusField;
+
+        console.log(
+          "🔄 normalizeMaritalStatus input - legally_married:",
+          legallyMarried,
+          "| marital_status:",
+          maritalStatusField,
+        );
+
+        if (!statusValue) return "";
+        if (statusValue === "Yes") return "Married";
+        if (statusValue === "No") return "Single";
+        // Return as is for Divorced, Widow, Separated, Others
+        return statusValue;
+      };
+
       // Populate form with all data
       methods.reset({
         // Processing Information
@@ -550,6 +582,53 @@ export default function OnboardingLayout() {
         embassy_name: processingInformation?.embassy_name || "",
         embassy_location: processingInformation?.embassy_location || "",
 
+        // Visa records from processing information
+        visa_records_applicant: visaRecords.length > 0 ? "yes" : "no",
+        applicant_visa_records: visaRecords.map((record) => ({
+          fullname: record.visa_fullname || "",
+          type: record.visa_type || "",
+          expedition_date: record.visa_expedition_date || "",
+          expiration_date: record.visa_expiration_date || "",
+        })),
+
+        // Dependents from processing information
+        visa_records_dependents: dependents.length > 0 ? "yes" : "no",
+        dependent_visa_records: visaRecords
+          .filter((dep) =>
+            dependents.some((d) =>
+              (d.dependent_first_name + " " + d.dependent_last_name)
+                .toLowerCase()
+                .includes(dep.visa_fullname?.toLowerCase()),
+            ),
+          )
+          .map((record) => ({
+            fullname: record.visa_fullname || "",
+            type: record.visa_type || "",
+            expedition_date: record.visa_expedition_date || "",
+            expiration_date: record.visa_expiration_date || "",
+          })),
+        dependents: dependents.map((dep) => {
+          console.log("🔍 Mapping dependent:", dep);
+          const birthCountry =
+            dep.dependent_country_of_birth || dep.country_of_birth?.id || "";
+          const citizenshipCountry =
+            dep.dependent_country_of_citizenship ||
+            dep.country_of_citizenship?.id ||
+            "";
+          return {
+            first_name: dep.dependent_first_name || "",
+            middle_name: dep.dependent_middle_name || "",
+            last_name: dep.dependent_last_name || "",
+            dob: dep.dependent_dob || "",
+            relation: dep.dependent_relation || "",
+            country_of_birth: birthCountry ? birthCountry.toString() : "",
+            country_of_citizenship: citizenshipCountry
+              ? citizenshipCountry.toString()
+              : "",
+            highest_level_of_education: dep.education || "",
+          };
+        }),
+
         // Main Applicant - Priority: onBoarding.employee > profile
         firstName: employee?.first_name || profile?.first_name || "",
         middleName: employee?.middle_name || profile?.middle_name || "",
@@ -559,7 +638,8 @@ export default function OnboardingLayout() {
         gender: normalizeGender(employee?.gender || profile?.gender),
         countryOfBirth:
           employee?.birth_country?.id ||
-          eligibilityData?.employee?.birth_country?.id ||
+          employee?.birth_country ||
+          eligibilityData?.employee?.birth_country ||
           "",
         citizenship1:
           employee?.country_of_citizenship?.id ||
@@ -574,7 +654,8 @@ export default function OnboardingLayout() {
         // Current Address - from employeeAddress
         country:
           employeeAddress?.current_country?.id ||
-          eligibilityData?.employee?.employee_address?.current_country?.id ||
+          employeeAddress?.current_country ||
+          eligibilityData?.employee?.employee_address?.current_country ||
           "",
         state:
           employeeAddress?.current_province_state ||
@@ -618,14 +699,34 @@ export default function OnboardingLayout() {
         ...dependentFields,
 
         // Marital Status
-        maritalStatus: maritalStatus?.legally_married || "",
+        maritalStatus: (() => {
+          const normalized = normalizeMaritalStatus(
+            maritalStatus?.legally_married,
+            maritalStatus?.marital_status,
+          );
+          console.log("🔍 Setting maritalStatus to:", normalized);
+          // ⚠️ TEMPORARY: Fallback to localStorage if backend returns null
+          const fallback =
+            normalized ||
+            localStorage.getItem(`maritalStatus_${profile?.id}`) ||
+            "";
+          console.log("💾 Using maritalStatus value:", fallback);
+          return fallback;
+        })(),
         clarifyMaritalStatus:
           maritalStatus?.legally_married_if_others ||
           maritalStatus?.legally_married_if_d_w_s ||
+          localStorage.getItem(`clarifyMaritalStatus_${profile?.id}`) ||
           "",
-        countryOfMarriage: maritalStatus?.legally_married_if_yes_country || "",
+        countryOfMarriage:
+          maritalStatus?.legally_married_if_yes_country ||
+          maritalStatus?.country ||
+          localStorage.getItem(`countryOfMarriage_${profile?.id}`) ||
+          "",
         dateOfMarriage:
-          maritalStatus?.legally_married_if_yes_date_of_marriage || "",
+          maritalStatus?.legally_married_if_yes_date_of_marriage ||
+          localStorage.getItem(`dateOfMarriage_${profile?.id}`) ||
+          "",
 
         // Emergency Contact
         emergencyFullName: emergencyContact?.eci_name || "",
@@ -636,6 +737,7 @@ export default function OnboardingLayout() {
         emergencyAddress: emergencyContact?.eci_address || "",
 
         // Immigration History
+        hasImmigrationHistory: onBoarding?.has_immigration_history ?? false,
         types: immigrationHistory?.immigration_type || "",
         beenToUsa: immigrationHistory?.been_to_usa || "No",
         socialSecurity: immigrationHistory?.ever_had_ssn || "No",
@@ -768,6 +870,8 @@ export default function OnboardingLayout() {
 
   //processing information
   const transformProcessingInformationData = (formData) => {
+    console.log("🔍 Processing Information - Raw Form Data:", formData);
+
     const data = {
       adjustment_of_status: formData.adjustment_of_status,
     };
@@ -782,20 +886,143 @@ export default function OnboardingLayout() {
       data.embassy_location = formData.embassy_location;
     }
 
+    // Add dependents if they exist
+    if (
+      formData.visa_records_dependents === "yes" &&
+      formData.dependents?.length > 0
+    ) {
+      data.dependents = formData.dependents.map((dependent) => ({
+        first_name: dependent.first_name || "",
+        middle_name: dependent.middle_name || "",
+        last_name: dependent.last_name || "",
+        dob: dependent.dob || "",
+        relation: dependent.relation || "",
+        country_of_birth: dependent.country_of_birth || "",
+        country_of_citizenship: dependent.country_of_citizenship || "",
+      }));
+    }
+
+    // Add visa records (both applicant and dependent)
+    const visa_records = [];
+
+    // Add applicant visa records
+    if (
+      formData.visa_records_applicant === "yes" &&
+      formData.applicant_visa_records?.length > 0
+    ) {
+      formData.applicant_visa_records.forEach((record) => {
+        if (record.fullname && record.type) {
+          visa_records.push({
+            fullname: record.fullname,
+            type: record.type,
+            expedition_date: record.expedition_date || "",
+            expiration_date: record.expiration_date || "",
+          });
+        }
+      });
+    }
+
+    // Add dependent visa records
+    if (
+      formData.visa_records_dependents === "yes" &&
+      formData.dependent_visa_records?.length > 0
+    ) {
+      formData.dependent_visa_records.forEach((record) => {
+        if (record.fullname && record.type) {
+          visa_records.push({
+            fullname: record.fullname,
+            type: record.type,
+            expedition_date: record.expedition_date || "",
+            expiration_date: record.expiration_date || "",
+          });
+        }
+      });
+    }
+
+    // Only add visa_records if there are any
+    if (visa_records.length > 0) {
+      data.visa_records = visa_records;
+    }
+
+    console.log("📤 Processing Information - Transformed API Data:", data);
     return data;
   };
 
   //main applicant detail
-  const transformMainApplicantData = (formData) => ({
-    first_name: formData.firstName,
-    middle_name: formData.middleName || "",
-    last_name: formData.lastName,
-    dob: formData.dob,
-    gender: formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1),
-    country_of_birth: formData.countryOfBirth,
-    country_of_citizenship: formData.citizenship1,
-    country_of_citizenship2: formData.citizenship2 || "",
-  });
+  const transformMainApplicantData = (formData) => {
+    const transformedData = {
+      first_name: formData.firstName,
+      middle_name: formData.middleName || "",
+      last_name: formData.lastName,
+      dob: formData.dob,
+      gender:
+        formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1),
+      country_of_birth: formData.countryOfBirth,
+      country_of_citizenship: formData.citizenship1,
+      country_of_citizenship2: formData.citizenship2 || "",
+      current_country: formData.country,
+      current_state: formData.state,
+      current_city: formData.city,
+      current_zip_code: formData.zipCode || "",
+      current_address: formData.address,
+      personal_email: formData.email,
+      phone_number: formData.phone,
+      legally_married:
+        formData.maritalStatus === "Married"
+          ? "Yes"
+          : formData.maritalStatus === "Single"
+            ? "No"
+            : formData.maritalStatus,
+      legally_married_if_others:
+        formData.maritalStatus &&
+        !["Married", "Single", "Divorced", "Widow", "Separated"].includes(
+          formData.maritalStatus,
+        )
+          ? formData.clarifyMaritalStatus || ""
+          : "",
+      legally_married_if_d_w_s: ["Divorced", "Widow", "Separated"].includes(
+        formData.maritalStatus,
+      )
+        ? formData.clarifyMaritalStatus || ""
+        : "",
+      legally_married_if_yes_country:
+        formData.maritalStatus === "Married"
+          ? formData.countryOfMarriage || ""
+          : "",
+      legally_married_if_yes_date_of_marriage:
+        formData.maritalStatus === "Married"
+          ? formData.dateOfMarriage || ""
+          : "",
+    };
+
+    console.log("📤 Main Applicant - Sending to API:", transformedData);
+    // ⚠️ TEMPORARY: Save marital data to localStorage as backup
+    if (formData.maritalStatus) {
+      localStorage.setItem(
+        `maritalStatus_${profile?.id}`,
+        formData.maritalStatus,
+      );
+    }
+    if (formData.clarifyMaritalStatus) {
+      localStorage.setItem(
+        `clarifyMaritalStatus_${profile?.id}`,
+        formData.clarifyMaritalStatus,
+      );
+    }
+    if (formData.countryOfMarriage) {
+      localStorage.setItem(
+        `countryOfMarriage_${profile?.id}`,
+        formData.countryOfMarriage.toString(),
+      );
+    }
+    if (formData.dateOfMarriage) {
+      localStorage.setItem(
+        `dateOfMarriage_${profile?.id}`,
+        formData.dateOfMarriage,
+      );
+    }
+    return transformedData;
+  };
 
   //current address
   const transformCurrentAddressData = (formData) => ({
@@ -875,6 +1102,11 @@ export default function OnboardingLayout() {
 
   //workexperiences form
   const transformWorkExperienceData = (formData) => {
+    // If user selected "No", return empty array
+    if (formData.has_work_experience === "No") {
+      return { work_experiences: [] };
+    }
+
     const work_experiences = (formData.work_experiences || []).map((exp) => ({
       company_name: exp.company_name || "",
       job_title: exp.job_title || "",
@@ -893,8 +1125,12 @@ export default function OnboardingLayout() {
   };
 
   //dependent information
-  //dependent information
   const transformDependentData = (formData) => {
+    // If user selected "No", return empty array
+    if (formData.has_dependents === "No") {
+      return { dependents: [] };
+    }
+
     const dependents = (formData.dependents || []).map((dependent) => ({
       first_name: dependent.first_name || "",
       middle_name: dependent.middle_name || null,
@@ -955,42 +1191,6 @@ export default function OnboardingLayout() {
       eci_phone: formData.emergencyPhone || "",
       eci_address: formData.emergencyAddress || "",
     };
-  };
-
-  //immigration history
-  const transformImmigrationHistoryData = (formData) => {
-    // If no immigration history, return only the boolean
-    if (!formData.hasImmigrationHistory) {
-      return { has_immigration_history: false };
-    }
-
-    // If yes, return the full immigration history object
-    return {
-      has_immigration_history: true,
-      immigration_history: {
-        immigration_type: String(formData.types),
-        been_to_usa: formData.beenToUsa,
-        ever_had_ssn: formData.socialSecurity,
-        ssn_number: formData.socialSecurityNumber || "",
-        employee_in_usa: formData.inUsaApplicant,
-        employee_in_usa_if_yes_who: formData.applicantName || "",
-        dependents_in_usa: formData.inUsaDependent,
-        dependents_in_usa_if_yes_who: formData.dependentName || "",
-        recent_i94_number: formData.i94Number || "",
-      },
-    };
-  };
-
-  //visa
-  const transformVisaData = (formData) => {
-    const visa_records = (formData.visa_records || []).map((record) => ({
-      fullname: record.visaName || "",
-      type: record.visaType || "",
-      expedition_date: record.visaExpeditionDate || "",
-      expiration_date: record.visaExpirationDate || "",
-    }));
-
-    return { visa_records };
   };
 
   //visa rejection
@@ -1077,19 +1277,33 @@ export default function OnboardingLayout() {
     },
   });
 
-  const transformCriminalRecordData = (formData) => ({
-    criminal_record_employee: formData.criminal_record_employee,
-    criminal_record_dependents: formData.criminal_record_dependents,
-    criminal_records: formData.criminal_records?.length
-      ? formData.criminal_records.map((r) => ({
-          related_to: r.related_to,
-          name: r.name,
-          type_of_record: r.type_of_record,
-          date: r.date,
-          outcome: r.outcome,
-        }))
-      : [],
-  });
+  const transformCriminalRecordData = (formData) => {
+    // If both employee and dependents selected "No", return empty array
+    if (
+      formData.criminal_record_employee === "No" &&
+      formData.criminal_record_dependents === "No"
+    ) {
+      return {
+        criminal_record_employee: formData.criminal_record_employee,
+        criminal_record_dependents: formData.criminal_record_dependents,
+        criminal_records: [],
+      };
+    }
+
+    return {
+      criminal_record_employee: formData.criminal_record_employee,
+      criminal_record_dependents: formData.criminal_record_dependents,
+      criminal_records: formData.criminal_records?.length
+        ? formData.criminal_records.map((r) => ({
+            related_to: r.related_to,
+            name: r.name,
+            type_of_record: r.type_of_record,
+            date: r.date,
+            outcome: r.outcome,
+          }))
+        : [],
+    };
+  };
 
   //inadmissibilty
   //inadmissibilty
@@ -1165,83 +1379,65 @@ export default function OnboardingLayout() {
           await saveProcessingInformation(
             transformProcessingInformationData(formData),
           );
-
-          // Handle data based on adjustment_of_status choice
-          if (formData.adjustment_of_status === true) {
-            // Adjustment of Status: Save visa records if exists
-            if (formData.has_visa_records === "Yes") {
-              await saveVisa(transformVisaData(formData));
-            }
-
-            // Clear consular processing data from form
-            methods.setValue("embassy_name", "");
-            methods.setValue("embassy_location", "");
-          } else {
-            // Consular Processing: Clear adjustment of status data
-            methods.setValue("date_of_last_entry", "");
-            methods.setValue("i944_number", "");
-            methods.setValue("has_visa_records", "No");
-            methods.setValue("visa_records", []);
-          }
           break;
         case 1:
           await saveMainApplicantDetail(transformMainApplicantData(formData));
           break;
+        // case 2:
+        //   await saveMaritalStatus(transformMaritalStatusData(formData));
+        //   break;
+        // case 3:
+        //   await saveDependentInformation(transformDependentData(formData));
+        //   break;
+        // case 4:
+        //   await saveCurrentAddress(transformCurrentAddressData(formData));
+        //   break;
+        // case 5:
+        //   await saveContactDetail(transformContactDetailsData(formData));
+        //   break;
         case 2:
-          await saveMaritalStatus(transformMaritalStatusData(formData));
-          break;
-        case 3:
-          await saveDependentInformation(transformDependentData(formData));
-          break;
-        case 4:
-          await saveCurrentAddress(transformCurrentAddressData(formData));
-          break;
-        case 5:
-          await saveContactDetail(transformContactDetailsData(formData));
-          break;
-        case 6:
           await saveAcademicInformation(transformAcademicData(formData));
           break;
-        case 7:
+        case 3:
           await saveWorkExperiences(transformWorkExperienceData(formData));
           break;
-        case 8:
+        case 4:
           await saveEnglishLanguage(transformEnglishProficiencyData(formData));
           break;
-        case 9:
+        case 5:
           await saveEmergencyContact(transformEmergencyContactData(formData));
           break;
-        case 10:
-          console.log("this is immigration ", formData);
-          await saveImmigrationHistory(
-            transformImmigrationHistoryData(formData),
-          );
-          break;
-        case 11:
-          // Only save visa if consular processing (adjustment of status is false)
-          if (formData.adjustment_of_status === false) {
-            await saveVisa(transformVisaData(formData));
-          } else {
-            console.log(
-              "⚠️ Skipping visa save - adjustment of status is enabled",
-            );
-          }
-          break;
-        case 12:
+        // case 6:
+        //   console.log("this is immigration ", formData);
+        //   await saveImmigrationHistory(
+        //     transformImmigrationHistoryData(formData),
+        //   );
+        //   break;
+        // case 6:
+        //   // Only save visa if consular processing (adjustment of status is false)
+        //   if (formData.adjustment_of_status === false) {
+        //     await saveVisa(transformVisaData(formData));
+        //   } else {
+        //     console.log(
+        //       "⚠️ Skipping visa save - adjustment of status is enabled",
+        //     );
+        //   }
+        //   break;
+        case 6:
           await saveVisaRejection(transformVisaRejectionData(formData));
           break;
-        case 13:
+        case 7:
           await saveImmigrationIncident(
             transformImmigrationIncidentData(formData),
           );
           break;
-        case 14:
+        case 8:
           await saveCriminalRecords(transformCriminalRecordData(formData));
           break;
-        case 15:
+        case 9:
           await saveInadmissibility(transformInadmissibilityData(formData));
           break;
-        case 16: {
+        case 10: {
           await saveHealth(transformHealthData(formData));
           const response = await saveFinalSubmit({
             is_draft: false,
@@ -1258,6 +1454,10 @@ export default function OnboardingLayout() {
       }
 
       console.log(`✅ Step ${stepIndex} saved successfully`);
+
+      // Refresh onboarding data from backend to update form with latest data
+      dispatch(fetchOnBoardingRequest());
+
       return true;
     } catch (error) {
       console.error(`❌ Failed to save step ${stepIndex}:`, error);
@@ -1272,6 +1472,8 @@ export default function OnboardingLayout() {
 
     if (!isValid) {
       console.log("❌ Validation failed for current step");
+      console.log("❌ Validation errors:", methods.formState.errors);
+      console.log("❌ Current form values:", methods.getValues());
       return;
     }
 
@@ -1291,9 +1493,9 @@ export default function OnboardingLayout() {
     let nextStep = currentStep + 1;
 
     // Skip step 11 if adjustment of status is Yes
-    if (nextStep === 11 && adjustmentOfStatus === true) {
-      nextStep = 12; // Jump to step 12 (Visa Rejection)
-    }
+    // if (nextStep === 11 && adjustmentOfStatus === true) {
+    //   nextStep = 12; // Jump to step 12 (Visa Rejection)
+    // }
 
     // Move to next step or submit
     if (nextStep < ONBOARDING_STEPS.length) {
@@ -1362,35 +1564,35 @@ export default function OnboardingLayout() {
         return <ProcessingInformation vacancyData={vacancyDetail} />;
       case 1:
         return <MainApplicantDetails country={country} />;
+      // case 2:
+      //   return <MaritalStatus />;
+      // case 2:
+      //   return <DependentInformation />;
+      // case 3:
+      //   return <CurrentAddress country={country} />;
+      // case 4:
+      //   return <ContactDetails />;
       case 2:
-        return <MaritalStatus />;
-      case 3:
-        return <DependentInformation />;
-      case 4:
-        return <CurrentAddress country={country} />;
-      case 5:
-        return <ContactDetails />;
-      case 6:
         return <AcademicInformation country={country} />;
-      case 7:
+      case 3:
         return <PastWorkExperiences />;
-      case 8:
+      case 4:
         return <EnglishLanguageProficiency />;
-      case 9:
+      case 5:
         return <EmergencyContactInformation />;
-      case 10:
-        return <ImmigrationHistory vacancyId={selectedVacancyId} />;
-      case 11:
-        return <Visa vacancyId={selectedVacancyId} />;
-      case 12:
+      // case 6:
+      //   return <ImmigrationHistory vacancyId={selectedVacancyId} />;
+      // case 7:
+      //   return <Visa vacancyId={selectedVacancyId} />;
+      case 6:
         return <VisaRejection vacancyId={selectedVacancyId} />;
-      case 13:
+      case 7:
         return <ImmigrationIncident vacancyId={selectedVacancyId} />;
-      case 14:
+      case 8:
         return <CriminalRecord />;
-      case 15:
+      case 9:
         return <Inadmissibility />;
-      case 16:
+      case 10:
         return <Health />;
       default:
         return null;
@@ -1437,7 +1639,7 @@ export default function OnboardingLayout() {
               <Card
                 sx={{
                   mb: 2,
-                  backgroundColor: "primary.light",
+                  backgroundColor: "primary.main",
                   color: "white",
                   boxShadow: 2,
                 }}
@@ -1539,7 +1741,7 @@ export default function OnboardingLayout() {
 
             <Box
               sx={{
-                backgroundColor: "primary.light",
+                backgroundColor: "primary.main",
                 borderRadius: 2,
                 p: 4,
                 boxShadow: "0 2px 10px rgba(0,0,0,0.2)",

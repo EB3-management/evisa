@@ -2,12 +2,12 @@ import { AppBar, Box, Divider, IconButton, Toolbar } from "@mui/material";
 import { Iconify } from "src/components/iconify";
 import { Logo } from "src/components/logo";
 
-export const OnboardingHeader = ({ onMenuClick, onClose }) => (
+export const  OnboardingHeader = ({ onMenuClick, onClose }) => (
   <>
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "#ffffffff",
+        backgroundColor: "transparent",
         boxShadow: "none",
       }}
     >

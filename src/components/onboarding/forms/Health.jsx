@@ -136,13 +136,11 @@ export const Health = () => {
     <Box sx={{ mt: 4 }}>
       {/* STD Section */}
       <Box sx={{ mb: 5 }}>
-        <Typography variant="body1" sx={{ mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
           Have you ever been diagnosed with a sexually transmitted disease?
         </Typography>
 
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          Applicant
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Applicant</Typography>
 
         <FormControl fullWidth>
           <Stack direction="row" alignItems="center" spacing={2}>
@@ -215,7 +213,7 @@ export const Health = () => {
 
         {/* std (Dependent) */}
         <Box sx={{ mt: 5 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
+          <Typography sx={{ mb: 1, fontWeight: 500, mt: 2 }}>
             Dependent
           </Typography>
 
@@ -286,11 +284,11 @@ export const Health = () => {
 
       {/* tb Section */}
       <Box sx={{ mb: 5 }}>
-        <Typography variant="body1" sx={{ mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
           Have you ever been diagnosed with Tuberculosis ?
         </Typography>
 
-        <Typography variant="body2" sx={{ mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
           Applicant
         </Typography>
 
@@ -365,7 +363,7 @@ export const Health = () => {
 
         {/* tb (Dependent) */}
         <Box sx={{ mt: 5 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500, mt: 2 }}>
             Dependent
           </Typography>
 
@@ -436,11 +434,11 @@ export const Health = () => {
 
       {/* health Section */}
       <Box sx={{ mb: 5 }}>
-        <Typography variant="body1" sx={{ mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 1, fontWeight: 500 }}>
           Do you have Health Insurance ?
         </Typography>
 
-        <Typography variant="body2" sx={{ mb: 1 }}>
+        <Typography variant="h6" sx={{ mb: 1, fontWeight: 500 }}>
           Applicant
         </Typography>
 
@@ -515,7 +513,7 @@ export const Health = () => {
 
         {/* tb (Dependent) */}
         <Box sx={{ mt: 5 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500, mt: 2 }}>
             Dependent
           </Typography>
 
@@ -594,15 +592,19 @@ export const Health = () => {
                   <Checkbox
                     checked={field.value || false}
                     onChange={(e) => field.onChange(e.target.checked)}
-                                 sx={{
-                          color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
+                    sx={{
+                      color: "secondary.main",
+                      "&.Mui-checked": {
+                        color: "secondary.main",
+                      },
+                    }}
                   />
                 }
-                label="I agree to all required form data"
+                label={
+                  <Typography variant="body1" fontWeight={700}>
+                    I agree to all required form data
+                  </Typography>
+                }
               />
               {errors.agree_to_terms && (
                 <Typography variant="caption" color="error">

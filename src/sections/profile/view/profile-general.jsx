@@ -35,6 +35,7 @@ export function ProfileGeneral() {
       "In Progress": "warning",
       Approved: "success",
       Rejected: "error",
+      Onboarding: "info",
     };
     return statusColors[status] || "default";
   };
@@ -402,7 +403,7 @@ export function ProfileGeneral() {
                     variant="body2"
                     sx={{ fontWeight: 600, fontSize: "0.8125rem" }}
                   >
-                    {profile.birth_country}
+                    {profile.birth_country?.name || ""}
                   </Typography>
                 </Stack>
               </Card>
