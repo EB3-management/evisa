@@ -1,4 +1,4 @@
-import { useTable } from "src/components/table";
+import { useTable , TableHeadCustom, TablePaginationCustom } from "src/components/table";
 import {
   TableContainer,
   Table,
@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import { Icon } from "@iconify/react";
 import { Scrollbar } from "src/components/scrollbar";
-import { TableHeadCustom, TablePaginationCustom } from "src/components/table";
 
 const daysInMonth = 31;
 

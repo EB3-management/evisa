@@ -1,5 +1,4 @@
 import axios from "axios";
-import { toast } from "sonner";
 
 import { CONFIG } from "src/global-config";
 import { clearOrganization } from "src/redux/actions/auth-actions";

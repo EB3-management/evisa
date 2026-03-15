@@ -11,11 +11,8 @@ import {
   useTheme,
   Card,
   Stack,
-  Chip,
   Button,
   LinearProgress,
-  Avatar,
-  AvatarGroup,
   Paper,
   MenuItem,
   Select,
@@ -129,7 +126,6 @@ export function AppView() {
       setSelectedVacancyId("");
       setActiveStep(0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedVacancy]);
 
   // Handle vacancy selection change
@@ -678,6 +674,594 @@ export function AppView() {
             </Stepper>
           </Box>
         </Card>
+
+        {/* Finance Plan & Payment Details */}
+        {selectedVacancyId && appliedVacancy && (
+          <>
+            {appliedVacancy
+              .filter((vac) => vac.id === selectedVacancyId)
+              .map((selectedVac) => (
+                <Card
+                  key={selectedVac.id}
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor: "divider",
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{ mb: 1.5 }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      Finance & Payments
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1.5,
+                        bgcolor: "primary.lighter",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Iconify
+                        icon="mdi:cash-multiple"
+                        width={18}
+                        sx={{ color: "primary.main" }}
+                      />
+                    </Box>
+                  </Stack>
+
+                  {/* Application Status */}
+                  {/* {selectedVac.employee_applied_vacancy &&
+                    selectedVac.employee_applied_vacancy.length > 0 && (
+                      <Box
+                        sx={{
+                          p: 1,
+                          mb: 1.5,
+                          borderRadius: 1,
+                          bgcolor: "success.lighter",
+                          border: "1px solid",
+                          borderColor: "success.light",
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={1}
+                          sx={{ width: "fit-content" }}
+                        >
+                          <Box
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 0.75,
+                              bgcolor: "success.main",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Iconify
+                              icon="mdi:check"
+                              width={14}
+                              sx={{ color: "white" }}
+                            />
+                          </Box>
+                          <Box sx={{ flexShrink: 0 }}>
+                            <Typography
+                              variant="caption"
+                              fontWeight={600}
+                              sx={{
+                                fontSize: "0.8rem",
+                                display: "block",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {selectedVac.employee_applied_vacancy[0].status}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ fontSize: "0.7rem", whiteSpace: "nowrap" }}
+                            >
+                              Applied{" "}
+                              {new Date(
+                                selectedVac.employee_applied_vacancy[0]
+                                  .applied_at,
+                              ).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Box>
+                    )} */}
+
+                  {/* Finance Plans */}
+                  {selectedVac.finance && selectedVac.finance.length > 0 ? (
+                    selectedVac.finance.map((financeItem) => (
+                      <Box key={financeItem.id} sx={{ mb: 3 }}>
+                        {/* Finance Summary Cards */}
+                        <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                borderRadius: 1.5,
+                                bgcolor: "primary.lighter",
+                                border: "1px solid",
+                                borderColor: "primary.light",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontSize: "0.7rem", display: "block" }}
+                              >
+                                Total Fee
+                              </Typography>
+                              <Typography
+                                variant="h6"
+                                fontWeight={700}
+                                color="primary.main"
+                                sx={{ fontSize: "1.1rem" }}
+                              >
+                                $
+                                {parseFloat(
+                                  financeItem.total_fee,
+                                ).toLocaleString()}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                borderRadius: 1.5,
+                                bgcolor: "success.lighter",
+                                border: "1px solid",
+                                borderColor: "success.light",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontSize: "0.7rem", display: "block" }}
+                              >
+                                Paid Amount
+                              </Typography>
+                              <Typography
+                                variant="h6"
+                                fontWeight={700}
+                                color="success.main"
+                                sx={{ fontSize: "1.1rem" }}
+                              >
+                                $
+                                {parseFloat(
+                                  financeItem.paid_amount,
+                                ).toLocaleString()}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                p: 1.5,
+                                borderRadius: 1.5,
+                                bgcolor: "warning.lighter",
+                                border: "1px solid",
+                                borderColor: "warning.light",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontSize: "0.7rem", display: "block" }}
+                              >
+                                Due Amount
+                              </Typography>
+                              <Typography
+                                variant="h6"
+                                fontWeight={700}
+                                color="warning.main"
+                                sx={{ fontSize: "1.1rem" }}
+                              >
+                                $
+                                {parseFloat(
+                                  financeItem.due_amount,
+                                ).toLocaleString()}
+                              </Typography>
+                            </Paper>
+                          </Grid>
+                        </Grid>
+
+                        {/* Finance Plan Details */}
+                        {financeItem.finance_plan && (
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 1.5,
+                              border: "1px solid",
+                              borderColor: "divider",
+                              bgcolor: "grey.50",
+                              mb: 1.5,
+                            }}
+                          >
+                            <Stack spacing={1}>
+                              <Box>
+                                <Stack
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                >
+                                  <Box
+                                    sx={{
+                                      width: 24,
+                                      height: 24,
+                                      borderRadius: 0.75,
+                                      bgcolor: "primary.main",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Iconify
+                                      icon="mdi:file-document"
+                                      width={14}
+                                      sx={{ color: "white" }}
+                                    />
+                                  </Box>
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={700}
+                                    sx={{ fontSize: "0.85rem" }}
+                                  >
+                                    {financeItem.finance_plan.plan_name}
+                                  </Typography>
+                                </Stack>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{
+                                    ml: 4,
+                                    display: "block",
+                                    fontSize: "0.7rem",
+                                    mt: 0.25,
+                                  }}
+                                >
+                                  {financeItem.finance_plan.description}
+                                </Typography>
+                              </Box>
+
+                              <Box
+                                sx={{
+                                  p: 1,
+                                  borderRadius: 1,
+                                  bgcolor: "white",
+                                  border: "1px solid",
+                                  borderColor: "divider",
+                                }}
+                              >
+                                <Grid container spacing={1.5}>
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Stack spacing={0.25}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        fontWeight={600}
+                                        sx={{ fontSize: "0.7rem" }}
+                                      >
+                                        Visa Type
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        fontWeight={700}
+                                        sx={{ fontSize: "0.875rem" }}
+                                      >
+                                        {financeItem.finance_plan.visa_type}
+                                      </Typography>
+                                    </Stack>
+                                  </Grid>
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Stack spacing={0.25}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        fontWeight={600}
+                                        sx={{ fontSize: "0.7rem" }}
+                                      >
+                                        Currency
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        fontWeight={700}
+                                        sx={{ fontSize: "0.875rem" }}
+                                      >
+                                        {financeItem.finance_plan.currency}
+                                      </Typography>
+                                    </Stack>
+                                  </Grid>
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Stack spacing={0.25}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        fontWeight={600}
+                                        sx={{ fontSize: "0.7rem" }}
+                                      >
+                                        Status
+                                      </Typography>
+                                      <Box
+                                        sx={{
+                                          display: "inline-flex",
+                                          px: 1,
+                                          py: 0.25,
+                                          borderRadius: 0.75,
+                                          bgcolor:
+                                            financeItem.status === "pending"
+                                              ? "warning.lighter"
+                                              : "success.lighter",
+                                          width: "fit-content",
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="caption"
+                                          fontWeight={700}
+                                          sx={{
+                                            color:
+                                              financeItem.status === "pending"
+                                                ? "warning.main"
+                                                : "success.main",
+                                            textTransform: "capitalize",
+                                            fontSize: "0.75rem",
+                                          }}
+                                        >
+                                          {financeItem.status.replace(
+                                            /_/g,
+                                            " ",
+                                          )}
+                                        </Typography>
+                                      </Box>
+                                    </Stack>
+                                  </Grid>
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Stack spacing={0.25}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        fontWeight={600}
+                                        sx={{ fontSize: "0.7rem" }}
+                                      >
+                                        Installments
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        fontWeight={700}
+                                        sx={{ fontSize: "0.875rem" }}
+                                      >
+                                        {
+                                          financeItem.finance_plan
+                                            .installment_count
+                                        }
+                                      </Typography>
+                                    </Stack>
+                                  </Grid>
+                                </Grid>
+                              </Box>
+                            </Stack>
+                          </Paper>
+                        )}
+
+                        {/* Payment History */}
+                        {financeItem.payments &&
+                        financeItem.payments.length > 0 ? (
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              fontWeight={700}
+                              sx={{
+                                mb: 1,
+                                fontSize: "0.8rem",
+                                display: "block",
+                              }}
+                            >
+                              Payment History
+                            </Typography>
+                            <Stack spacing={1}>
+                              {financeItem.payments.map((payment) => (
+                                <Paper
+                                  key={payment.id}
+                                  elevation={0}
+                                  sx={{
+                                    p: 1,
+                                    borderRadius: 1,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    bgcolor: "white",
+                                  }}
+                                >
+                                  <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    spacing={1}
+                                  >
+                                    <Stack
+                                      direction="row"
+                                      spacing={1}
+                                      alignItems="center"
+                                      flex={1}
+                                    >
+                                      <Box
+                                        sx={{
+                                          width: 24,
+                                          height: 24,
+                                          borderRadius: 0.75,
+                                          bgcolor:
+                                            payment.status === "completed"
+                                              ? "success.lighter"
+                                              : "warning.lighter",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        <Iconify
+                                          icon={
+                                            payment.status === "completed"
+                                              ? "mdi:check"
+                                              : "mdi:clock-outline"
+                                          }
+                                          width={12}
+                                          sx={{
+                                            color:
+                                              payment.status === "completed"
+                                                ? "success.main"
+                                                : "warning.main",
+                                          }}
+                                        />
+                                      </Box>
+                                      <Box>
+                                        <Typography
+                                          variant="caption"
+                                          fontWeight={700}
+                                          sx={{
+                                            fontSize: "0.8rem",
+                                            display: "block",
+                                          }}
+                                        >
+                                          $
+                                          {parseFloat(
+                                            payment.amount,
+                                          ).toLocaleString()}
+                                        </Typography>
+                                        <Typography
+                                          variant="caption"
+                                          color="text.secondary"
+                                          sx={{ fontSize: "0.7rem" }}
+                                        >
+                                          {new Date(
+                                            payment.date,
+                                          ).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                          })}
+                                        </Typography>
+                                      </Box>
+                                    </Stack>
+                                    <Box
+                                      sx={{
+                                        px: 1,
+                                        py: 0.25,
+                                        borderRadius: 0.75,
+                                        bgcolor:
+                                          payment.status === "completed"
+                                            ? "success.lighter"
+                                            : "warning.lighter",
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="caption"
+                                        fontWeight={700}
+                                        sx={{
+                                          color:
+                                            payment.status === "completed"
+                                              ? "success.main"
+                                              : "warning.main",
+                                          textTransform: "capitalize",
+                                          fontSize: "0.65rem",
+                                        }}
+                                      >
+                                        {payment.status}
+                                      </Typography>
+                                    </Box>
+                                  </Stack>
+                                </Paper>
+                              ))}
+                            </Stack>
+                          </Box>
+                        ) : (
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 2,
+                              borderRadius: 1.5,
+                              bgcolor: "grey.50",
+                              border: "1px dashed",
+                              borderColor: "grey.300",
+                              textAlign: "center",
+                            }}
+                          >
+                            <Iconify
+                              icon="mdi:cash-clock"
+                              width={24}
+                              sx={{ color: "text.disabled", mb: 0.5 }}
+                            />
+                            <Typography
+                              variant="caption"
+                              fontWeight={600}
+                              color="text.secondary"
+                              sx={{ display: "block", fontSize: "0.75rem" }}
+                            >
+                              No Payments Yet
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Box>
+                    ))
+                  ) : (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2.5,
+                        borderRadius: 1.5,
+                        bgcolor: "grey.50",
+                        border: "1px dashed",
+                        borderColor: "grey.300",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Iconify
+                        icon="mdi:file-document-outline"
+                        width={28}
+                        sx={{ color: "text.disabled", mb: 1 }}
+                      />
+                      <Typography
+                        variant="caption"
+                        fontWeight={700}
+                        color="text.secondary"
+                        sx={{ display: "block", fontSize: "0.8rem" }}
+                      >
+                        No Finance Plan Assigned
+                      </Typography>
+                    </Paper>
+                  )}
+                </Card>
+              ))}
+          </>
+        )}
 
         {/* Main Content Grid */}
         <Grid container spacing={{ xs: 2, sm: 3 }}>

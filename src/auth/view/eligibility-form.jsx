@@ -1,7 +1,6 @@
 import { z as zod } from "zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useBoolean } from "minimal-shared/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { LoadingButton } from "@mui/lab";
@@ -21,19 +20,14 @@ import {
 
 import { paths } from "src/routes/paths";
 import { useRouter } from "src/routes/hooks";
-import { RouterLink } from "src/routes/components";
 
-import { saveEligibilityForm, signUp, useGetCountryCode } from "src/api";
+import { saveEligibilityForm, useGetCountryCode } from "src/api";
 
 import { useAppDispatch } from "src/redux/hooks";
-import { setOrganization } from "src/redux/actions";
 
 import { toast } from "src/components/snackbar";
 import { Form, Field } from "src/components/hook-form";
 
-import { getErrorMessage } from "../utils";
-import { FormHead } from "../components/form-head";
-import { Logo } from "src/components/logo";
 import dayjs from "dayjs";
 
 // ----------------------------------------------------------------------

@@ -18,217 +18,185 @@ import { useGetVacancyDetail } from "src/api/vacancy";
 export const immigrationIncidentSchema = z
   .object({
     e_overstayed_usa_visa_i94_employee: z.enum(["yes", "no"]),
-    e_overstayed_usa_visa_i94_employee_from_date: z.string().optional(),
-    e_overstayed_usa_visa_i94_employee_to_date: z.string().optional(),
+    e_overstayed_usa_visa_employee_if_yes_from: z.string().optional(),
+    e_overstayed_usa_visa_employee_if_yes_to: z.string().optional(),
     e_overstayed_usa_visa_i94_dependents: z.enum(["yes", "no"]),
-    e_overstayed_usa_visa_i94_dependents_from_date: z.string().optional(),
-    e_overstayed_usa_visa_i94_dependents_to_date: z.string().optional(),
+    e_overstayed_usa_visa_i94_dependents_if_yes_who: z.string().optional(),
+    e_overstayed_usa_visa_i94_dependents_from: z.string().optional(),
+    e_overstayed_usa_visa_i94_dependents_to: z.string().optional(),
 
     eb_unlawfully_present_usa_employee: z.enum(["yes", "no"]),
-    eb_unlawfully_present_usa_employee_from_date: z.string().optional(),
-    eb_unlawfully_present_usa_employee_to_date: z.string().optional(),
+    eb_unlawfully_present_usa_employee_from: z.string().optional(),
+    eb_unlawfully_present_usa_employee_to: z.string().optional(),
     eb_unlawfully_present_usa_dependents: z.enum(["yes", "no"]),
-    eb_unlawfully_present_usa_dependents_from_date: z.string().optional(),
-    eb_unlawfully_present_usa_dependents_to_date: z.string().optional(),
+    eb_unlawfully_present_usa_dependents_if_yes_who: z.string().optional(),
+    eb_unlawfully_present_usa_dependents_from: z.string().optional(),
+    eb_unlawfully_present_usa_dependents_to: z.string().optional(),
 
     eb_denied_entry_usa_employee: z.enum(["yes", "no"]),
-    eb_denied_entry_usa_employee_from_date: z.string().optional(),
-    eb_denied_entry_usa_employee_to_date: z.string().optional(),
+    eb_denied_entry_usa_employee_if_yes: z.string().optional(),
     eb_denied_entry_usa_dependents: z.enum(["yes", "no"]),
-    eb_denied_entry_usa_dependents_from_date: z.string().optional(),
-    eb_denied_entry_usa_dependents_to_date: z.string().optional(),
+    eb_denied_entry_usa_dependents_if_yes: z.string().optional(),
 
     eb_deported_from_any_country_employee: z.enum(["yes", "no"]),
-    eb_deported_from_any_country_employee_from_date: z.string().optional(),
-    eb_deported_from_any_country_employee_to_date: z.string().optional(),
+    eb_deported_from_any_country_employee_if_yes: z.string().optional(),
     eb_deported_from_any_country_dependents: z.enum(["yes", "no"]),
-    eb_deported_from_any_country_dependents_from_date: z.string().optional(),
-    eb_deported_from_any_country_dependents_to_date: z.string().optional(),
+    eb_deported_from_any_country_dependents_if_yes: z.string().optional(),
 
     ebb_imr_judge_h_ofcr_employee: z.enum(["yes", "no"]),
-    ebb_imr_judge_h_ofcr_employee_from_date: z.string().optional(),
-    ebb_imr_judge_h_ofcr_employee_to_date: z.string().optional(),
+    ebb_imr_judge_h_ofcr_employee_if_yes: z.string().optional(),
     ebb_imr_judge_h_ofcr_dependents: z.enum(["yes", "no"]),
-    ebb_imr_judge_h_ofcr_dependents_from_date: z.string().optional(),
-    ebb_imr_judge_h_ofcr_dependents_to_date: z.string().optional(),
+    ebb_imr_judge_h_ofcr_dependents_if_yes: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Overstayed - Employee
     if (data.e_overstayed_usa_visa_i94_employee === "yes") {
-      if (!data.e_overstayed_usa_visa_i94_employee_from_date?.trim()) {
+      if (!data.e_overstayed_usa_visa_employee_if_yes_from?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "From date is required",
-          path: ["e_overstayed_usa_visa_i94_employee_from_date"],
+          path: ["e_overstayed_usa_visa_employee_if_yes_from"],
         });
       }
-      if (!data.e_overstayed_usa_visa_i94_employee_to_date?.trim()) {
+      if (!data.e_overstayed_usa_visa_employee_if_yes_to?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "To date is required",
-          path: ["e_overstayed_usa_visa_i94_employee_to_date"],
+          path: ["e_overstayed_usa_visa_employee_if_yes_to"],
         });
       }
     }
 
     // Overstayed - Dependents
     if (data.e_overstayed_usa_visa_i94_dependents === "yes") {
-      if (!data.e_overstayed_usa_visa_i94_dependents_from_date?.trim()) {
+      if (!data.e_overstayed_usa_visa_i94_dependents_if_yes_who?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Who is required",
+          path: ["e_overstayed_usa_visa_i94_dependents_if_yes_who"],
+        });
+      }
+      if (!data.e_overstayed_usa_visa_i94_dependents_from?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "From date is required",
-          path: ["e_overstayed_usa_visa_i94_dependents_from_date"],
+          path: ["e_overstayed_usa_visa_i94_dependents_from"],
         });
       }
-      if (!data.e_overstayed_usa_visa_i94_dependents_to_date?.trim()) {
+      if (!data.e_overstayed_usa_visa_i94_dependents_to?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "To date is required",
-          path: ["e_overstayed_usa_visa_i94_dependents_to_date"],
+          path: ["e_overstayed_usa_visa_i94_dependents_to"],
         });
       }
     }
 
     // Unlawfully Present - Employee
     if (data.eb_unlawfully_present_usa_employee === "yes") {
-      if (!data.eb_unlawfully_present_usa_employee_from_date?.trim()) {
+      if (!data.eb_unlawfully_present_usa_employee_from?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "From date is required",
-          path: ["eb_unlawfully_present_usa_employee_from_date"],
+          path: ["eb_unlawfully_present_usa_employee_from"],
         });
       }
-      if (!data.eb_unlawfully_present_usa_employee_to_date?.trim()) {
+      if (!data.eb_unlawfully_present_usa_employee_to?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "To date is required",
-          path: ["eb_unlawfully_present_usa_employee_to_date"],
+          path: ["eb_unlawfully_present_usa_employee_to"],
         });
       }
     }
 
     // Unlawfully Present - Dependents
     if (data.eb_unlawfully_present_usa_dependents === "yes") {
-      if (!data.eb_unlawfully_present_usa_dependents_from_date?.trim()) {
+      if (!data.eb_unlawfully_present_usa_dependents_if_yes_who?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Who is required",
+          path: ["eb_unlawfully_present_usa_dependents_if_yes_who"],
+        });
+      }
+      if (!data.eb_unlawfully_present_usa_dependents_from?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "From date is required",
-          path: ["eb_unlawfully_present_usa_dependents_from_date"],
+          path: ["eb_unlawfully_present_usa_dependents_from"],
         });
       }
-      if (!data.eb_unlawfully_present_usa_dependents_to_date?.trim()) {
+      if (!data.eb_unlawfully_present_usa_dependents_to?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "To date is required",
-          path: ["eb_unlawfully_present_usa_dependents_to_date"],
+          path: ["eb_unlawfully_present_usa_dependents_to"],
         });
       }
     }
 
     // Denied Entry - Employee
     if (data.eb_denied_entry_usa_employee === "yes") {
-      if (!data.eb_denied_entry_usa_employee_from_date?.trim()) {
+      if (!data.eb_denied_entry_usa_employee_if_yes?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "From date is required",
-          path: ["eb_denied_entry_usa_employee_from_date"],
-        });
-      }
-      if (!data.eb_denied_entry_usa_employee_to_date?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "To date is required",
-          path: ["eb_denied_entry_usa_employee_to_date"],
+          message: "Explanation is required",
+          path: ["eb_denied_entry_usa_employee_if_yes"],
         });
       }
     }
 
     // Denied Entry - Dependents
     if (data.eb_denied_entry_usa_dependents === "yes") {
-      if (!data.eb_denied_entry_usa_dependents_from_date?.trim()) {
+      if (!data.eb_denied_entry_usa_dependents_if_yes?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "From date is required",
-          path: ["eb_denied_entry_usa_dependents_from_date"],
-        });
-      }
-      if (!data.eb_denied_entry_usa_dependents_to_date?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "To date is required",
-          path: ["eb_denied_entry_usa_dependents_to_date"],
+          message: "Explanation is required",
+          path: ["eb_denied_entry_usa_dependents_if_yes"],
         });
       }
     }
 
     // Deported - Employee
     if (data.eb_deported_from_any_country_employee === "yes") {
-      if (!data.eb_deported_from_any_country_employee_from_date?.trim()) {
+      if (!data.eb_deported_from_any_country_employee_if_yes?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "From date is required",
-          path: ["eb_deported_from_any_country_employee_from_date"],
-        });
-      }
-      if (!data.eb_deported_from_any_country_employee_to_date?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "To date is required",
-          path: ["eb_deported_from_any_country_employee_to_date"],
+          message: "Explanation is required",
+          path: ["eb_deported_from_any_country_employee_if_yes"],
         });
       }
     }
 
     // Deported - Dependents
     if (data.eb_deported_from_any_country_dependents === "yes") {
-      if (!data.eb_deported_from_any_country_dependents_from_date?.trim()) {
+      if (!data.eb_deported_from_any_country_dependents_if_yes?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "From date is required",
-          path: ["eb_deported_from_any_country_dependents_from_date"],
-        });
-      }
-      if (!data.eb_deported_from_any_country_dependents_to_date?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "To date is required",
-          path: ["eb_deported_from_any_country_dependents_to_date"],
+          message: "Explanation is required",
+          path: ["eb_deported_from_any_country_dependents_if_yes"],
         });
       }
     }
 
     // Immigration Judge - Employee
     if (data.ebb_imr_judge_h_ofcr_employee === "yes") {
-      if (!data.ebb_imr_judge_h_ofcr_employee_from_date?.trim()) {
+      if (!data.ebb_imr_judge_h_ofcr_employee_if_yes?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "From date is required",
-          path: ["ebb_imr_judge_h_ofcr_employee_from_date"],
-        });
-      }
-      if (!data.ebb_imr_judge_h_ofcr_employee_to_date?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "To date is required",
-          path: ["ebb_imr_judge_h_ofcr_employee_to_date"],
+          message: "Explanation is required",
+          path: ["ebb_imr_judge_h_ofcr_employee_if_yes"],
         });
       }
     }
 
     // Immigration Judge - Dependents
     if (data.ebb_imr_judge_h_ofcr_dependents === "yes") {
-      if (!data.ebb_imr_judge_h_ofcr_dependents_from_date?.trim()) {
+      if (!data.ebb_imr_judge_h_ofcr_dependents_if_yes?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "From date is required",
-          path: ["ebb_imr_judge_h_ofcr_dependents_from_date"],
-        });
-      }
-      if (!data.ebb_imr_judge_h_ofcr_dependents_to_date?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "To date is required",
-          path: ["ebb_imr_judge_h_ofcr_dependents_to_date"],
+          message: "Explanation is required",
+          path: ["ebb_imr_judge_h_ofcr_dependents_if_yes"],
         });
       }
     }
@@ -319,7 +287,7 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                   <Grid size={{ xs: 12, sm: 6, md: 6 }}>
                     <Typography sx={{ mb: 1 }}>From Date</Typography>
                     <Controller
-                      name="e_overstayed_usa_visa_i94_employee_from_date"
+                      name="e_overstayed_usa_visa_employee_if_yes_from"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
@@ -333,10 +301,10 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                             },
                           }}
                           error={
-                            !!errors.e_overstayed_usa_visa_i94_employee_from_date
+                            !!errors.e_overstayed_usa_visa_employee_if_yes_from
                           }
                           helperText={
-                            errors.e_overstayed_usa_visa_i94_employee_from_date
+                            errors.e_overstayed_usa_visa_employee_if_yes_from
                               ?.message
                           }
                         />
@@ -346,7 +314,7 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                   <Grid size={{ xs: 12, sm: 6, md: 6 }}>
                     <Typography sx={{ mb: 1 }}>To Date</Typography>
                     <Controller
-                      name="e_overstayed_usa_visa_i94_employee_to_date"
+                      name="e_overstayed_usa_visa_employee_if_yes_to"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
@@ -360,10 +328,10 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                             },
                           }}
                           error={
-                            !!errors.e_overstayed_usa_visa_i94_employee_to_date
+                            !!errors.e_overstayed_usa_visa_employee_if_yes_to
                           }
                           helperText={
-                            errors.e_overstayed_usa_visa_i94_employee_to_date
+                            errors.e_overstayed_usa_visa_employee_if_yes_to
                               ?.message
                           }
                         />
@@ -427,38 +395,38 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {overstayedDependent === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12, sm: 4, md: 4 }}>
+                    <Typography sx={{ mb: 1 }}>Who</Typography>
                     <Controller
-                      name="e_overstayed_usa_visa_i94_dependents_from_date"
+                      name="e_overstayed_usa_visa_i94_dependents_if_yes_who"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          placeholder="Enter name"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
                           error={
-                            !!errors.e_overstayed_usa_visa_i94_dependents_from_date
+                            !!errors.e_overstayed_usa_visa_i94_dependents_if_yes_who
                           }
                           helperText={
                             errors
-                              .e_overstayed_usa_visa_i94_dependents_from_date
+                              .e_overstayed_usa_visa_i94_dependents_if_yes_who
                               ?.message
                           }
                         />
                       )}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
+                  <Grid size={{ xs: 12, sm: 4, md: 4 }}>
+                    <Typography sx={{ mb: 1 }}>From Date</Typography>
                     <Controller
-                      name="e_overstayed_usa_visa_i94_dependents_to_date"
+                      name="e_overstayed_usa_visa_i94_dependents_from"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
@@ -472,10 +440,37 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                             },
                           }}
                           error={
-                            !!errors.e_overstayed_usa_visa_i94_dependents_to_date
+                            !!errors.e_overstayed_usa_visa_i94_dependents_from
                           }
                           helperText={
-                            errors.e_overstayed_usa_visa_i94_dependents_to_date
+                            errors.e_overstayed_usa_visa_i94_dependents_from
+                              ?.message
+                          }
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4, md: 4 }}>
+                    <Typography sx={{ mb: 1 }}>To Date</Typography>
+                    <Controller
+                      name="e_overstayed_usa_visa_i94_dependents_to"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          type="date"
+                          fullWidth
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#fff",
+                            },
+                          }}
+                          error={
+                            !!errors.e_overstayed_usa_visa_i94_dependents_to
+                          }
+                          helperText={
+                            errors.e_overstayed_usa_visa_i94_dependents_to
                               ?.message
                           }
                         />
@@ -550,7 +545,7 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                   <Grid size={{ xs: 12, sm: 6, md: 6 }}>
                     <Typography sx={{ mb: 1 }}>From Date</Typography>
                     <Controller
-                      name="eb_unlawfully_present_usa_employee_from_date"
+                      name="eb_unlawfully_present_usa_employee_from"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
@@ -564,10 +559,10 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                             },
                           }}
                           error={
-                            !!errors.eb_unlawfully_present_usa_employee_from_date
+                            !!errors.eb_unlawfully_present_usa_employee_from
                           }
                           helperText={
-                            errors.eb_unlawfully_present_usa_employee_from_date
+                            errors.eb_unlawfully_present_usa_employee_from
                               ?.message
                           }
                         />
@@ -577,7 +572,7 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                   <Grid size={{ xs: 12, sm: 6, md: 6 }}>
                     <Typography sx={{ mb: 1 }}>To Date</Typography>
                     <Controller
-                      name="eb_unlawfully_present_usa_employee_to_date"
+                      name="eb_unlawfully_present_usa_employee_to"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
@@ -590,11 +585,9 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                               backgroundColor: "#fff",
                             },
                           }}
-                          error={
-                            !!errors.eb_unlawfully_present_usa_employee_to_date
-                          }
+                          error={!!errors.eb_unlawfully_present_usa_employee_to}
                           helperText={
-                            errors.eb_unlawfully_present_usa_employee_to_date
+                            errors.eb_unlawfully_present_usa_employee_to
                               ?.message
                           }
                         />
@@ -658,38 +651,38 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {unLawfullDependent === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12, sm: 4, md: 4 }}>
+                    <Typography sx={{ mb: 1 }}>Who</Typography>
                     <Controller
-                      name="eb_unlawfully_present_usa_dependents_from_date"
+                      name="eb_unlawfully_present_usa_dependents_if_yes_who"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          placeholder="Enter name"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
                           error={
-                            !!errors.eb_unlawfully_present_usa_dependents_from_date
+                            !!errors.eb_unlawfully_present_usa_dependents_if_yes_who
                           }
                           helperText={
                             errors
-                              .eb_unlawfully_present_usa_dependents_from_date
+                              .eb_unlawfully_present_usa_dependents_if_yes_who
                               ?.message
                           }
                         />
                       )}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
+                  <Grid size={{ xs: 12, sm: 4, md: 4 }}>
+                    <Typography sx={{ mb: 1 }}>From Date</Typography>
                     <Controller
-                      name="eb_unlawfully_present_usa_dependents_to_date"
+                      name="eb_unlawfully_present_usa_dependents_from"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
@@ -703,10 +696,37 @@ export const ImmigrationIncident = ({ vacancyId }) => {
                             },
                           }}
                           error={
-                            !!errors.eb_unlawfully_present_usa_dependents_to_date
+                            !!errors.eb_unlawfully_present_usa_dependents_from
                           }
                           helperText={
-                            errors.eb_unlawfully_present_usa_dependents_to_date
+                            errors.eb_unlawfully_present_usa_dependents_from
+                              ?.message
+                          }
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4, md: 4 }}>
+                    <Typography sx={{ mb: 1 }}>To Date</Typography>
+                    <Controller
+                      name="eb_unlawfully_present_usa_dependents_to"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          type="date"
+                          fullWidth
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              backgroundColor: "#fff",
+                            },
+                          }}
+                          error={
+                            !!errors.eb_unlawfully_present_usa_dependents_to
+                          }
+                          helperText={
+                            errors.eb_unlawfully_present_usa_dependents_to
                               ?.message
                           }
                         />
@@ -778,52 +798,27 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {deniedEmployee === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography sx={{ mb: 1 }}>Explanation</Typography>
                     <Controller
-                      name="eb_denied_entry_usa_employee_from_date"
+                      name="eb_denied_entry_usa_employee_if_yes"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Please explain the circumstances"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
-                          error={
-                            !!errors.eb_denied_entry_usa_employee_from_date
-                          }
+                          error={!!errors.eb_denied_entry_usa_employee_if_yes}
                           helperText={
-                            errors.eb_denied_entry_usa_employee_from_date
-                              ?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
-                    <Controller
-                      name="eb_denied_entry_usa_employee_to_date"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="date"
-                          fullWidth
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#fff",
-                            },
-                          }}
-                          error={!!errors.eb_denied_entry_usa_employee_to_date}
-                          helperText={
-                            errors.eb_denied_entry_usa_employee_to_date?.message
+                            errors.eb_denied_entry_usa_employee_if_yes?.message
                           }
                         />
                       )}
@@ -886,54 +881,27 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {deniedDependent === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography sx={{ mb: 1 }}>Explanation</Typography>
                     <Controller
-                      name="eb_denied_entry_usa_dependents_from_date"
+                      name="eb_denied_entry_usa_dependents_if_yes"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Please explain the circumstances"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
-                          error={
-                            !!errors.eb_denied_entry_usa_dependents_from_date
-                          }
+                          error={!!errors.eb_denied_entry_usa_dependents_if_yes}
                           helperText={
-                            errors.eb_denied_entry_usa_dependents_from_date
-                              ?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
-                    <Controller
-                      name="eb_denied_entry_usa_dependents_to_date"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="date"
-                          fullWidth
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#fff",
-                            },
-                          }}
-                          error={
-                            !!errors.eb_denied_entry_usa_dependents_to_date
-                          }
-                          helperText={
-                            errors.eb_denied_entry_usa_dependents_to_date
+                            errors.eb_denied_entry_usa_dependents_if_yes
                               ?.message
                           }
                         />
@@ -1002,55 +970,29 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {deportedEmployee === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography sx={{ mb: 1 }}>Explanation</Typography>
                     <Controller
-                      name="eb_deported_from_any_country_employee_from_date"
+                      name="eb_deported_from_any_country_employee_if_yes"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Please explain the circumstances"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
                           error={
-                            !!errors.eb_deported_from_any_country_employee_from_date
+                            !!errors.eb_deported_from_any_country_employee_if_yes
                           }
                           helperText={
-                            errors
-                              .eb_deported_from_any_country_employee_from_date
-                              ?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
-                    <Controller
-                      name="eb_deported_from_any_country_employee_to_date"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="date"
-                          fullWidth
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#fff",
-                            },
-                          }}
-                          error={
-                            !!errors.eb_deported_from_any_country_employee_to_date
-                          }
-                          helperText={
-                            errors.eb_deported_from_any_country_employee_to_date
+                            errors.eb_deported_from_any_country_employee_if_yes
                               ?.message
                           }
                         />
@@ -1114,56 +1056,30 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {deportedDependent === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography sx={{ mb: 1 }}>Explanation</Typography>
                     <Controller
-                      name="eb_deported_from_any_country_dependents_from_date"
+                      name="eb_deported_from_any_country_dependents_if_yes"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Please explain the circumstances"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
                           error={
-                            !!errors.eb_deported_from_any_country_dependents_from_date
+                            !!errors.eb_deported_from_any_country_dependents_if_yes
                           }
                           helperText={
                             errors
-                              .eb_deported_from_any_country_dependents_from_date
-                              ?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
-                    <Controller
-                      name="eb_deported_from_any_country_dependents_to_date"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="date"
-                          fullWidth
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#fff",
-                            },
-                          }}
-                          error={
-                            !!errors.eb_deported_from_any_country_dependents_to_date
-                          }
-                          helperText={
-                            errors
-                              .eb_deported_from_any_country_dependents_to_date
+                              .eb_deported_from_any_country_dependents_if_yes
                               ?.message
                           }
                         />
@@ -1232,53 +1148,27 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {judgeEmployee === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography sx={{ mb: 1 }}>Explanation</Typography>
                     <Controller
-                      name="ebb_imr_judge_h_ofcr_employee_from_date"
+                      name="ebb_imr_judge_h_ofcr_employee_if_yes"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Please explain the circumstances"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
-                          error={
-                            !!errors.ebb_imr_judge_h_ofcr_employee_from_date
-                          }
+                          error={!!errors.ebb_imr_judge_h_ofcr_employee_if_yes}
                           helperText={
-                            errors.ebb_imr_judge_h_ofcr_employee_from_date
-                              ?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
-                    <Controller
-                      name="ebb_imr_judge_h_ofcr_employee_to_date"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="date"
-                          fullWidth
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#fff",
-                            },
-                          }}
-                          error={!!errors.ebb_imr_judge_h_ofcr_employee_to_date}
-                          helperText={
-                            errors.ebb_imr_judge_h_ofcr_employee_to_date
-                              ?.message
+                            errors.ebb_imr_judge_h_ofcr_employee_if_yes?.message
                           }
                         />
                       )}
@@ -1341,54 +1231,29 @@ export const ImmigrationIncident = ({ vacancyId }) => {
 
               {judgeDependent === "yes" && (
                 <>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>From Date</Typography>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography sx={{ mb: 1 }}>Explanation</Typography>
                     <Controller
-                      name="ebb_imr_judge_h_ofcr_dependents_from_date"
+                      name="ebb_imr_judge_h_ofcr_dependents_if_yes"
                       control={control}
                       defaultValue=""
                       render={({ field }) => (
                         <TextField
                           {...field}
-                          type="date"
                           fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Please explain the circumstances"
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               backgroundColor: "#fff",
                             },
                           }}
                           error={
-                            !!errors.ebb_imr_judge_h_ofcr_dependents_from_date
+                            !!errors.ebb_imr_judge_h_ofcr_dependents_if_yes
                           }
                           helperText={
-                            errors.ebb_imr_judge_h_ofcr_dependents_from_date
-                              ?.message
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                    <Typography sx={{ mb: 1 }}>To Date</Typography>
-                    <Controller
-                      name="ebb_imr_judge_h_ofcr_dependents_to_date"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          type="date"
-                          fullWidth
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              backgroundColor: "#fff",
-                            },
-                          }}
-                          error={
-                            !!errors.ebb_imr_judge_h_ofcr_dependents_to_date
-                          }
-                          helperText={
-                            errors.ebb_imr_judge_h_ofcr_dependents_to_date
+                            errors.ebb_imr_judge_h_ofcr_dependents_if_yes
                               ?.message
                           }
                         />

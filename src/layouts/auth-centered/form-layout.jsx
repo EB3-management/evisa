@@ -1,14 +1,7 @@
 import { useAppSelector } from "src/redux/hooks";
 import { selectSiteSetting } from "src/redux/selectors";
-import { HeaderSection, LayoutSection, MainSection } from "../core";
-import { AuthCenteredContent } from "./content";
-import { Alert, Box } from "@mui/material";
-import { merge } from "es-toolkit";
-import { SettingsButton } from "../components/settings-button";
-import { RouterLink } from "src/routes/components";
-import { paths } from "src/routes/paths";
-import { Link } from "react-router";
-import { Logo } from "src/components/logo";
+import { LayoutSection, MainSection } from "../core";
+import { Box } from "@mui/material";
 import { FormCenteredContent } from "./form-content";
 
 export function FormCenteredLayout({

@@ -16,7 +16,7 @@ import {
 import Grid from "@mui/material/Grid2";
 
 import { DashboardContent } from "src/layouts/dashboard";
-import { applyVacancy, useGetVacancyDetail } from "src/api/vacancy";
+import { useGetVacancyDetail } from "src/api/vacancy";
 import { Iconify } from "src/components/iconify";
 import { useNavigate } from "react-router";
 import { paths } from "src/routes/paths";
@@ -736,18 +736,40 @@ export function VacancyDetailView({ id }) {
                   />
                   Job Duties & Responsibilities
                 </Typography>
-                <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                  {/* {jobDutiesList.map((duty, index) => (
-                    <Box component="li" key={index} sx={{ mb: 1.5 }}>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ lineHeight: 1.8 }}
-                      >
-                        {duty}
-                      </Typography>
-                    </Box>
-                  ))} */}
+                <Box
+                  sx={{
+                    "& ul": {
+                      pl: 0,
+                      m: 0,
+                      listStyleType: "none",
+                    },
+                    "& li": {
+                      mb: 2,
+                      color: "text.primary",
+                      lineHeight: 1.8,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 1.5,
+                    },
+                    "& li::before": {
+                      content: '"•"',
+                      flexShrink: 0,
+                      fontWeight: "bold",
+                    },
+                    "& li > p": {
+                      margin: "0 !important",
+                      padding: 0,
+                      color: "text.primary",
+                      lineHeight: 1.8,
+                      flex: 1,
+                    },
+                    "& p": {
+                      margin: "0 !important",
+                      color: "text.primary",
+                      lineHeight: 1.8,
+                    },
+                  }}
+                >
                   <Markdown children={vacancyDetail?.job_duties} />
                 </Box>
               </CardContent>

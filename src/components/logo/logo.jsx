@@ -3,13 +3,10 @@ import { mergeClasses } from "minimal-shared/utils";
 
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
-import Typography from "@mui/material/Typography";
 import { styled, useTheme } from "@mui/material/styles";
 
 import { RouterLink } from "src/routes/components";
 
-import { useAppSelector } from "src/redux/hooks";
-import { selectSiteSetting } from "src/redux/selectors";
 
 import { logoClasses } from "./classes";
 

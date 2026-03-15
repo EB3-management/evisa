@@ -1,6 +1,6 @@
 import { mergeClasses } from "minimal-shared/utils";
 
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 
 import { layoutClasses } from "../core/classes";
 import PropTypes from "prop-types";

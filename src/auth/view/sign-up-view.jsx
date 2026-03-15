@@ -11,11 +11,7 @@ import {
   Alert,
   IconButton,
   InputAdornment,
-  Divider,
-  Typography,
   MenuItem,
-  Checkbox,
-  FormControlLabel,
   FormHelperText,
 } from "@mui/material";
 
@@ -32,10 +28,7 @@ import { toast } from "src/components/snackbar";
 import { Iconify } from "src/components/iconify";
 import { Form, Field } from "src/components/hook-form";
 
-import { getErrorMessage } from "../utils";
 import { FormHead } from "../components/form-head";
-import { SignUpTerms } from "../components/sign-up-terms";
-import { authRoutes } from "src/routes/sections/auth";
 
 // ----------------------------------------------------------------------
 

@@ -1,4 +1,3 @@
-import { list } from "src/theme/core/components/list";
 
 const ROOTS = {
   AUTH: "/auth",

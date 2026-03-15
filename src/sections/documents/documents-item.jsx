@@ -3,7 +3,6 @@ import {
   TableCell,
   Chip,
   IconButton,
-  Checkbox,
   Button,
 } from "@mui/material";
 import { Iconify } from "src/components/iconify";

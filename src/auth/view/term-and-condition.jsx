@@ -3,13 +3,9 @@ import {
   Container,
   Typography,
   Paper,
-  Button,
   Stack,
-  Divider,
-  Chip,
 } from "@mui/material";
 import { useRouter } from "src/routes/hooks";
-import { Iconify } from "src/components/iconify";
 import { useGettermCondition } from "src/api";
 import { Markdown } from "src/components/markdown";
 

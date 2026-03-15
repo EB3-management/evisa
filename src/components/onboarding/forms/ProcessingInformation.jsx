@@ -13,6 +13,7 @@ import {
   Stack,
   MenuItem,
   Select,
+  InputLabel,
 } from "@mui/material";
 import { Controller, useFormContext, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -31,22 +32,7 @@ export const processingInformationSchema = z
     embassy_location: z.string().optional(),
     visa_records_applicant: z.enum(["yes", "no"]).optional().default("no"),
     visa_records_dependents: z.enum(["yes", "no"]).optional().default("no"),
-    applicant_visa_records: z
-      .array(
-        z.object({
-          fullname: z.string().min(1, "Name is required"),
-          type: z
-            .union([z.string(), z.number()])
-            .refine((val) => val !== "" && val !== null && val !== undefined, {
-              message: "Visa type is required",
-            }),
-          expedition_date: z.string().min(1, "Issued date is required"),
-          expiration_date: z.string().min(1, "Expiry date is required"),
-        }),
-      )
-      .optional()
-      .default([]),
-    dependent_visa_records: z
+    visa_records: z
       .array(
         z.object({
           fullname: z.string().min(1, "Name is required"),
@@ -71,7 +57,37 @@ export const processingInformationSchema = z
           relation: z.string().min(1, "Relation is required"),
           country_of_birth: z.union([z.string(), z.number()]).optional(),
           country_of_citizenship: z.union([z.string(), z.number()]).optional(),
-          highest_level_of_education: z.string().optional().default(""),
+          education: z.string().optional().default(""),
+          academic_records: z
+            .object({
+              program_name: z.string().default(""),
+              institution_name: z.string().default(""),
+              graduation_year: z.string().default(""),
+              grade: z.string().default(""),
+              country: z.union([z.string(), z.number()]).optional(),
+              state: z.string().default(""),
+              city: z.string().default(""),
+              zip_code: z.string().default(""),
+              address: z.string().default(""),
+            })
+            .optional(),
+          visa_records: z
+            .array(
+              z.object({
+                type: z
+                  .union([z.string(), z.number()])
+                  .refine(
+                    (val) => val !== "" && val !== null && val !== undefined,
+                    {
+                      message: "Visa type is required",
+                    },
+                  ),
+                expedition_date: z.string().min(1, "Issued date is required"),
+                expiration_date: z.string().min(1, "Expiry date is required"),
+              }),
+            )
+            .optional()
+            .default([]),
         }),
       )
       .optional()
@@ -97,35 +113,37 @@ export const processingInformationSchema = z
 
       // Validate applicant visa records when applicant says yes
       if (data.visa_records_applicant === "yes") {
-        if (
-          !data.applicant_visa_records ||
-          data.applicant_visa_records.length === 0
-        ) {
+        if (!data.visa_records || data.visa_records.length === 0) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Please add at least one visa record for applicant",
-            path: ["applicant_visa_records"],
+            path: ["visa_records"],
           });
         }
       }
 
       // Validate dependent visa records when dependent says yes
       if (data.visa_records_dependents === "yes") {
-        if (
-          !data.dependent_visa_records ||
-          data.dependent_visa_records.length === 0
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Please add at least one visa record for dependent",
-            path: ["dependent_visa_records"],
-          });
-        }
         if (!data.dependents || data.dependents.length === 0) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Please add dependent information",
             path: ["dependents"],
+          });
+        } else {
+          // Validate that each dependent has at least one visa record
+          data.dependents.forEach((dependent, index) => {
+            if (
+              !dependent.visa_records ||
+              dependent.visa_records.length === 0
+            ) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message:
+                  "Please add at least one visa record for this dependent",
+                path: ["dependents", index, "visa_records"],
+              });
+            }
           });
         }
       }
@@ -145,27 +163,496 @@ export const processingInformationSchema = z
           path: ["embassy_location"],
         });
       }
+
+      // Validate applicant visa records when applicant says yes
+      if (data.visa_records_applicant === "yes") {
+        if (!data.visa_records || data.visa_records.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please add at least one visa record for applicant",
+            path: ["visa_records"],
+          });
+        }
+      }
+
+      // Validate dependent visa records when dependent says yes
+      if (data.visa_records_dependents === "yes") {
+        if (!data.dependents || data.dependents.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please add dependent information",
+            path: ["dependents"],
+          });
+        } else {
+          // Validate that each dependent has at least one visa record
+          data.dependents.forEach((dependent, index) => {
+            if (
+              !dependent.visa_records ||
+              dependent.visa_records.length === 0
+            ) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message:
+                  "Please add at least one visa record for this dependent",
+                path: ["dependents", index, "visa_records"],
+              });
+            }
+          });
+        }
+      }
+    }
+
+    // Validate academic records for dependents when education is selected
+    if (data.dependents && data.dependents.length > 0) {
+      data.dependents.forEach((dependent, index) => {
+        // Only validate if education is selected and not "none"
+        if (
+          dependent.education &&
+          dependent.education !== "none" &&
+          dependent.education !== ""
+        ) {
+          const academicRecords = dependent.academic_records;
+
+          // Required fields when education is selected
+          const requiredFields = [
+            { field: "program_name", label: "Program name" },
+            { field: "institution_name", label: "Institution name" },
+            { field: "graduation_year", label: "Graduation year" },
+            { field: "country", label: "Country" },
+            { field: "state", label: "State" },
+            { field: "city", label: "City" },
+            { field: "address", label: "Address" },
+          ];
+
+          requiredFields.forEach(({ field, label }) => {
+            if (
+              !academicRecords?.[field] ||
+              academicRecords[field].toString().trim() === ""
+            ) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `${label} is required`,
+                path: ["dependents", index, "academic_records", field],
+              });
+            }
+          });
+
+          // Validate graduation year format
+          if (academicRecords?.graduation_year) {
+            if (!/^\d{4}$/.test(academicRecords.graduation_year)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Must be a valid 4-digit year",
+                path: [
+                  "dependents",
+                  index,
+                  "academic_records",
+                  "graduation_year",
+                ],
+              });
+            }
+          }
+        }
+      });
     }
   });
 
-// ------------------ Component ------------------
-export const ProcessingInformation = ({ vacancyData }) => {
+// Helper component for rendering visa records
+const VisaRecordsSection = ({
+  control,
+  errors,
+  visaRecords,
+  fieldPrefix,
+  onAppend,
+  onRemove,
+  immigrationType,
+  immigrationTypeLoading,
+  includeFullname = true,
+}) => (
+  <Box>
+    {visaRecords.map((item, index) => (
+      <Box
+        key={item.id}
+        sx={{
+          mb: 3,
+          p: 3,
+          border: "1px solid #e0e0e0",
+          borderRadius: 2,
+          backgroundColor: "#fafafa",
+        }}
+      >
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 2 }}
+        >
+          <Typography variant="subtitle1" fontWeight={600} color="primary">
+            {index === 0 ? "Visa Record" : `Visa Record ${index + 1}`}
+          </Typography>
+          {visaRecords.length > 1 && (
+            <IconButton
+              color="error"
+              onClick={() => onRemove(index)}
+              size="small"
+            >
+              <Icon icon="mdi:delete" width={20} />
+            </IconButton>
+          )}
+        </Stack>
+
+        <Grid container spacing={3}>
+          {includeFullname && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name={`${fieldPrefix}.${index}.fullname`}
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Name"
+                    fullWidth
+                    required
+                    placeholder="Enter name"
+                    error={!!errors?.[fieldPrefix]?.[index]?.fullname?.message}
+                    helperText={
+                      errors?.[fieldPrefix]?.[index]?.fullname?.message
+                    }
+                  />
+                )}
+              />
+            </Grid>
+          )}
+
+          <Grid size={{ xs: 12, sm: includeFullname ? 6 : 12 }}>
+            <FormControl
+              fullWidth
+              error={!!errors?.[fieldPrefix]?.[index]?.type?.message}
+            >
+              <InputLabel id={`${fieldPrefix}-${index}-type-label`}>
+                Visa Type *
+              </InputLabel>
+              <Controller
+                name={`${fieldPrefix}.${index}.type`}
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    labelId={`${fieldPrefix}-${index}-type-label`}
+                    label="Visa Type *"
+                    disabled={immigrationTypeLoading}
+                  >
+                    <MenuItem value="" disabled>
+                      Select visa type
+                    </MenuItem>
+                    {immigrationType?.map((type) => (
+                      <MenuItem key={type.id} value={type.id}>
+                        {type.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+              {errors?.[fieldPrefix]?.[index]?.type && (
+                <FormHelperText>
+                  {errors?.[fieldPrefix]?.[index]?.type?.message}
+                </FormHelperText>
+              )}
+            </FormControl>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name={`${fieldPrefix}.${index}.expedition_date`}
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Issued Date"
+                  type="date"
+                  fullWidth
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  error={
+                    !!errors?.[fieldPrefix]?.[index]?.expedition_date?.message
+                  }
+                  helperText={
+                    errors?.[fieldPrefix]?.[index]?.expedition_date?.message
+                  }
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name={`${fieldPrefix}.${index}.expiration_date`}
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Expiry Date"
+                  type="date"
+                  fullWidth
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  error={
+                    !!errors?.[fieldPrefix]?.[index]?.expiration_date?.message
+                  }
+                  helperText={
+                    errors?.[fieldPrefix]?.[index]?.expiration_date?.message
+                  }
+                />
+              )}
+            />
+          </Grid>
+        </Grid>
+      </Box>
+    ))}
+
+    <Button
+      variant="outlined"
+      startIcon={<Icon icon="mdi:plus" />}
+      onClick={() => {
+        const newRecord = includeFullname
+          ? {
+              fullname: "",
+              type: "",
+              expedition_date: "",
+              expiration_date: "",
+            }
+          : {
+              type: "",
+              expedition_date: "",
+              expiration_date: "",
+            };
+        onAppend(newRecord);
+      }}
+      sx={{ mb: 2 }}
+    >
+      Add Another Visa Record
+    </Button>
+  </Box>
+);
+
+// Helper component for dependent visa records
+const DependentVisaRecordsField = ({
+  control,
+  errors,
+  dependentIndex,
+  immigrationType,
+  immigrationTypeLoading,
+}) => {
+  const {
+    fields: dependentVisaRecords,
+    append: appendDependentVisa,
+    remove: removeDependentVisa,
+  } = useFieldArray({
+    control,
+    name: `dependents.${dependentIndex}.visa_records`,
+  });
+
+  return (
+    <Box sx={{ mt: 3 }}>
+      <Typography
+        variant="subtitle2"
+        sx={{ mb: 2, fontWeight: 600, color: "text.secondary" }}
+      >
+        Visa Records for this Dependent
+      </Typography>
+
+      {dependentVisaRecords.map((item, index) => (
+        <Box
+          key={item.id}
+          sx={{
+            mb: 2,
+            p: 2,
+            border: "1px solid #e0e0e0",
+            borderRadius: 1,
+            backgroundColor: "#f9f9f9",
+          }}
+        >
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="body2" fontWeight={600} color="primary">
+              Visa Record {index + 1}
+            </Typography>
+            {dependentVisaRecords.length > 1 && (
+              <IconButton
+                color="error"
+                onClick={() => removeDependentVisa(index)}
+                size="small"
+              >
+                <Icon icon="mdi:delete" width={18} />
+              </IconButton>
+            )}
+          </Stack>
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <FormControl
+                fullWidth
+                error={
+                  !!errors?.dependents?.[dependentIndex]?.visa_records?.[index]
+                    ?.type?.message
+                }
+              >
+                <InputLabel
+                  id={`dependent-${dependentIndex}-visa-${index}-type-label`}
+                  size="small"
+                >
+                  Visa Type *
+                </InputLabel>
+                <Controller
+                  name={`dependents.${dependentIndex}.visa_records.${index}.type`}
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      labelId={`dependent-${dependentIndex}-visa-${index}-type-label`}
+                      label="Visa Type *"
+                      disabled={immigrationTypeLoading}
+                      size="small"
+                    >
+                      <MenuItem value="" disabled>
+                        Select visa type
+                      </MenuItem>
+                      {immigrationType?.map((type) => (
+                        <MenuItem key={type.id} value={type.id}>
+                          {type.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                {errors?.dependents?.[dependentIndex]?.visa_records?.[index]
+                  ?.type && (
+                  <FormHelperText>
+                    {
+                      errors?.dependents?.[dependentIndex]?.visa_records?.[
+                        index
+                      ]?.type?.message
+                    }
+                  </FormHelperText>
+                )}
+              </FormControl>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name={`dependents.${dependentIndex}.visa_records.${index}.expedition_date`}
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Issued Date"
+                    type="date"
+                    fullWidth
+                    required
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                    error={
+                      !!errors?.dependents?.[dependentIndex]?.visa_records?.[
+                        index
+                      ]?.expedition_date?.message
+                    }
+                    helperText={
+                      errors?.dependents?.[dependentIndex]?.visa_records?.[
+                        index
+                      ]?.expedition_date?.message
+                    }
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name={`dependents.${dependentIndex}.visa_records.${index}.expiration_date`}
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Expiry Date"
+                    type="date"
+                    fullWidth
+                    required
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                    error={
+                      !!errors?.dependents?.[dependentIndex]?.visa_records?.[
+                        index
+                      ]?.expiration_date?.message
+                    }
+                    helperText={
+                      errors?.dependents?.[dependentIndex]?.visa_records?.[
+                        index
+                      ]?.expiration_date?.message
+                    }
+                  />
+                )}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      ))}
+
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<Icon icon="mdi:plus" />}
+        onClick={() => {
+          appendDependentVisa({
+            type: "",
+            expedition_date: "",
+            expiration_date: "",
+          });
+        }}
+        sx={{
+          color: "primary.main",
+          borderColor: "primary.main",
+          "&:hover": {
+            borderColor: "primary.main",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+          },
+        }}
+      >
+        Add Visa Record
+      </Button>
+    </Box>
+  );
+};
+
+// ------------------ Main Component ------------------
+function ProcessingInformation({ vacancyData }) {
   const {
     control,
     formState: { errors },
     watch,
     setValue,
+    getValues,
   } = useFormContext();
 
-  const adjustmentOfStatus = watch("adjustment_of_status", true);
-  const visaRecordsApplicant = watch("visa_records_applicant", "no");
-  const visaRecordsDependents = watch("visa_records_dependents", "no");
+  const adjustmentOfStatus = watch("adjustment_of_status");
+  const visaRecordsApplicant = watch("visa_records_applicant");
+  const visaRecordsDependents = watch("visa_records_dependents");
 
   const { immigrationType, immigrationTypeLoading } = useGetImmigrationTypes(
     vacancyData?.id,
   );
-
-  const { country } = useGetCountryCode();
+  const { country: countryCode, countryLoading: countryCodeLoading } =
+    useGetCountryCode();
 
   // Field arrays for applicant visa records
   const {
@@ -174,17 +661,7 @@ export const ProcessingInformation = ({ vacancyData }) => {
     remove: removeApplicantVisa,
   } = useFieldArray({
     control,
-    name: "applicant_visa_records",
-  });
-
-  // Field arrays for dependent visa records
-  const {
-    fields: dependentVisaRecords,
-    append: appendDependentVisa,
-    remove: removeDependentVisa,
-  } = useFieldArray({
-    control,
-    name: "dependent_visa_records",
+    name: "visa_records",
   });
 
   // Field arrays for dependent information
@@ -197,40 +674,62 @@ export const ProcessingInformation = ({ vacancyData }) => {
     name: "dependents",
   });
 
-  // Auto-add first visa record for applicant
+  // Auto-add first visa record for applicant only when user manually selects "yes"
   useEffect(() => {
-    if (visaRecordsApplicant === "yes" && applicantVisaRecords.length === 0) {
-      appendApplicantVisa({
-        fullname: "",
-        type: "",
-        expedition_date: "",
-        expiration_date: "",
-      });
-    } else if (
-      visaRecordsApplicant === "no" &&
-      applicantVisaRecords.length > 0
-    ) {
-      setValue("applicant_visa_records", []);
-    }
-  }, [
-    visaRecordsApplicant,
-    applicantVisaRecords.length,
-    setValue,
-    appendApplicantVisa,
-  ]);
+    console.log("🔍 Applicant visa useEffect triggered", {
+      visaRecordsApplicant,
+      applicantVisaRecordsLength: applicantVisaRecords.length,
+    });
 
-  // Auto-add first visa record and dependent info for dependent
-  useEffect(() => {
-    if (visaRecordsDependents === "yes") {
-      if (dependentVisaRecords.length === 0) {
-        appendDependentVisa({
+    if (visaRecordsApplicant === "yes") {
+      // Use getValues to check actual form state
+      const currentFormRecords = getValues("visa_records") || [];
+      console.log("📋 Current form visa_records:", currentFormRecords);
+
+      if (
+        currentFormRecords.length === 0 &&
+        applicantVisaRecords.length === 0
+      ) {
+        console.log("➕ Adding empty applicant visa record");
+        appendApplicantVisa({
           fullname: "",
           type: "",
           expedition_date: "",
           expiration_date: "",
         });
       }
-      if (dependentInformations.length === 0) {
+    } else if (
+      visaRecordsApplicant === "no" &&
+      applicantVisaRecords.length > 0
+    ) {
+      console.log("🗑️ Clearing applicant visa records");
+      setValue("visa_records", []);
+    }
+  }, [
+    visaRecordsApplicant,
+    applicantVisaRecords.length,
+    getValues,
+    appendApplicantVisa,
+    setValue,
+  ]);
+
+  // Auto-add first dependent when dependent visa records = yes
+  useEffect(() => {
+    console.log("🔍 Dependent visa useEffect triggered", {
+      visaRecordsDependents,
+      dependentInformationsLength: dependentInformations.length,
+    });
+
+    if (visaRecordsDependents === "yes") {
+      // Use getValues to check actual form state
+      const currentFormDependents = getValues("dependents") || [];
+      console.log("📋 Current form dependents:", currentFormDependents);
+
+      if (
+        currentFormDependents.length === 0 &&
+        dependentInformations.length === 0
+      ) {
+        console.log("➕ Adding empty dependent");
         appendDependentInfo({
           first_name: "",
           middle_name: "",
@@ -239,114 +738,114 @@ export const ProcessingInformation = ({ vacancyData }) => {
           relation: "",
           country_of_birth: "",
           country_of_citizenship: "",
-          highest_level_of_education: "",
+          education: "",
+          academic_records: {
+            program_name: "",
+            institution_name: "",
+            graduation_year: "",
+            grade: "",
+            country: "",
+            state: "",
+            city: "",
+            zip_code: "",
+            address: "",
+          },
+          visa_records: [
+            {
+              type: "",
+              expedition_date: "",
+              expiration_date: "",
+            },
+          ],
         });
       }
-    } else if (visaRecordsDependents === "no") {
-      if (dependentVisaRecords.length > 0) {
-        setValue("dependent_visa_records", []);
-      }
-      if (dependentInformations.length > 0) {
-        setValue("dependents", []);
-      }
+    } else if (
+      visaRecordsDependents === "no" &&
+      dependentInformations.length > 0
+    ) {
+      console.log("🗑️ Clearing dependents");
+      setValue("dependents", []);
     }
   }, [
     visaRecordsDependents,
-    dependentVisaRecords.length,
     dependentInformations.length,
-    setValue,
-    appendDependentVisa,
+    getValues,
     appendDependentInfo,
+    setValue,
   ]);
 
-  const relationOptions = ["Spouse", "Child", "Parent", "Sibling", "Other"];
-
-  const educationOptions = [
-    { value: "high_school", label: "High School" },
-    { value: "bachelors", label: "Bachelor's Degree" },
-    { value: "masters", label: "Master's Degree" },
-    { value: "phd", label: "PhD" },
-    { value: "none", label: "None" },
-  ];
-
-  const today = new Date().toISOString().split("T")[0];
-
   return (
-    <Box id="section-0" sx={{ mb: 6 }}>
-      <Grid container spacing={3}>
-        {/* Adjustment of Status */}
-        <Grid size={{ xs: 12 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>
-            Are you currently applying to{" "}
-            {vacancyData?.visa_category?.country?.name ||
-              "the United States of America"}
-            ?
+    <Box>
+      {/* Adjustment of Status Question */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          Adjustment of Status
+        </Typography>
+        <FormControl component="fieldset" error={!!errors.adjustment_of_status}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Are you currently in the United States?
           </Typography>
           <Controller
             name="adjustment_of_status"
             control={control}
-            // eslint-disable-next-line react/jsx-boolean-value
-            defaultValue={true}
+            defaultValue
             render={({ field }) => (
-              <FormControl error={!!errors.adjustment_of_status}>
-                <RadioGroup
-                  row
-                  value={field.value ? "Yes" : "No"}
-                  onChange={(e) => field.onChange(e.target.value === "Yes")}
-                >
-                  <FormControlLabel
-                    value="Yes"
-                    control={
-                      <Radio
-                        sx={{
+              <RadioGroup
+                {...field}
+                row
+                value={field.value ? "true" : "false"}
+                onChange={(e) => field.onChange(e.target.value === "true")}
+              >
+                <FormControlLabel
+                  value="true"
+                  control={
+                    <Radio
+                      sx={{
+                        color: "secondary.main",
+                        "&.Mui-checked": {
                           color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      />
-                    }
-                    label="Yes"
-                  />
-                  <FormControlLabel
-                    value="No"
-                    control={
-                      <Radio
-                        sx={{
+                        },
+                      }}
+                    />
+                  }
+                  label="Yes"
+                />
+                <FormControlLabel
+                  value="false"
+                  control={
+                    <Radio
+                      sx={{
+                        color: "secondary.main",
+                        "&.Mui-checked": {
                           color: "secondary.main",
-                          "&.Mui-checked": {
-                            color: "secondary.main",
-                          },
-                        }}
-                      />
-                    }
-                    label="No"
-                  />
-                </RadioGroup>
-                {errors.adjustment_of_status && (
-                  <FormHelperText>
-                    {errors.adjustment_of_status?.message}
-                  </FormHelperText>
-                )}
-              </FormControl>
+                        },
+                      }}
+                    />
+                  }
+                  label="No"
+                />
+              </RadioGroup>
             )}
           />
-        </Grid>
+          {errors.adjustment_of_status && (
+            <FormHelperText>
+              {errors.adjustment_of_status.message}
+            </FormHelperText>
+          )}
+        </FormControl>
+      </Box>
 
-        {/* Conditional Fields - If Yes */}
-        {adjustmentOfStatus === true && (
-          <>
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="h6"
-                sx={{ textAlign: "center", mt: 2, mb: 1, fontWeight: 600 }}
-              >
-                Adjustment of status
-              </Typography>
-            </Grid>
+      {/* Conditional Fields Based on Adjustment of Status */}
+      {adjustmentOfStatus === true && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+            Adjustment of Status Information
+          </Typography>
+
+          <Grid container spacing={3}>
             {/* Date of Last Entry */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ mb: 1, color: "#fff" }}>
                 Date of Last Entry <span style={{ color: "red" }}>*</span>
               </Typography>
               <Controller
@@ -376,8 +875,8 @@ export const ProcessingInformation = ({ vacancyData }) => {
             </Grid>
 
             {/* I-944 Number */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ mb: 1, color: "#fff" }}>
                 I-944 Number <span style={{ color: "red" }}>*</span>
               </Typography>
               <Controller
@@ -404,1235 +903,20 @@ export const ProcessingInformation = ({ vacancyData }) => {
                 )}
               />
             </Grid>
+          </Grid>
+        </Box>
+      )}
 
-            {/* Visa Records Section - Only when adjustment = Yes */}
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="h5"
-                sx={{
-                  mt: 2,
-                  fontWeight: 600,
-                  textAlign: "center",
-                  color: "primary.contrastText",
-                }}
-              >
-                Visa Records
-              </Typography>
-            </Grid>
+      {adjustmentOfStatus === false && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+            Consular Processing Information
+          </Typography>
 
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>
-                Are any{" "}
-                {vacancyData?.visa_category?.country?.name ||
-                  "the United States of America"}{" "}
-                visas held?
-              </Typography>
-
-              {/* Applicant Visa Records Section */}
-              <Box sx={{ mb: 4 }}>
-                <Typography sx={{ mb: 2, fontWeight: 500 }}>
-                  Applicant
-                </Typography>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  alignItems={{ xs: "flex-start", sm: "center" }}
-                >
-                  <Controller
-                    name="visa_records_applicant"
-                    control={control}
-                    defaultValue="no"
-                    render={({ field }) => (
-                      <FormControl>
-                        <RadioGroup row {...field}>
-                          <FormControlLabel
-                            value="yes"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
-                              />
-                            }
-                            label="Yes"
-                          />
-                          <FormControlLabel
-                            value="no"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
-                              />
-                            }
-                            label="No"
-                          />
-                        </RadioGroup>
-                      </FormControl>
-                    )}
-                  />
-                </Stack>
-
-                {/* Applicant Visa Records Form */}
-                {visaRecordsApplicant === "yes" && (
-                  <Box sx={{ mt: 3 }}>
-                    {applicantVisaRecords.map((item, index) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          mb: 3,
-                          p: 3,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            color="primary"
-                          >
-                            {index === 0
-                              ? "Applicant Visa Record"
-                              : `Applicant Visa Record ${index + 1}`}
-                          </Typography>
-                          {applicantVisaRecords.length > 1 && (
-                            <IconButton
-                              color="error"
-                              onClick={() => removeApplicantVisa(index)}
-                              size="small"
-                            >
-                              <Icon icon="mdi:delete" width={20} />
-                            </IconButton>
-                          )}
-                        </Stack>
-
-                        <Grid container spacing={3}>
-                          {/* Name */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.fullname`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter name"
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.fullname
-                                  }
-                                  helperText={
-                                    errors.applicant_visa_records?.[index]
-                                      ?.fullname?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Type of Visa */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.type`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl
-                                  fullWidth
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.type
-                                  }
-                                >
-                                  <TextField
-                                    {...field}
-                                    select
-                                    label="Type of Visa"
-                                    fullWidth
-                                    required
-                                    disabled={immigrationTypeLoading}
-                                    error={
-                                      !!errors.applicant_visa_records?.[index]
-                                        ?.type
-                                    }
-                                    onChange={(e) => {
-                                      const selectedType =
-                                        immigrationType?.find(
-                                          (type) => type.id === e.target.value,
-                                        );
-                                      if (selectedType) {
-                                        const typeCode = selectedType.name
-                                          .split(/[-–\s]/)[0]
-                                          .trim();
-                                        field.onChange(typeCode);
-                                      } else {
-                                        field.onChange(e.target.value);
-                                      }
-                                    }}
-                                    value={
-                                      immigrationType?.find(
-                                        (type) =>
-                                          type.name
-                                            .split(/[-–\s]/)[0]
-                                            .trim() === field.value,
-                                      )?.id ||
-                                      field.value ||
-                                      ""
-                                    }
-                                    sx={{
-                                      "& .MuiOutlinedInput-root": {
-                                        backgroundColor: "#fff",
-                                      },
-                                    }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>
-                                        {immigrationTypeLoading
-                                          ? "Loading..."
-                                          : "Select Visa Type"}
-                                      </em>
-                                    </MenuItem>
-                                    {immigrationType?.map((type) => (
-                                      <MenuItem key={type.id} value={type.id}>
-                                        {type.name}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                  {errors.applicant_visa_records?.[index]
-                                    ?.type && (
-                                    <FormHelperText>
-                                      {
-                                        errors.applicant_visa_records?.[index]
-                                          ?.type?.message
-                                      }
-                                    </FormHelperText>
-                                  )}
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Expedition Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.expedition_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Issued Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.expedition_date
-                                  }
-                                  helperText={
-                                    errors.applicant_visa_records?.[index]
-                                      ?.expedition_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Expiration Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.expiration_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Expiry Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.expiration_date
-                                  }
-                                  helperText={
-                                    errors.applicant_visa_records?.[index]
-                                      ?.expiration_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      startIcon={<Icon icon="mdi:plus" />}
-                      onClick={() =>
-                        appendApplicantVisa({
-                          fullname: "",
-                          type: "",
-                          expedition_date: "",
-                          expiration_date: "",
-                        })
-                      }
-                      sx={{ mt: 1 }}
-                    >
-                      Add Another Visa Record
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Dependent Visa Records Section */}
-              <Box sx={{ mt: 4 }}>
-                <Typography sx={{ mb: 2, fontWeight: 500 }}>
-                  Dependents
-                </Typography>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  alignItems={{ xs: "flex-start", sm: "center" }}
-                >
-                  <Controller
-                    name="visa_records_dependents"
-                    control={control}
-                    defaultValue="no"
-                    render={({ field }) => (
-                      <FormControl>
-                        <RadioGroup row {...field}>
-                          <FormControlLabel
-                            value="yes"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
-                              />
-                            }
-                            label="Yes"
-                          />
-                          <FormControlLabel
-                            value="no"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
-                              />
-                            }
-                            label="No"
-                          />
-                        </RadioGroup>
-                      </FormControl>
-                    )}
-                  />
-                </Stack>
-
-                {/* Dependent Visa Records & Information Form */}
-                {visaRecordsDependents === "yes" && (
-                  <Box sx={{ mt: 3 }}>
-                    {/* Dependent Information */}
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ mb: 2, fontWeight: 600 }}
-                    >
-                      Dependent Information
-                    </Typography>
-
-                    {dependentInformations.map((item, depIndex) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          mb: 3,
-                          p: 3,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            color="primary"
-                          >
-                            {depIndex === 0
-                              ? "Dependent"
-                              : `Dependent ${depIndex + 1}`}
-                          </Typography>
-                          {dependentInformations.length > 1 && (
-                            <IconButton
-                              color="error"
-                              onClick={() => removeDependentInfo(depIndex)}
-                              size="small"
-                            >
-                              <Icon icon="mdi:delete" width={20} />
-                            </IconButton>
-                          )}
-                        </Stack>
-
-                        <Grid container spacing={3}>
-                          {/* First Name */}
-                          <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.first_name`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="First Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter first name"
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.first_name
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.first_name
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Middle Name */}
-                          <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.middle_name`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Middle Name"
-                                  fullWidth
-                                  placeholder="Enter middle name"
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.middle_name
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.middle_name
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Last Name */}
-                          <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.last_name`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Last Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter last name"
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.last_name
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.last_name
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* DOB */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.dob`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Date of Birth"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  inputProps={{ max: today }}
-                                  error={!!errors.dependents?.[depIndex]?.dob}
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.dob?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Relation */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.relation`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  select
-                                  label="Relation"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.relation
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.relation
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                >
-                                  <MenuItem value="">
-                                    <em>Select Relation</em>
-                                  </MenuItem>
-                                  {relationOptions.map((option) => (
-                                    <MenuItem
-                                      key={option}
-                                      value={option.toLowerCase()}
-                                    >
-                                      {option}
-                                    </MenuItem>
-                                  ))}
-                                </TextField>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Country of Birth */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.country_of_birth`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl fullWidth>
-                                  <Typography
-                                    sx={{
-                                      mb: 1,
-                                      fontWeight: 500,
-                                      fontSize: "0.875rem",
-                                    }}
-                                  >
-                                    Country of Birth (Optional)
-                                  </Typography>
-                                  <Select
-                                    {...field}
-                                    displayEmpty
-                                    sx={{ backgroundColor: "#fff" }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>Select Country of Birth</em>
-                                    </MenuItem>
-                                    {country?.map((option) => (
-                                      <MenuItem
-                                        key={option.id}
-                                        value={option.id}
-                                      >
-                                        {option.label}
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Country of Citizenship */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.country_of_citizenship`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl fullWidth>
-                                  <Typography
-                                    sx={{
-                                      mb: 1,
-                                      fontWeight: 500,
-                                      fontSize: "0.875rem",
-                                    }}
-                                  >
-                                    Country of Citizenship (Optional)
-                                  </Typography>
-                                  <Select
-                                    {...field}
-                                    displayEmpty
-                                    sx={{ backgroundColor: "#fff" }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>Select Country of Citizenship</em>
-                                    </MenuItem>
-                                    {country?.map((option) => (
-                                      <MenuItem
-                                        key={option.id}
-                                        value={option.id}
-                                      >
-                                        {option.label}
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Education Level */}
-                          <Grid size={{ xs: 12 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.highest_level_of_education`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl fullWidth>
-                                  <Typography
-                                    sx={{
-                                      mb: 1,
-                                      fontWeight: 500,
-                                      fontSize: "0.875rem",
-                                    }}
-                                  >
-                                    Highest Level of Education (Optional)
-                                  </Typography>
-                                  <RadioGroup {...field} row>
-                                    {educationOptions.map((option) => (
-                                      <FormControlLabel
-                                        key={option.value}
-                                        value={option.value}
-                                        control={
-                                          <Radio
-                                            sx={{
-                                              color: "secondary.main",
-                                              "&.Mui-checked": {
-                                                color: "secondary.main",
-                                              },
-                                            }}
-                                          />
-                                        }
-                                        label={option.label}
-                                        sx={{
-                                          "& .MuiFormControlLabel-label": {
-                                            color: "text.primary",
-                                            fontWeight: 500,
-                                          },
-                                        }}
-                                      />
-                                    ))}
-                                  </RadioGroup>
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Conditional Education Form Fields */}
-                          {watch(
-                            `dependents.${depIndex}.highest_level_of_education`,
-                          ) &&
-                            watch(
-                              `dependents.${depIndex}.highest_level_of_education`,
-                            ) !== "none" && (
-                              <>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Name of Institute
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.instituteName`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter institute name"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.instituteName
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.instituteName?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Year of Graduation
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.graduationYear`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        type="number"
-                                        fullWidth
-                                        placeholder="YYYY"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.graduationYear
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.graduationYear?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Country
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_country`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <FormControl
-                                        fullWidth
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_country
-                                        }
-                                      >
-                                        <Select
-                                          {...field}
-                                          displayEmpty
-                                          sx={{ backgroundColor: "#fff" }}
-                                        >
-                                          <MenuItem value="">
-                                            <em>Select Country</em>
-                                          </MenuItem>
-                                          {country?.map((option) => (
-                                            <MenuItem
-                                              key={option.id}
-                                              value={option.id}
-                                            >
-                                              {option.label}
-                                            </MenuItem>
-                                          ))}
-                                        </Select>
-                                        {errors.dependents?.[depIndex]
-                                          ?.edu_country && (
-                                          <FormHelperText>
-                                            {
-                                              errors.dependents[depIndex]
-                                                .edu_country.message
-                                            }
-                                          </FormHelperText>
-                                        )}
-                                      </FormControl>
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>State</Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_state`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter state"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_state
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_state?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>City</Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_city`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter city"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_city
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_city?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Zip Code
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_zipCode`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter zip code"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_zipCode
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_zipCode?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 12, md: 8 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Address
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_address`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        multiline
-                                        rows={2}
-                                        placeholder="Enter full address"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_address
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_address?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-                              </>
-                            )}
-                        </Grid>
-                      </Box>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      startIcon={<Icon icon="mdi:plus" />}
-                      onClick={() =>
-                        appendDependentInfo({
-                          first_name: "",
-                          middle_name: "",
-                          last_name: "",
-                          dob: "",
-                          relation: "",
-                          country_of_birth: "",
-                          country_of_citizenship: "",
-                          highest_level_of_education: "",
-                        })
-                      }
-                      sx={{ mt: 1, mb: 3 }}
-                    >
-                      Add Another Dependent
-                    </Button>
-
-                    {/* Dependent Visa Records */}
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ mb: 2, fontWeight: 600 }}
-                    >
-                      Dependent Visa Records
-                    </Typography>
-
-                    {dependentVisaRecords.map((item, index) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          mb: 3,
-                          p: 3,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            color="primary"
-                          >
-                            {index === 0
-                              ? "Dependent Visa Record"
-                              : `Dependent Visa Record ${index + 1}`}
-                          </Typography>
-                          {dependentVisaRecords.length > 1 && (
-                            <IconButton
-                              color="error"
-                              onClick={() => removeDependentVisa(index)}
-                              size="small"
-                            >
-                              <Icon icon="mdi:delete" width={20} />
-                            </IconButton>
-                          )}
-                        </Stack>
-
-                        <Grid container spacing={3}>
-                          {/* Name */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.fullname`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter name"
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.fullname
-                                  }
-                                  helperText={
-                                    errors.dependent_visa_records?.[index]
-                                      ?.fullname?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Type of Visa */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.type`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl
-                                  fullWidth
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.type
-                                  }
-                                >
-                                  <TextField
-                                    {...field}
-                                    select
-                                    label="Type of Visa"
-                                    fullWidth
-                                    required
-                                    disabled={immigrationTypeLoading}
-                                    error={
-                                      !!errors.dependent_visa_records?.[index]
-                                        ?.type
-                                    }
-                                    onChange={(e) => {
-                                      const selectedType =
-                                        immigrationType?.find(
-                                          (type) => type.id === e.target.value,
-                                        );
-                                      if (selectedType) {
-                                        const typeCode = selectedType.name
-                                          .split(/[-–\s]/)[0]
-                                          .trim();
-                                        field.onChange(typeCode);
-                                      } else {
-                                        field.onChange(e.target.value);
-                                      }
-                                    }}
-                                    value={
-                                      immigrationType?.find(
-                                        (type) =>
-                                          type.name
-                                            .split(/[-–\s]/)[0]
-                                            .trim() === field.value,
-                                      )?.id ||
-                                      field.value ||
-                                      ""
-                                    }
-                                    sx={{
-                                      "& .MuiOutlinedInput-root": {
-                                        backgroundColor: "#fff",
-                                      },
-                                    }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>
-                                        {immigrationTypeLoading
-                                          ? "Loading..."
-                                          : "Select Visa Type"}
-                                      </em>
-                                    </MenuItem>
-                                    {immigrationType?.map((type) => (
-                                      <MenuItem key={type.id} value={type.id}>
-                                        {type.name}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                  {errors.dependent_visa_records?.[index]
-                                    ?.type && (
-                                    <FormHelperText>
-                                      {
-                                        errors.dependent_visa_records?.[index]
-                                          ?.type?.message
-                                      }
-                                    </FormHelperText>
-                                  )}
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Expedition Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.expedition_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Issued Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.expedition_date
-                                  }
-                                  helperText={
-                                    errors.dependent_visa_records?.[index]
-                                      ?.expedition_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Expiration Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.expiration_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Expiry Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.expiration_date
-                                  }
-                                  helperText={
-                                    errors.dependent_visa_records?.[index]
-                                      ?.expiration_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      startIcon={<Icon icon="mdi:plus" />}
-                      onClick={() =>
-                        appendDependentVisa({
-                          fullname: "",
-                          type: "",
-                          expedition_date: "",
-                          expiration_date: "",
-                        })
-                      }
-                      sx={{ mt: 1 }}
-                    >
-                      Add Another Visa Record
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-            </Grid>
-          </>
-        )}
-
-        {/* Conditional Fields - If No (Consular Processing) */}
-        {adjustmentOfStatus === false && (
-          <>
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="h6"
-                sx={{ textAlign: "center", mt: 2, mb: 1, fontWeight: 600 }}
-              >
-                Consular Processing
-              </Typography>
-            </Grid>
-
+          <Grid container spacing={3}>
             {/* Embassy Name */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ mb: 1, color: "#fff" }}>
                 Embassy Name <span style={{ color: "red" }}>*</span>
               </Typography>
               <Controller
@@ -1661,8 +945,8 @@ export const ProcessingInformation = ({ vacancyData }) => {
             </Grid>
 
             {/* Embassy Location */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ mb: 1, color: "#fff" }}>
                 Embassy Location <span style={{ color: "red" }}>*</span>
               </Typography>
               <Controller
@@ -1689,1223 +973,885 @@ export const ProcessingInformation = ({ vacancyData }) => {
                 )}
               />
             </Grid>
+          </Grid>
+        </Box>
+      )}
 
-            {/* Visa Records Section - Only when Consular Processing */}
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="h5"
+      {/* Visa Records Section - Shared for both paths */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          Visa Records
+        </Typography>
+
+        {/* Applicant Visa Records Question */}
+        <Box sx={{ mb: 3 }}>
+          <FormControl
+            component="fieldset"
+            error={!!errors.visa_records_applicant}
+          >
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Do you have any visa records?
+            </Typography>
+            <Controller
+              name="visa_records_applicant"
+              control={control}
+              defaultValue="no"
+              render={({ field }) => (
+                <RadioGroup {...field} row>
+                  <FormControlLabel
+                    value="yes"
+                    control={
+                      <Radio
+                        sx={{
+                          color: "secondary.main",
+                          "&.Mui-checked": {
+                            color: "secondary.main",
+                          },
+                        }}
+                      />
+                    }
+                    label="Yes"
+                  />
+                  <FormControlLabel
+                    value="no"
+                    control={
+                      <Radio
+                        sx={{
+                          color: "secondary.main",
+                          "&.Mui-checked": {
+                            color: "secondary.main",
+                          },
+                        }}
+                      />
+                    }
+                    label="No"
+                  />
+                </RadioGroup>
+              )}
+            />
+            {errors.visa_records_applicant && (
+              <FormHelperText>
+                {errors.visa_records_applicant.message}
+              </FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        {/* Applicant Visa Records Form */}
+        {visaRecordsApplicant === "yes" && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              Applicant Visa Records
+            </Typography>
+
+            <VisaRecordsSection
+              control={control}
+              errors={errors}
+              visaRecords={applicantVisaRecords}
+              fieldPrefix="visa_records"
+              onAppend={appendApplicantVisa}
+              onRemove={removeApplicantVisa}
+              immigrationType={immigrationType}
+              immigrationTypeLoading={immigrationTypeLoading}
+              includeFullname
+            />
+          </Box>
+        )}
+
+        {/* Dependent Visa Records Question */}
+        <Box sx={{ mb: 3 }}>
+          <FormControl
+            component="fieldset"
+            error={!!errors.visa_records_dependents}
+          >
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Do your dependents have any visa records?
+            </Typography>
+            <Controller
+              name="visa_records_dependents"
+              control={control}
+              defaultValue="no"
+              render={({ field }) => (
+                <RadioGroup {...field} row>
+                  <FormControlLabel
+                    value="yes"
+                    control={
+                      <Radio
+                        sx={{
+                          color: "secondary.main",
+                          "&.Mui-checked": {
+                            color: "secondary.main",
+                          },
+                        }}
+                      />
+                    }
+                    label="Yes"
+                  />
+                  <FormControlLabel
+                    value="no"
+                    control={
+                      <Radio
+                        sx={{
+                          color: "secondary.main",
+                          "&.Mui-checked": {
+                            color: "secondary.main",
+                          },
+                        }}
+                      />
+                    }
+                    label="No"
+                  />
+                </RadioGroup>
+              )}
+            />
+            {errors.visa_records_dependents && (
+              <FormHelperText>
+                {errors.visa_records_dependents.message}
+              </FormHelperText>
+            )}
+          </FormControl>
+        </Box>
+
+        {/* Dependent Information and Visa Records */}
+        {visaRecordsDependents === "yes" && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              Dependent Information
+            </Typography>
+
+            {dependentInformations.map((item, depIndex) => (
+              <Box
+                key={item.id}
                 sx={{
-                  mt: 4,
-                  fontWeight: 600,
-                  textAlign: "center",
-                  color: "primary.contrastText",
+                  mb: 3,
+                  p: 3,
+                  border: "2px solid #e0e0e0",
+                  borderRadius: 2,
+                  backgroundColor: "#f5f5f5",
                 }}
               >
-                Visa Records
-              </Typography>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>
-                Are any{" "}
-                {vacancyData?.visa_category?.country?.name ||
-                  "the United States of America"}{" "}
-                visas held?
-              </Typography>
-
-              {/* Applicant Visa Records Section */}
-              <Box sx={{ mb: 4 }}>
-                <Typography sx={{ mb: 2, fontWeight: 500 }}>
-                  Applicant
-                </Typography>
                 <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  alignItems={{ xs: "flex-start", sm: "center" }}
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ mb: 3 }}
                 >
-                  <Controller
-                    name="visa_records_applicant"
-                    control={control}
-                    defaultValue="no"
-                    render={({ field }) => (
-                      <FormControl>
-                        <RadioGroup row {...field}>
-                          <FormControlLabel
-                            value="yes"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
-                              />
-                            }
-                            label="Yes"
-                          />
-                          <FormControlLabel
-                            value="no"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
-                              />
-                            }
-                            label="No"
-                          />
-                        </RadioGroup>
-                      </FormControl>
-                    )}
-                  />
+                  <Typography variant="h6" fontWeight={600} color="primary">
+                    {depIndex === 0 ? "Dependent" : `Dependent ${depIndex + 1}`}
+                  </Typography>
+                  {dependentInformations.length > 1 && (
+                    <IconButton
+                      color="error"
+                      onClick={() => removeDependentInfo(depIndex)}
+                    >
+                      <Icon icon="mdi:delete" width={24} />
+                    </IconButton>
+                  )}
                 </Stack>
 
-                {/* Applicant Visa Records Form */}
-                {visaRecordsApplicant === "yes" && (
-                  <Box sx={{ mt: 3 }}>
-                    {applicantVisaRecords.map((item, index) => (
-                      <Box
-                        key={item.id}
+                <Grid container spacing={3}>
+                  {/* First Name */}
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Controller
+                      name={`dependents.${depIndex}.first_name`}
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="First Name"
+                          fullWidth
+                          required
+                          placeholder="Enter first name"
+                          error={
+                            !!errors?.dependents?.[depIndex]?.first_name
+                              ?.message
+                          }
+                          helperText={
+                            errors?.dependents?.[depIndex]?.first_name?.message
+                          }
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Middle Name */}
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Controller
+                      name={`dependents.${depIndex}.middle_name`}
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Middle Name"
+                          fullWidth
+                          placeholder="Enter middle name"
+                          error={
+                            !!errors?.dependents?.[depIndex]?.middle_name
+                              ?.message
+                          }
+                          helperText={
+                            errors?.dependents?.[depIndex]?.middle_name?.message
+                          }
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Last Name */}
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Controller
+                      name={`dependents.${depIndex}.last_name`}
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Last Name"
+                          fullWidth
+                          required
+                          placeholder="Enter last name"
+                          error={
+                            !!errors?.dependents?.[depIndex]?.last_name?.message
+                          }
+                          helperText={
+                            errors?.dependents?.[depIndex]?.last_name?.message
+                          }
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Date of Birth */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Controller
+                      name={`dependents.${depIndex}.dob`}
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Date of Birth"
+                          type="date"
+                          fullWidth
+                          required
+                          InputLabelProps={{ shrink: true }}
+                          error={!!errors?.dependents?.[depIndex]?.dob?.message}
+                          helperText={
+                            errors?.dependents?.[depIndex]?.dob?.message
+                          }
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  {/* Relation */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl
+                      fullWidth
+                      error={
+                        !!errors?.dependents?.[depIndex]?.relation?.message
+                      }
+                    >
+                      <InputLabel id={`dependent-${depIndex}-relation-label`}>
+                        Relation *
+                      </InputLabel>
+                      <Controller
+                        name={`dependents.${depIndex}.relation`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            labelId={`dependent-${depIndex}-relation-label`}
+                            label="Relation *"
+                          >
+                            <MenuItem value="" disabled>
+                              Select relation
+                            </MenuItem>
+                            <MenuItem value="Spouse">Spouse</MenuItem>
+                            <MenuItem value="Child">Child</MenuItem>
+                            <MenuItem value="Parent">Parent</MenuItem>
+                            <MenuItem value="Sibling">Sibling</MenuItem>
+                            <MenuItem value="Other">Other</MenuItem>
+                          </Select>
+                        )}
+                      />
+                      {errors?.dependents?.[depIndex]?.relation && (
+                        <FormHelperText>
+                          {errors?.dependents?.[depIndex]?.relation?.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
+
+                  {/* Country of Birth */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl
+                      fullWidth
+                      error={
+                        !!errors?.dependents?.[depIndex]?.country_of_birth
+                          ?.message
+                      }
+                    >
+                      <InputLabel
+                        id={`dependent-${depIndex}-country-birth-label`}
                         sx={{
-                          mb: 3,
-                          p: 3,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          backgroundColor: "#fafafa",
+                          color: "text.primary",
+                          fontWeight: 500,
+                          fontSize: "0.875rem",
                         }}
                       >
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            color="primary"
+                        Country of Birth
+                      </InputLabel>
+                      <Controller
+                        name={`dependents.${depIndex}.country_of_birth`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            labelId={`dependent-${depIndex}-country-birth-label`}
+                            label="Country of Birth"
+                            disabled={countryCodeLoading}
+                            MenuProps={{
+                              PaperProps: {
+                                sx: {
+                                  backgroundColor: "#fff",
+                                  "& .MuiMenuItem-root": {
+                                    color: "#000",
+                                  },
+                                },
+                              },
+                            }}
                           >
-                            {index === 0
-                              ? "Applicant Visa Record"
-                              : `Applicant Visa Record ${index + 1}`}
-                          </Typography>
-                          {applicantVisaRecords.length > 1 && (
-                            <IconButton
-                              color="error"
-                              onClick={() => removeApplicantVisa(index)}
-                              size="small"
-                            >
-                              <Icon icon="mdi:delete" width={20} />
-                            </IconButton>
-                          )}
-                        </Stack>
+                            <MenuItem value="" disabled>
+                              Select country of birth
+                            </MenuItem>
+                            {countryCode?.map((country) => (
+                              <MenuItem key={country.id} value={country.id}>
+                                {country.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        )}
+                      />
+                      {errors?.dependents?.[depIndex]?.country_of_birth && (
+                        <FormHelperText>
+                          {
+                            errors?.dependents?.[depIndex]?.country_of_birth
+                              ?.message
+                          }
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
 
-                        <Grid container spacing={3}>
-                          {/* Name */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.fullname`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter name"
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.fullname
-                                  }
-                                  helperText={
-                                    errors.applicant_visa_records?.[index]
-                                      ?.fullname?.message
-                                  }
+                  {/* Country of Citizenship */}
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormControl
+                      fullWidth
+                      error={
+                        !!errors?.dependents?.[depIndex]?.country_of_citizenship
+                          ?.message
+                      }
+                    >
+                      <InputLabel
+                        id={`dependent-${depIndex}-country-citizenship-label`}
+                        sx={{
+                          color: "text.primary",
+                          fontWeight: 500,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Country of Citizenship
+                      </InputLabel>
+                      <Controller
+                        name={`dependents.${depIndex}.country_of_citizenship`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            labelId={`dependent-${depIndex}-country-citizenship-label`}
+                            label="Country of Citizenship"
+                            disabled={countryCodeLoading}
+                            MenuProps={{
+                              PaperProps: {
+                                sx: {
+                                  backgroundColor: "#fff",
+                                  "& .MuiMenuItem-root": {
+                                    color: "#000",
+                                  },
+                                },
+                              },
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              Select country of citizenship
+                            </MenuItem>
+                            {countryCode?.map((country) => (
+                              <MenuItem key={country.id} value={country.id}>
+                                {country.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        )}
+                      />
+                      {errors?.dependents?.[depIndex]
+                        ?.country_of_citizenship && (
+                        <FormHelperText>
+                          {
+                            errors?.dependents?.[depIndex]
+                              ?.country_of_citizenship?.message
+                          }
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
+
+                  {/* Highest Level of Education */}
+                  <Grid size={{ xs: 12 }}>
+                    <Controller
+                      name={`dependents.${depIndex}.education`}
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <FormControl fullWidth>
+                          <Typography
+                            sx={{
+                              mb: 1,
+                              fontWeight: 500,
+                              fontSize: "0.875rem",
+                              color: "text.primary",
+                            }}
+                          >
+                            Highest Level of Education (Optional)
+                          </Typography>
+                          <RadioGroup {...field} row>
+                            <FormControlLabel
+                              value="high_school"
+                              control={
+                                <Radio
                                   sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
+                                    color: "secondary.main",
+                                    "&.Mui-checked": {
+                                      color: "secondary.main",
                                     },
                                   }}
                                 />
-                              )}
+                              }
+                              label="High School"
+                              sx={{
+                                "& .MuiFormControlLabel-label": {
+                                  color: "text.primary",
+                                  fontWeight: 500,
+                                },
+                              }}
                             />
-                          </Grid>
+                            <FormControlLabel
+                              value="bachelors"
+                              control={
+                                <Radio
+                                  sx={{
+                                    color: "secondary.main",
+                                    "&.Mui-checked": {
+                                      color: "secondary.main",
+                                    },
+                                  }}
+                                />
+                              }
+                              label="Bachelor's Degree"
+                              sx={{
+                                "& .MuiFormControlLabel-label": {
+                                  color: "text.primary",
+                                  fontWeight: 500,
+                                },
+                              }}
+                            />
+                            <FormControlLabel
+                              value="masters"
+                              control={
+                                <Radio
+                                  sx={{
+                                    color: "secondary.main",
+                                    "&.Mui-checked": {
+                                      color: "secondary.main",
+                                    },
+                                  }}
+                                />
+                              }
+                              label="Master's Degree"
+                              sx={{
+                                "& .MuiFormControlLabel-label": {
+                                  color: "text.primary",
+                                  fontWeight: 500,
+                                },
+                              }}
+                            />
+                            <FormControlLabel
+                              value="phd"
+                              control={
+                                <Radio
+                                  sx={{
+                                    color: "secondary.main",
+                                    "&.Mui-checked": {
+                                      color: "secondary.main",
+                                    },
+                                  }}
+                                />
+                              }
+                              label="PhD"
+                              sx={{
+                                "& .MuiFormControlLabel-label": {
+                                  color: "text.primary",
+                                  fontWeight: 500,
+                                },
+                              }}
+                            />
+                            <FormControlLabel
+                              value="none"
+                              control={
+                                <Radio
+                                  sx={{
+                                    color: "secondary.main",
+                                    "&.Mui-checked": {
+                                      color: "secondary.main",
+                                    },
+                                  }}
+                                />
+                              }
+                              label="None"
+                              sx={{
+                                "& .MuiFormControlLabel-label": {
+                                  color: "text.primary",
+                                  fontWeight: 500,
+                                },
+                              }}
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      )}
+                    />
+                  </Grid>
 
-                          {/* Type of Visa */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.type`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl
-                                  fullWidth
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.type
-                                  }
-                                >
+                  {/* Academic Records Section - Show when education is selected */}
+                  {watch(`dependents.${depIndex}.education`) &&
+                    watch(`dependents.${depIndex}.education`) !== "none" &&
+                    watch(`dependents.${depIndex}.education`) !== "" && (
+                      <Grid size={{ xs: 12 }}>
+                        <Box
+                          sx={{
+                            p: 2,
+                            backgroundColor: "#f5f5f5",
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              mb: 2,
+                              fontWeight: 600,
+                              color: "text.primary",
+                            }}
+                          >
+                            Academic Record Details
+                          </Typography>
+
+                          <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.program_name`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
                                   <TextField
                                     {...field}
-                                    select
-                                    label="Type of Visa"
+                                    label="Program Name"
                                     fullWidth
-                                    required
-                                    disabled={immigrationTypeLoading}
+                                    size="small"
+                                    placeholder="e.g., Computer Science"
                                     error={
-                                      !!errors.applicant_visa_records?.[index]
-                                        ?.type
+                                      !!errors?.dependents?.[depIndex]
+                                        ?.academic_records?.program_name
                                     }
-                                    onChange={(e) => {
-                                      const selectedType =
-                                        immigrationType?.find(
-                                          (type) => type.id === e.target.value,
-                                        );
-                                      if (selectedType) {
-                                        const typeCode = selectedType.name
-                                          .split(/[-–\s]/)[0]
-                                          .trim();
-                                        field.onChange(typeCode);
-                                      } else {
-                                        field.onChange(e.target.value);
-                                      }
-                                    }}
-                                    value={
-                                      immigrationType?.find(
-                                        (type) =>
-                                          type.name
-                                            .split(/[-–\s]/)[0]
-                                            .trim() === field.value,
-                                      )?.id ||
-                                      field.value ||
-                                      ""
+                                    helperText={
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.program_name
+                                        ?.message
                                     }
-                                    sx={{
-                                      "& .MuiOutlinedInput-root": {
-                                        backgroundColor: "#fff",
-                                      },
-                                    }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>
-                                        {immigrationTypeLoading
-                                          ? "Loading..."
-                                          : "Select Visa Type"}
-                                      </em>
-                                    </MenuItem>
-                                    {immigrationType?.map((type) => (
-                                      <MenuItem key={type.id} value={type.id}>
-                                        {type.name}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                  {errors.applicant_visa_records?.[index]
-                                    ?.type && (
-                                    <FormHelperText>
-                                      {
-                                        errors.applicant_visa_records?.[index]
-                                          ?.type?.message
-                                      }
-                                    </FormHelperText>
-                                  )}
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Expedition Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.expedition_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Issued Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.expedition_date
-                                  }
-                                  helperText={
-                                    errors.applicant_visa_records?.[index]
-                                      ?.expedition_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Expiration Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`applicant_visa_records.${index}.expiration_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Expiry Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.applicant_visa_records?.[index]
-                                      ?.expiration_date
-                                  }
-                                  helperText={
-                                    errors.applicant_visa_records?.[index]
-                                      ?.expiration_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      startIcon={<Icon icon="mdi:plus" />}
-                      onClick={() =>
-                        appendApplicantVisa({
-                          fullname: "",
-                          type: "",
-                          expedition_date: "",
-                          expiration_date: "",
-                        })
-                      }
-                      sx={{ mt: 1 }}
-                    >
-                      Add Another Visa Record
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Dependent Visa Records Section */}
-              <Box sx={{ mt: 4 }}>
-                <Typography sx={{ mb: 2, fontWeight: 500 }}>
-                  Dependents
-                </Typography>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  alignItems={{ xs: "flex-start", sm: "center" }}
-                >
-                  <Controller
-                    name="visa_records_dependents"
-                    control={control}
-                    defaultValue="no"
-                    render={({ field }) => (
-                      <FormControl>
-                        <RadioGroup row {...field}>
-                          <FormControlLabel
-                            value="yes"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
+                                  />
+                                )}
                               />
-                            }
-                            label="Yes"
-                          />
-                          <FormControlLabel
-                            value="no"
-                            control={
-                              <Radio
-                                sx={{
-                                  color: "secondary.main",
-                                  "&.Mui-checked": {
-                                    color: "secondary.main",
-                                  },
-                                }}
+                            </Grid>
+
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.institution_name`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    label="Institution Name"
+                                    fullWidth
+                                    size="small"
+                                    placeholder="Enter institution name"
+                                    error={
+                                      !!errors?.dependents?.[depIndex]
+                                        ?.academic_records?.institution_name
+                                    }
+                                    helperText={
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.institution_name
+                                        ?.message
+                                    }
+                                  />
+                                )}
                               />
-                            }
-                            label="No"
-                          />
-                        </RadioGroup>
-                      </FormControl>
-                    )}
-                  />
-                </Stack>
+                            </Grid>
 
-                {/* Dependent Visa Records & Information Form */}
-                {visaRecordsDependents === "yes" && (
-                  <Box sx={{ mt: 3 }}>
-                    {/* Dependent Information */}
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ mb: 2, fontWeight: 600 }}
-                    >
-                      Dependent Information
-                    </Typography>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.graduation_year`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    label="Graduation Year"
+                                    fullWidth
+                                    size="small"
+                                    placeholder="YYYY"
+                                    error={
+                                      !!errors?.dependents?.[depIndex]
+                                        ?.academic_records?.graduation_year
+                                    }
+                                    helperText={
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.graduation_year
+                                        ?.message
+                                    }
+                                  />
+                                )}
+                              />
+                            </Grid>
 
-                    {dependentInformations.map((item, depIndex) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          mb: 3,
-                          p: 3,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            color="primary"
-                          >
-                            {depIndex === 0
-                              ? "Dependent"
-                              : `Dependent ${depIndex + 1}`}
-                          </Typography>
-                          {dependentInformations.length > 1 && (
-                            <IconButton
-                              color="error"
-                              onClick={() => removeDependentInfo(depIndex)}
-                              size="small"
-                            >
-                              <Icon icon="mdi:delete" width={20} />
-                            </IconButton>
-                          )}
-                        </Stack>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.grade`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    label="Grade"
+                                    fullWidth
+                                    size="small"
+                                    placeholder="e.g., pass, A, B+"
+                                  />
+                                )}
+                              />
+                            </Grid>
 
-                        <Grid container spacing={3}>
-                          {/* First Name */}
-                          <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.first_name`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="First Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter first name"
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.first_name
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.first_name
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Middle Name */}
-                          <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.middle_name`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Middle Name"
-                                  fullWidth
-                                  placeholder="Enter middle name"
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.middle_name
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.middle_name
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Last Name */}
-                          <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.last_name`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Last Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter last name"
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.last_name
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.last_name
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* DOB */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.dob`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Date of Birth"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  inputProps={{ max: today }}
-                                  error={!!errors.dependents?.[depIndex]?.dob}
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.dob?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Relation */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.relation`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  select
-                                  label="Relation"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.dependents?.[depIndex]?.relation
-                                  }
-                                  helperText={
-                                    errors.dependents?.[depIndex]?.relation
-                                      ?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                >
-                                  <MenuItem value="">
-                                    <em>Select Relation</em>
-                                  </MenuItem>
-                                  {relationOptions.map((option) => (
-                                    <MenuItem
-                                      key={option}
-                                      value={option.toLowerCase()}
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <FormControl
+                                fullWidth
+                                size="small"
+                                error={
+                                  !!errors?.dependents?.[depIndex]
+                                    ?.academic_records?.country
+                                }
+                              >
+                                <InputLabel>Country</InputLabel>
+                                <Controller
+                                  name={`dependents.${depIndex}.academic_records.country`}
+                                  control={control}
+                                  defaultValue=""
+                                  render={({ field }) => (
+                                    <Select
+                                      {...field}
+                                      label="Country"
+                                      disabled={countryCodeLoading}
+                                      MenuProps={{
+                                        PaperProps: {
+                                          sx: {
+                                            backgroundColor: "#fff",
+                                            "& .MuiMenuItem-root": {
+                                              color: "#000",
+                                            },
+                                          },
+                                        },
+                                      }}
                                     >
-                                      {option}
-                                    </MenuItem>
-                                  ))}
-                                </TextField>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Country of Birth */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.country_of_birth`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl fullWidth>
-                                  <Typography
-                                    sx={{
-                                      mb: 1,
-                                      fontWeight: 500,
-                                      fontSize: "0.875rem",
-                                      color: "text.primary",
-                                    }}
-                                  >
-                                    Country of Birth (Optional)
-                                  </Typography>
-                                  <Select
-                                    {...field}
-                                    displayEmpty
-                                    sx={{ backgroundColor: "#fff" }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>Select Country of Birth</em>
-                                    </MenuItem>
-                                    {country?.map((option) => (
-                                      <MenuItem
-                                        key={option.id}
-                                        value={option.id}
-                                      >
-                                        {option.label}
+                                      <MenuItem value="">
+                                        Select country
                                       </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Country of Citizenship */}
-                          <Grid size={{ xs: 12, md: 6 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.country_of_citizenship`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl fullWidth>
-                                  <Typography
-                                    sx={{
-                                      mb: 1,
-                                      fontWeight: 500,
-                                      fontSize: "0.875rem",
-                                      color: "text.primary",
-                                    }}
-                                  >
-                                    Country of Citizenship (Optional)
-                                  </Typography>
-                                  <Select
-                                    {...field}
-                                    displayEmpty
-                                    sx={{ backgroundColor: "#fff" }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>Select Country of Citizenship</em>
-                                    </MenuItem>
-                                    {country?.map((option) => (
-                                      <MenuItem
-                                        key={option.id}
-                                        value={option.id}
-                                      >
-                                        {option.label}
-                                      </MenuItem>
-                                    ))}
-                                  </Select>
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Education Level */}
-                          <Grid size={{ xs: 12 }}>
-                            <Controller
-                              name={`dependents.${depIndex}.highest_level_of_education`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl fullWidth>
-                                  <Typography
-                                    sx={{
-                                      mb: 1,
-                                      fontWeight: 500,
-                                      fontSize: "0.875rem",
-                                      color: "text.primary",
-                                    }}
-                                  >
-                                    Highest Level of Education (Optional)
-                                  </Typography>
-                                  <RadioGroup {...field} row>
-                                    {educationOptions.map((option) => (
-                                      <FormControlLabel
-                                        key={option.value}
-                                        value={option.value}
-                                        control={
-                                          <Radio
-                                            sx={{
-                                              color: "secondary.main",
-                                              "&.Mui-checked": {
-                                                color: "secondary.main",
-                                              },
-                                            }}
-                                          />
-                                        }
-                                        label={option.label}
-                                        sx={{
-                                          "& .MuiFormControlLabel-label": {
-                                            color: "text.primary", // change this to any color
-                                            fontWeight: 500, // optional
-                                          },
-                                        }}
-                                      />
-                                    ))}
-                                  </RadioGroup>
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
-
-                          {/* Conditional Education Form Fields */}
-                          {watch(
-                            `dependents.${depIndex}.highest_level_of_education`,
-                          ) &&
-                            watch(
-                              `dependents.${depIndex}.highest_level_of_education`,
-                            ) !== "none" && (
-                              <>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Name of Institute
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.instituteName`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter institute name"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.instituteName
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.instituteName?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Year of Graduation
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.graduationYear`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        type="number"
-                                        fullWidth
-                                        placeholder="YYYY"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.graduationYear
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.graduationYear?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Country
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_country`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <FormControl
-                                        fullWidth
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_country
-                                        }
-                                      >
-                                        <Select
-                                          {...field}
-                                          displayEmpty
-                                          sx={{ backgroundColor: "#fff" }}
+                                      {countryCode?.map((country) => (
+                                        <MenuItem
+                                          key={country.id}
+                                          value={country.id}
                                         >
-                                          <MenuItem value="">
-                                            <em>Select Country</em>
-                                          </MenuItem>
-                                          {country?.map((option) => (
-                                            <MenuItem
-                                              key={option.id}
-                                              value={option.id}
-                                            >
-                                              {option.label}
-                                            </MenuItem>
-                                          ))}
-                                        </Select>
-                                        {errors.dependents?.[depIndex]
-                                          ?.edu_country && (
-                                          <FormHelperText>
-                                            {
-                                              errors.dependents[depIndex]
-                                                .edu_country.message
-                                            }
-                                          </FormHelperText>
-                                        )}
-                                      </FormControl>
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>State</Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_state`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter state"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_state
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_state?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>City</Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_city`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter city"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_city
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_city?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Zip Code
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_zipCode`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        placeholder="Enter zip code"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_zipCode
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_zipCode?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-
-                                <Grid size={{ xs: 12, sm: 12, md: 8 }}>
-                                  <Typography sx={{ mb: 1 }}>
-                                    Address
-                                  </Typography>
-                                  <Controller
-                                    name={`dependents.${depIndex}.edu_address`}
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <TextField
-                                        {...field}
-                                        fullWidth
-                                        multiline
-                                        // rows={2}
-                                        placeholder="Enter full address"
-                                        error={
-                                          !!errors.dependents?.[depIndex]
-                                            ?.edu_address
-                                        }
-                                        helperText={
-                                          errors.dependents?.[depIndex]
-                                            ?.edu_address?.message
-                                        }
-                                        sx={{
-                                          "& .MuiOutlinedInput-root": {
-                                            backgroundColor: "#fff",
-                                          },
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </Grid>
-                              </>
-                            )}
-                        </Grid>
-                      </Box>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      startIcon={<Icon icon="mdi:plus" />}
-                      onClick={() =>
-                        appendDependentInfo({
-                          first_name: "",
-                          middle_name: "",
-                          last_name: "",
-                          dob: "",
-                          relation: "",
-                          country_of_birth: "",
-                          country_of_citizenship: "",
-                          highest_level_of_education: "",
-                        })
-                      }
-                      sx={{ mt: 1, mb: 3 }}
-                    >
-                      Add Another Dependent
-                    </Button>
-
-                    {/* Dependent Visa Records */}
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ mb: 2, fontWeight: 600 }}
-                    >
-                      Dependent Visa Records
-                    </Typography>
-
-                    {dependentVisaRecords.map((item, index) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          mb: 3,
-                          p: 3,
-                          border: "1px solid #e0e0e0",
-                          borderRadius: 2,
-                          backgroundColor: "#fafafa",
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          sx={{ mb: 2 }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            color="primary"
-                          >
-                            {index === 0
-                              ? "Dependent Visa Record"
-                              : `Dependent Visa Record ${index + 1}`}
-                          </Typography>
-                          {dependentVisaRecords.length > 1 && (
-                            <IconButton
-                              color="error"
-                              onClick={() => removeDependentVisa(index)}
-                              size="small"
-                            >
-                              <Icon icon="mdi:delete" width={20} />
-                            </IconButton>
-                          )}
-                        </Stack>
-
-                        <Grid container spacing={3}>
-                          {/* Name */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.fullname`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Name"
-                                  fullWidth
-                                  required
-                                  placeholder="Enter name"
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.fullname
-                                  }
-                                  helperText={
-                                    errors.dependent_visa_records?.[index]
-                                      ?.fullname?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
+                                          {country.label}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  )}
                                 />
-                              )}
-                            />
-                          </Grid>
+                                {errors?.dependents?.[depIndex]
+                                  ?.academic_records?.country && (
+                                  <FormHelperText>
+                                    {
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.country?.message
+                                    }
+                                  </FormHelperText>
+                                )}
+                              </FormControl>
+                            </Grid>
 
-                          {/* Type of Visa */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.type`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormControl
-                                  fullWidth
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.type
-                                  }
-                                >
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.state`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
                                   <TextField
                                     {...field}
-                                    select
-                                    label="Type of Visa"
+                                    label="State"
                                     fullWidth
-                                    required
-                                    disabled={immigrationTypeLoading}
+                                    size="small"
+                                    placeholder="Enter state"
                                     error={
-                                      !!errors.dependent_visa_records?.[index]
-                                        ?.type
+                                      !!errors?.dependents?.[depIndex]
+                                        ?.academic_records?.state
                                     }
-                                    onChange={(e) => {
-                                      const selectedType =
-                                        immigrationType?.find(
-                                          (type) => type.id === e.target.value,
-                                        );
-                                      if (selectedType) {
-                                        const typeCode = selectedType.name
-                                          .split(/[-–\s]/)[0]
-                                          .trim();
-                                        field.onChange(typeCode);
-                                      } else {
-                                        field.onChange(e.target.value);
-                                      }
-                                    }}
-                                    value={
-                                      immigrationType?.find(
-                                        (type) =>
-                                          type.name
-                                            .split(/[-–\s]/)[0]
-                                            .trim() === field.value,
-                                      )?.id ||
-                                      field.value ||
-                                      ""
+                                    helperText={
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.state?.message
                                     }
-                                    sx={{
-                                      "& .MuiOutlinedInput-root": {
-                                        backgroundColor: "#fff",
-                                      },
-                                    }}
-                                  >
-                                    <MenuItem value="">
-                                      <em>
-                                        {immigrationTypeLoading
-                                          ? "Loading..."
-                                          : "Select Visa Type"}
-                                      </em>
-                                    </MenuItem>
-                                    {immigrationType?.map((type) => (
-                                      <MenuItem key={type.id} value={type.id}>
-                                        {type.name}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                  {errors.dependent_visa_records?.[index]
-                                    ?.type && (
-                                    <FormHelperText>
-                                      {
-                                        errors.dependent_visa_records?.[index]
-                                          ?.type?.message
-                                      }
-                                    </FormHelperText>
-                                  )}
-                                </FormControl>
-                              )}
-                            />
-                          </Grid>
+                                  />
+                                )}
+                              />
+                            </Grid>
 
-                          {/* Expedition Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.expedition_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Expedition Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.expedition_date
-                                  }
-                                  helperText={
-                                    errors.dependent_visa_records?.[index]
-                                      ?.expedition_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.city`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    label="City"
+                                    fullWidth
+                                    size="small"
+                                    placeholder="Enter city"
+                                    error={
+                                      !!errors?.dependents?.[depIndex]
+                                        ?.academic_records?.city
+                                    }
+                                    helperText={
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.city?.message
+                                    }
+                                  />
+                                )}
+                              />
+                            </Grid>
 
-                          {/* Expiration Date */}
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                              name={`dependent_visa_records.${index}.expiration_date`}
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  label="Expiry Date"
-                                  type="date"
-                                  fullWidth
-                                  required
-                                  InputLabelProps={{ shrink: true }}
-                                  error={
-                                    !!errors.dependent_visa_records?.[index]
-                                      ?.expiration_date
-                                  }
-                                  helperText={
-                                    errors.dependent_visa_records?.[index]
-                                      ?.expiration_date?.message
-                                  }
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      backgroundColor: "#fff",
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))}
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.zip_code`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    label="Zip Code"
+                                    fullWidth
+                                    size="small"
+                                    placeholder="Enter zip code"
+                                  />
+                                )}
+                              />
+                            </Grid>
 
-                    <Button
-                      variant="outlined"
-                      startIcon={<Icon icon="mdi:plus" />}
-                      onClick={() =>
-                        appendDependentVisa({
-                          fullname: "",
-                          type: "",
-                          expedition_date: "",
-                          expiration_date: "",
-                        })
-                      }
-                      sx={{ mt: 1 }}
-                    >
-                      Add Another Visa Record
-                    </Button>
-                  </Box>
-                )}
+                            <Grid size={{ xs: 12 }}>
+                              <Controller
+                                name={`dependents.${depIndex}.academic_records.address`}
+                                control={control}
+                                defaultValue=""
+                                render={({ field }) => (
+                                  <TextField
+                                    {...field}
+                                    label="Address"
+                                    fullWidth
+                                    size="small"
+                                    multiline
+                                    rows={2}
+                                    placeholder="Enter full address"
+                                    error={
+                                      !!errors?.dependents?.[depIndex]
+                                        ?.academic_records?.address
+                                    }
+                                    helperText={
+                                      errors?.dependents?.[depIndex]
+                                        ?.academic_records?.address?.message
+                                    }
+                                  />
+                                )}
+                              />
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      </Grid>
+                    )}
+                </Grid>
+
+                {/* Dependent's Visa Records */}
+                <DependentVisaRecordsField
+                  control={control}
+                  errors={errors}
+                  dependentIndex={depIndex}
+                  immigrationType={immigrationType}
+                  immigrationTypeLoading={immigrationTypeLoading}
+                />
               </Box>
-            </Grid>
-          </>
+            ))}
+
+            <Button
+              variant="outlined"
+              startIcon={<Icon icon="mdi:plus" />}
+              onClick={() => {
+                appendDependentInfo({
+                  first_name: "",
+                  middle_name: "",
+                  last_name: "",
+                  dob: "",
+                  relation: "",
+                  country_of_birth: "",
+                  country_of_citizenship: "",
+                  education: "",
+                  academic_records: [],
+                  visa_records: [
+                    {
+                      type: "",
+                      expedition_date: "",
+                      expiration_date: "",
+                    },
+                  ],
+                });
+              }}
+            >
+              Add Another Dependent
+            </Button>
+          </Box>
         )}
-      </Grid>
+      </Box>
     </Box>
   );
-};
+}
+
+export { ProcessingInformation };

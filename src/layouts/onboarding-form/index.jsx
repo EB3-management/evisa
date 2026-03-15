@@ -22,14 +22,7 @@ import {
   MainApplicantDetails,
   mainApplicantSchema,
 } from "src/components/onboarding/forms/MainApplicantDetails";
-import {
-  CurrentAddress,
-  currentAddressSchema,
-} from "src/components/onboarding/forms/CurrentAddress";
-import {
-  ContactDetails,
-  contactDetailsSchema,
-} from "src/components/onboarding/forms/ContactDetails";
+
 import { ONBOARDING_STEPS } from "src/constant/onboardingSteps";
 import { useGetCountryCode, useGetEligibilityData } from "src/api";
 import {
@@ -44,14 +37,7 @@ import {
   PastWorkExperiences,
   pastWorkExperiencesSchema,
 } from "src/components/onboarding/forms/PastWorkExperiences";
-import {
-  DependentInformation,
-  dependentsSchema,
-} from "src/components/onboarding/forms/DependentInformation";
-import {
-  MaritalStatus,
-  maritalStatusSchema,
-} from "src/components/onboarding/forms/MaritalStatus";
+
 import {
   EmergencyContactInformation,
   emergencyContactSchema,
@@ -61,11 +47,7 @@ import {
   inadmissibilitySchema,
 } from "src/components/onboarding/forms/Inadmissibility";
 import { Health, healthSchema } from "src/components/onboarding/forms/Health";
-import {
-  ImmigrationHistory,
-  immigrationHistorySchema,
-} from "src/components/onboarding/forms/ImmigrationHistory";
-import { Visa, visaSchema } from "src/components/onboarding/forms/Visa";
+
 import {
   VisaRejection,
   visaRejectionSchema,
@@ -80,25 +62,18 @@ import {
 } from "src/components/onboarding/forms/CriminalRecords";
 import {
   saveAcademicInformation,
-  saveContactDetail,
   saveCriminalRecords,
-  saveCurrentAddress,
-  saveDependentInformation,
   saveEmergencyContact,
   saveEnglishLanguage,
   saveFinalSubmit,
   saveHealth,
-  saveImmigrationHistory,
   saveImmigrationIncident,
   saveInadmissibility,
   saveMainApplicantDetail,
-  saveMaritalStatus,
   saveProcessingInformation,
-  saveVisa,
   saveVisaRejection,
   saveWorkExperiences,
 } from "src/api/onboardingform";
-import { useNavigate, useParams } from "react-router";
 import { useGetVacancyDetail } from "src/api/vacancy";
 import { useRouter } from "src/routes/hooks";
 import { paths } from "src/routes/paths";
@@ -464,7 +439,7 @@ export default function OnboardingLayout() {
             record.institution_name || "";
           academicFields[`${level}_graduationYear`] =
             record.graduation_year || "";
-          academicFields[`${level}_country`] = record.country || "";
+          academicFields[`${level}_country`] = record.country?.id || record.country || "";
           academicFields[`${level}_state`] = record.state || "";
           academicFields[`${level}_city`] = record.city || "";
           academicFields[`${level}_zipCode`] = record.zip_code || "";
@@ -491,42 +466,6 @@ export default function OnboardingLayout() {
           zip_code: exp.jwe_zip_code || "",
           supervisor_name: exp.jwe_supervisor_name || "",
           job_duty: exp.jwe_job_duty || "",
-        })),
-      };
-
-      // Populate Dependents
-      const dependentFields = {
-        has_dependents: dependents.length > 0 ? "Yes" : "No",
-        dependents: dependents.map((dep) => {
-          const birthCountry =
-            dep.dependent_country_of_birth || dep.country_of_birth?.id || "";
-          const citizenshipCountry =
-            dep.dependent_country_of_citizenship ||
-            dep.country_of_citizenship?.id ||
-            "";
-          return {
-            first_name: dep.dependent_first_name || "",
-            middle_name: dep.dependent_middle_name || "",
-            last_name: dep.dependent_last_name || "",
-            dob: dep.dependent_dob || "",
-            kinship: dep.dependent_relation || "",
-            birth_country: birthCountry ? birthCountry.toString() : "",
-            citizenship_country: citizenshipCountry
-              ? citizenshipCountry.toString()
-              : "",
-            highest_level_of_education: dep.education || "",
-          };
-        }),
-      };
-
-      // Populate Visa Records
-      const visaFields = {
-        has_visa_records: visaRecords.length > 0 ? "Yes" : "No",
-        visa_records: visaRecords.map((visa) => ({
-          visaName: visa.visa_fullname || "",
-          visaType: visa.visa_type || "",
-          visaExpeditionDate: visa.visa_expedition_date || "",
-          visaExpirationDate: visa.visa_expiration_date || "",
         })),
       };
 
@@ -571,6 +510,37 @@ export default function OnboardingLayout() {
       };
 
       // Populate form with all data
+      // Get employee visa records (those without employee_dependent_id or for: "Employee")
+      const employeeVisaRecords = onBoarding?.employeeVisaRecords || [];
+      const hasEmployeeVisaRecords = employeeVisaRecords.length > 0;
+      console.log("this is employee records visa", employeeVisaRecords);
+      // Get dependents with their visa records
+      const dependentsWithVisaRecords = dependents.map((dep) => {
+        const depVisaRecords = dep.visa_records || [];
+        return {
+          ...dep,
+          visa_records: depVisaRecords.map((record) => {
+            const visaType = record.visa_type
+              ? parseInt(record.visa_type, 10)
+              : "";
+            console.log("🔍 Populating dependent visa record:", {
+              raw_visa_type: record.visa_type,
+              parsed_type: visaType,
+              dependent_name: dep.dependent_first_name,
+            });
+            return {
+              type: visaType,
+              expedition_date: record.visa_expedition_date || "",
+              expiration_date: record.visa_expiration_date || "",
+            };
+          }),
+        };
+      });
+
+      const hasDependentVisaRecords = dependentsWithVisaRecords.some(
+        (dep) => dep.visa_records.length > 0,
+      );
+
       methods.reset({
         // Processing Information
         adjustment_of_status:
@@ -582,50 +552,90 @@ export default function OnboardingLayout() {
         embassy_name: processingInformation?.embassy_name || "",
         embassy_location: processingInformation?.embassy_location || "",
 
-        // Visa records from processing information
-        visa_records_applicant: visaRecords.length > 0 ? "yes" : "no",
-        applicant_visa_records: visaRecords.map((record) => ({
-          fullname: record.visa_fullname || "",
-          type: record.visa_type || "",
-          expedition_date: record.visa_expedition_date || "",
-          expiration_date: record.visa_expiration_date || "",
-        })),
+        // Visa records radio buttons
+        visa_records_applicant: hasEmployeeVisaRecords ? "yes" : "no",
+        visa_records_dependents: hasDependentVisaRecords ? "yes" : "no",
 
-        // Dependents from processing information
-        visa_records_dependents: dependents.length > 0 ? "yes" : "no",
-        dependent_visa_records: visaRecords
-          .filter((dep) =>
-            dependents.some((d) =>
-              (d.dependent_first_name + " " + d.dependent_last_name)
-                .toLowerCase()
-                .includes(dep.visa_fullname?.toLowerCase()),
-            ),
-          )
-          .map((record) => ({
+        // Visa records from processing information (for applicant)
+        visa_records: employeeVisaRecords.map((record) => {
+          const visaType = record.visa_type
+            ? parseInt(record.visa_type, 10)
+            : "";
+
+          // Note: Immigration types may not be loaded yet when this runs
+          // The Select component will show a warning if the value is out of range
+          // This is expected on initial load and will resolve once immigration types load
+          console.log("🔍 Populating applicant visa record:", {
+            raw_visa_type: record.visa_type,
+            parsed_type: visaType,
+            fullRecord: record,
+          });
+
+          return {
             fullname: record.visa_fullname || "",
-            type: record.visa_type || "",
+            type: visaType,
             expedition_date: record.visa_expedition_date || "",
             expiration_date: record.visa_expiration_date || "",
-          })),
-        dependents: dependents.map((dep) => {
+          };
+        }),
+
+        // Dependents from processing information with nested visa records
+        dependents: dependentsWithVisaRecords.map((dep) => {
           console.log("🔍 Mapping dependent:", dep);
+          console.log("🔍 Dependent relation value:", dep.dependent_relation);
           const birthCountry =
             dep.dependent_country_of_birth || dep.country_of_birth?.id || "";
           const citizenshipCountry =
             dep.dependent_country_of_citizenship ||
             dep.country_of_citizenship?.id ||
             "";
+
+          // Capitalize first letter of relation to match Select options
+          const normalizeRelation = (relation) => {
+            if (!relation) return "";
+            return (
+              relation.charAt(0).toUpperCase() + relation.slice(1).toLowerCase()
+            );
+          };
+
           return {
             first_name: dep.dependent_first_name || "",
             middle_name: dep.dependent_middle_name || "",
             last_name: dep.dependent_last_name || "",
             dob: dep.dependent_dob || "",
-            relation: dep.dependent_relation || "",
+            relation: normalizeRelation(dep.dependent_relation),
             country_of_birth: birthCountry ? birthCountry.toString() : "",
             country_of_citizenship: citizenshipCountry
               ? citizenshipCountry.toString()
               : "",
-            highest_level_of_education: dep.education || "",
+            education: dep.education || "",
+            academic_records: dep.academic_records
+              ? {
+                  program_name: dep.academic_records.program_name || "",
+                  institution_name: dep.academic_records.institution_name || "",
+                  graduation_year: dep.academic_records.graduation_year || "",
+                  grade: dep.academic_records.grade || "",
+                  country:
+                    dep.academic_records.country?.id ||
+                    dep.academic_records.country ||
+                    "",
+                  state: dep.academic_records.state || "",
+                  city: dep.academic_records.city || "",
+                  zip_code: dep.academic_records.zip_code || "",
+                  address: dep.academic_records.address || "",
+                }
+              : {
+                  program_name: "",
+                  institution_name: "",
+                  graduation_year: "",
+                  grade: "",
+                  country: "",
+                  state: "",
+                  city: "",
+                  zip_code: "",
+                  address: "",
+                },
+            visa_records: dep.visa_records,
           };
         }),
 
@@ -695,9 +705,6 @@ export default function OnboardingLayout() {
         // Past Work Experience
         ...workFields,
 
-        // Dependents
-        ...dependentFields,
-
         // Marital Status
         maritalStatus: (() => {
           const normalized = normalizeMaritalStatus(
@@ -747,9 +754,6 @@ export default function OnboardingLayout() {
         inUsaDependent: immigrationHistory?.dependents_in_usa || "No",
         dependentName: immigrationHistory?.dependents_in_usa_if_yes_who || "",
         i94Number: immigrationHistory?.recent_i94_number || "",
-
-        // Visa Records
-        ...visaFields,
 
         // Visa Rejection - Populate from API
         employee_visa_rejected: employeeRejection ? "Yes" : "No",
@@ -886,62 +890,88 @@ export default function OnboardingLayout() {
       data.embassy_location = formData.embassy_location;
     }
 
-    // Add dependents if they exist
-    if (
-      formData.visa_records_dependents === "yes" &&
-      formData.dependents?.length > 0
-    ) {
-      data.dependents = formData.dependents.map((dependent) => ({
-        first_name: dependent.first_name || "",
-        middle_name: dependent.middle_name || "",
-        last_name: dependent.last_name || "",
-        dob: dependent.dob || "",
-        relation: dependent.relation || "",
-        country_of_birth: dependent.country_of_birth || "",
-        country_of_citizenship: dependent.country_of_citizenship || "",
+    // Add applicant visa records if they exist
+    if (formData.visa_records?.length > 0) {
+      data.visa_records = formData.visa_records.map((record) => ({
+        fullname: record.fullname || "",
+        type: String(record.type || ""),
+        expedition_date: record.expedition_date || "",
+        expiration_date: record.expiration_date || "",
       }));
     }
 
-    // Add visa records (both applicant and dependent)
-    const visa_records = [];
+    // Add dependents with their nested visa records
+    if (formData.dependents?.length > 0) {
+      console.log("🔍 Raw formData.dependents:", formData.dependents);
+      console.log(
+        "🔍 First dependent academic_records:",
+        formData.dependents[0]?.academic_records,
+      );
 
-    // Add applicant visa records
-    if (
-      formData.visa_records_applicant === "yes" &&
-      formData.applicant_visa_records?.length > 0
-    ) {
-      formData.applicant_visa_records.forEach((record) => {
-        if (record.fullname && record.type) {
-          visa_records.push({
-            fullname: record.fullname,
-            type: record.type,
-            expedition_date: record.expedition_date || "",
-            expiration_date: record.expiration_date || "",
-          });
+      data.dependents = formData.dependents.map((dependent, index) => {
+        const academicRecords = dependent.academic_records;
+        console.log(
+          `🔍 Dependent ${index} academic_records structure:`,
+          academicRecords,
+        );
+
+        const transformedDependent = {
+          first_name: dependent.first_name || "",
+          middle_name: dependent.middle_name || "",
+          last_name: dependent.last_name || "",
+          dob: dependent.dob || "",
+          relation: dependent.relation || "",
+          country_of_birth: String(dependent.country_of_birth || ""),
+          country_of_citizenship: String(
+            dependent.country_of_citizenship || "",
+          ),
+          education: dependent.education || "",
+          visa_records:
+            dependent.visa_records?.length > 0
+              ? dependent.visa_records.map((visa) => ({
+                  type: String(visa.type || ""),
+                  expedition_date: visa.expedition_date || "",
+                  expiration_date: visa.expiration_date || "",
+                }))
+              : [],
+        };
+
+        // Only add academic_records if education is selected and fields are filled
+        // API expects an array, so wrap the single object in an array
+        // Only send if at least program_name or institution_name is filled
+        if (
+          dependent.education &&
+          dependent.education !== "none" &&
+          dependent.education !== "" &&
+          academicRecords &&
+          (academicRecords.program_name || academicRecords.institution_name)
+        ) {
+          transformedDependent.academic_records = [
+            {
+              program_name: academicRecords.program_name || "",
+              institution_name: academicRecords.institution_name || "",
+              graduation_year: academicRecords.graduation_year || "",
+              grade: academicRecords.grade || "",
+              country: String(academicRecords.country || ""),
+              state: academicRecords.state || "",
+              city: academicRecords.city || "",
+              zip_code: academicRecords.zip_code || "",
+              address: academicRecords.address || "",
+            },
+          ];
+          console.log(
+            `🔍 Dependent ${index} transformed academic_records:`,
+            transformedDependent.academic_records,
+          );
         }
-      });
-    }
 
-    // Add dependent visa records
-    if (
-      formData.visa_records_dependents === "yes" &&
-      formData.dependent_visa_records?.length > 0
-    ) {
-      formData.dependent_visa_records.forEach((record) => {
-        if (record.fullname && record.type) {
-          visa_records.push({
-            fullname: record.fullname,
-            type: record.type,
-            expedition_date: record.expedition_date || "",
-            expiration_date: record.expiration_date || "",
-          });
-        }
+        return transformedDependent;
       });
-    }
 
-    // Only add visa_records if there are any
-    if (visa_records.length > 0) {
-      data.visa_records = visa_records;
+      console.log(
+        "📤 Final transformed dependents:",
+        JSON.stringify(data.dependents, null, 2),
+      );
     }
 
     console.log("📤 Processing Information - Transformed API Data:", data);
@@ -970,12 +1000,12 @@ export default function OnboardingLayout() {
       legally_married:
         formData.maritalStatus === "Married"
           ? "Yes"
-          : formData.maritalStatus === "Single"
+          : formData.maritalStatus === "Unmarried"
             ? "No"
             : formData.maritalStatus,
       legally_married_if_others:
         formData.maritalStatus &&
-        !["Married", "Single", "Divorced", "Widow", "Separated"].includes(
+        !["Married", "Unmarried", "Divorced", "Widow", "Separated"].includes(
           formData.maritalStatus,
         )
           ? formData.clarifyMaritalStatus || ""
@@ -1226,56 +1256,114 @@ export default function OnboardingLayout() {
     };
   };
 
-  const transformImmigrationIncidentData = (formData) => ({
-    immigration_incidents: {
-      e_overstayed_usa_visa_i94_employee:
-        formData.e_overstayed_usa_visa_i94_employee === "yes" ? "Yes" : "No",
-      e_overstayed_usa_visa_i94_employee_if_yes_who:
-        formData.e_overstayed_usa_visa_i94_employee_if_yes_who || "",
-      e_overstayed_usa_visa_i94_dependents:
-        formData.e_overstayed_usa_visa_i94_dependents === "yes" ? "Yes" : "No",
-      e_overstayed_usa_visa_i94_dependents_if_yes_who:
-        formData.e_overstayed_usa_visa_i94_dependents_if_yes_who || "",
+  const transformImmigrationIncidentData = (formData) => {
+    const data = {
+      immigration_incidents: {
+        e_overstayed_usa_visa_i94_employee:
+          formData.e_overstayed_usa_visa_i94_employee === "yes" ? "Yes" : "No",
+        e_overstayed_usa_visa_i94_dependents:
+          formData.e_overstayed_usa_visa_i94_dependents === "yes"
+            ? "Yes"
+            : "No",
+        eb_unlawfully_present_usa_employee:
+          formData.eb_unlawfully_present_usa_employee === "yes" ? "Yes" : "No",
+        eb_unlawfully_present_usa_dependents:
+          formData.eb_unlawfully_present_usa_dependents === "yes"
+            ? "Yes"
+            : "No",
+        eb_denied_entry_usa_employee:
+          formData.eb_denied_entry_usa_employee === "yes" ? "Yes" : "No",
+        eb_denied_entry_usa_dependents:
+          formData.eb_denied_entry_usa_dependents === "yes" ? "Yes" : "No",
+        eb_deported_from_any_country_employee:
+          formData.eb_deported_from_any_country_employee === "yes"
+            ? "Yes"
+            : "No",
+        eb_deported_from_any_country_dependents:
+          formData.eb_deported_from_any_country_dependents === "yes"
+            ? "Yes"
+            : "No",
+        ebb_imr_judge_h_ofcr_employee:
+          formData.ebb_imr_judge_h_ofcr_employee === "yes" ? "Yes" : "No",
+        ebb_imr_judge_h_ofcr_dependents:
+          formData.ebb_imr_judge_h_ofcr_dependents === "yes" ? "Yes" : "No",
+      },
+    };
 
-      eb_unlawfully_present_usa_employee:
-        formData.eb_unlawfully_present_usa_employee === "yes" ? "Yes" : "No",
-      eb_unlawfully_present_usa_employee_if_yes_who:
-        formData.eb_unlawfully_present_usa_employee_if_yes_who || "",
-      eb_unlawfully_present_usa_dependents:
-        formData.eb_unlawfully_present_usa_dependents === "yes" ? "Yes" : "No",
-      eb_unlawfully_present_usa_dependents_if_yes_who:
-        formData.eb_unlawfully_present_usa_dependents_if_yes_who || "",
+    // Only add employee overstayed fields if yes
+    if (formData.e_overstayed_usa_visa_i94_employee === "yes") {
+      data.immigration_incidents.e_overstayed_usa_visa_employee_if_yes_from =
+        formData.e_overstayed_usa_visa_employee_if_yes_from || "";
+      data.immigration_incidents.e_overstayed_usa_visa_employee_if_yes_to =
+        formData.e_overstayed_usa_visa_employee_if_yes_to || "";
+    }
 
-      eb_denied_entry_usa_employee:
-        formData.eb_denied_entry_usa_employee === "yes" ? "Yes" : "No",
-      eb_denied_entry_usa_employee_if_yes:
-        formData.eb_denied_entry_usa_employee_if_yes || "",
-      eb_denied_entry_usa_dependents:
-        formData.eb_denied_entry_usa_dependents === "yes" ? "Yes" : "No",
-      eb_denied_entry_usa_dependents_if_yes:
-        formData.eb_denied_entry_usa_dependents_if_yes || "",
+    // Only add dependent overstayed fields if yes
+    if (formData.e_overstayed_usa_visa_i94_dependents === "yes") {
+      data.immigration_incidents.e_overstayed_usa_visa_i94_dependents_if_yes_who =
+        formData.e_overstayed_usa_visa_i94_dependents_if_yes_who || "";
+      data.immigration_incidents.e_overstayed_usa_visa_i94_dependents_from =
+        formData.e_overstayed_usa_visa_i94_dependents_from || "";
+      data.immigration_incidents.e_overstayed_usa_visa_i94_dependents_to =
+        formData.e_overstayed_usa_visa_i94_dependents_to || "";
+    }
 
-      eb_deported_from_any_country_employee:
-        formData.eb_deported_from_any_country_employee === "yes" ? "Yes" : "No",
-      eb_deported_from_any_country_employee_if_yes:
-        formData.eb_deported_from_any_country_employee_if_yes || "",
-      eb_deported_from_any_country_dependents:
-        formData.eb_deported_from_any_country_dependents === "yes"
-          ? "Yes"
-          : "No",
-      eb_deported_from_any_country_dependents_if_yes:
-        formData.eb_deported_from_any_country_dependents_if_yes || "",
+    // Only add employee unlawfully present fields if yes
+    if (formData.eb_unlawfully_present_usa_employee === "yes") {
+      data.immigration_incidents.eb_unlawfully_present_usa_employee_from =
+        formData.eb_unlawfully_present_usa_employee_from || "";
+      data.immigration_incidents.eb_unlawfully_present_usa_employee_to =
+        formData.eb_unlawfully_present_usa_employee_to || "";
+    }
 
-      ebb_imr_judge_h_ofcr_employee:
-        formData.ebb_imr_judge_h_ofcr_employee === "yes" ? "Yes" : "No",
-      ebb_imr_judge_h_ofcr_employee_if_yes:
-        formData.ebb_imr_judge_h_ofcr_employee_if_yes || "",
-      ebb_imr_judge_h_ofcr_dependents:
-        formData.ebb_imr_judge_h_ofcr_dependents === "yes" ? "Yes" : "No",
-      ebb_imr_judge_h_ofcr_dependents_if_yes:
-        formData.ebb_imr_judge_h_ofcr_dependents_if_yes || "",
-    },
-  });
+    // Only add dependent unlawfully present fields if yes
+    if (formData.eb_unlawfully_present_usa_dependents === "yes") {
+      data.immigration_incidents.eb_unlawfully_present_usa_dependents_if_yes_who =
+        formData.eb_unlawfully_present_usa_dependents_if_yes_who || "";
+      data.immigration_incidents.eb_unlawfully_present_usa_dependents_from =
+        formData.eb_unlawfully_present_usa_dependents_from || "";
+      data.immigration_incidents.eb_unlawfully_present_usa_dependents_to =
+        formData.eb_unlawfully_present_usa_dependents_to || "";
+    }
+
+    // Only add employee denied entry fields if yes
+    if (formData.eb_denied_entry_usa_employee === "yes") {
+      data.immigration_incidents.eb_denied_entry_usa_employee_if_yes =
+        formData.eb_denied_entry_usa_employee_if_yes || "";
+    }
+
+    // Only add dependent denied entry fields if yes
+    if (formData.eb_denied_entry_usa_dependents === "yes") {
+      data.immigration_incidents.eb_denied_entry_usa_dependents_if_yes =
+        formData.eb_denied_entry_usa_dependents_if_yes || "";
+    }
+
+    // Only add employee deported fields if yes
+    if (formData.eb_deported_from_any_country_employee === "yes") {
+      data.immigration_incidents.eb_deported_from_any_country_employee_if_yes =
+        formData.eb_deported_from_any_country_employee_if_yes || "";
+    }
+
+    // Only add dependent deported fields if yes
+    if (formData.eb_deported_from_any_country_dependents === "yes") {
+      data.immigration_incidents.eb_deported_from_any_country_dependents_if_yes =
+        formData.eb_deported_from_any_country_dependents_if_yes || "";
+    }
+
+    // Only add employee immigration judge fields if yes
+    if (formData.ebb_imr_judge_h_ofcr_employee === "yes") {
+      data.immigration_incidents.ebb_imr_judge_h_ofcr_employee_if_yes =
+        formData.ebb_imr_judge_h_ofcr_employee_if_yes || "";
+    }
+
+    // Only add dependent immigration judge fields if yes
+    if (formData.ebb_imr_judge_h_ofcr_dependents === "yes") {
+      data.immigration_incidents.ebb_imr_judge_h_ofcr_dependents_if_yes =
+        formData.ebb_imr_judge_h_ofcr_dependents_if_yes || "";
+    }
+
+    return data;
+  };
 
   const transformCriminalRecordData = (formData) => {
     // If both employee and dependents selected "No", return empty array
@@ -1294,13 +1382,20 @@ export default function OnboardingLayout() {
       criminal_record_employee: formData.criminal_record_employee,
       criminal_record_dependents: formData.criminal_record_dependents,
       criminal_records: formData.criminal_records?.length
-        ? formData.criminal_records.map((r) => ({
-            related_to: r.related_to,
-            name: r.name,
-            type_of_record: r.type_of_record,
-            date: r.date,
-            outcome: r.outcome,
-          }))
+        ? formData.criminal_records.map((r) => {
+            const record = {
+              related_to: r.related_to,
+              name: r.name,
+              type_of_record: r.type_of_record,
+              date: r.date,
+              outcome: r.outcome,
+            };
+            // Only include dependent_id if related_to is dependent
+            if (r.related_to === "dependent" && r.dependent_id) {
+              record.dependent_id = r.dependent_id;
+            }
+            return record;
+          })
         : [],
     };
   };
@@ -1370,16 +1465,21 @@ export default function OnboardingLayout() {
   };
 
   const saveCurrentStepData = async (stepIndex) => {
+    console.log("💾 Saving step:", stepIndex);
     const formData = methods.getValues();
+    console.log("💾 Form data for step:", formData);
 
     try {
       switch (stepIndex) {
-        case 0:
+        case 0: {
           // Processing Information
-          await saveProcessingInformation(
-            transformProcessingInformationData(formData),
-          );
+          console.log("💾 Calling saveProcessingInformation API");
+          const transformedData = transformProcessingInformationData(formData);
+          console.log("💾 Transformed data:", transformedData);
+          await saveProcessingInformation(transformedData);
+          console.log("✅ Processing Information saved successfully");
           break;
+        }
         case 1:
           await saveMainApplicantDetail(transformMainApplicantData(formData));
           break;
@@ -1468,6 +1568,9 @@ export default function OnboardingLayout() {
 
   const goNext = async () => {
     // Validate current step
+    console.log("🔍 Validating step:", currentStep);
+    console.log("🔍 Form values before validation:", methods.getValues());
+
     const isValid = await methods.trigger();
 
     if (!isValid) {
@@ -1476,6 +1579,8 @@ export default function OnboardingLayout() {
       console.log("❌ Current form values:", methods.getValues());
       return;
     }
+
+    console.log("✅ Validation passed");
 
     // Save current step data
     const saved = await saveCurrentStepData(currentStep);
@@ -1589,7 +1694,7 @@ export default function OnboardingLayout() {
       case 7:
         return <ImmigrationIncident vacancyId={selectedVacancyId} />;
       case 8:
-        return <CriminalRecord />;
+        return <CriminalRecord dependents={onBoarding?.dependents || []} />;
       case 9:
         return <Inadmissibility />;
       case 10:

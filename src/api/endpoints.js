@@ -1,4 +1,3 @@
-import { list } from "src/theme/core/components/list";
 
 export const endpoints = {
   auth: {
@@ -90,10 +89,6 @@ export const endpoints = {
     updateNotes: (id) => `lead/note/update/${id}`,
     rewardLeads: (id) => `lead/re-reward-lead/${id}`,
     followupLeads: (id) => `lead/followup/store/${id}`,
-  },
-
-  transaction: {
-    list: "organization-transaction",
   },
 
   permission: {

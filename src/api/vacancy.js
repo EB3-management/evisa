@@ -5,7 +5,7 @@ import { fetcher, poster } from "src/lib";
 
 export function useGetVacancy(country = null, visaCategory = null) {
   let url = endpoints.vacancy.list;
-  
+
   const params = new URLSearchParams();
   if (country && country !== "all") {
     params.append("country", country);
@@ -13,7 +13,7 @@ export function useGetVacancy(country = null, visaCategory = null) {
   if (visaCategory && visaCategory !== "all") {
     params.append("visa_category", visaCategory);
   }
-  
+
   if (params.toString()) {
     url = `${url}?${params.toString()}`;
   }
@@ -26,7 +26,7 @@ export function useGetVacancy(country = null, visaCategory = null) {
       vacancyLoading: isLoading,
       vacancyError: error,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -56,7 +56,7 @@ export function useGetVacancyDetail(id) {
       vacancyError: error,
       mutateVacancyDetail: mutate,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -73,23 +73,11 @@ export function useGetCountryVisa() {
       visaCountryLoading: isLoading,
       visaCountryError: error,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
 }
-
-// export const fetchVacancyDetail = async (id) => {
-//   try {
-//     const response = await fetcher(endpoints.vacancy.detail(id));
-
-//     return response.data;
-//   } catch (error) {
-//     console.error(error);
-
-//     throw error;
-//   }
-// };
 
 export const applyVacancy = async (id) => {
   try {
@@ -115,7 +103,7 @@ export function useGetAppliedVacancy() {
       appliedVacancyError: error,
       mutateAppliedVacancy: mutate,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;

@@ -26,6 +26,7 @@ export const criminalRecordSchema = z
       .array(
         z.object({
           related_to: z.string().optional(),
+          dependent_id: z.union([z.string(), z.number()]).optional(),
           name: z.string().optional(),
           type_of_record: z.string().optional(),
           date: z.string().optional(),
@@ -55,6 +56,13 @@ export const criminalRecordSchema = z
               code: z.ZodIssueCode.custom,
               message: "Please select who this record is related to",
               path: ["criminal_records", index, "related_to"],
+            });
+          }
+          if (record.related_to === "dependent" && !record.dependent_id) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Please select which dependent",
+              path: ["criminal_records", index, "dependent_id"],
             });
           }
           if (!record.name || record.name.trim() === "") {
@@ -92,7 +100,7 @@ export const criminalRecordSchema = z
   });
 
 // ------------------ Component ------------------
-export const CriminalRecord = () => {
+export const CriminalRecord = ({ dependents = [] }) => {
   const {
     control,
     formState: { errors },
@@ -121,6 +129,7 @@ export const CriminalRecord = () => {
       // Add first record when switching to "Yes"
       append({
         related_to: "",
+        dependent_id: "",
         name: "",
         type_of_record: "",
         date: "",
@@ -338,8 +347,62 @@ export const CriminalRecord = () => {
                       />
                     </Grid>
 
+                    {/* Dependent Selector - Show only when related_to is dependent */}
+                    {watch(`criminal_records.${index}.related_to`) ===
+                      "dependent" &&
+                      dependents.length > 0 && (
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Controller
+                            name={`criminal_records.${index}.dependent_id`}
+                            control={control}
+                            defaultValue=""
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                select
+                                label="Select Dependent"
+                                fullWidth
+                                required
+                                error={
+                                  !!errors.criminal_records?.[index]
+                                    ?.dependent_id
+                                }
+                                helperText={
+                                  errors.criminal_records?.[index]?.dependent_id
+                                    ?.message
+                                }
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    backgroundColor: "#fff",
+                                  },
+                                }}
+                              >
+                                {dependents.map((dependent) => (
+                                  <MenuItem
+                                    key={dependent.id}
+                                    value={dependent.id}
+                                  >
+                                    {dependent.dependent_first_name}{" "}
+                                    {dependent.dependent_last_name}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            )}
+                          />
+                        </Grid>
+                      )}
+
                     {/* Name */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm:
+                          watch(`criminal_records.${index}.related_to`) ===
+                            "dependent" && dependents.length > 0
+                            ? 12
+                            : 6,
+                      }}
+                    >
                       <Controller
                         name={`criminal_records.${index}.name`}
                         control={control}
@@ -459,6 +522,7 @@ export const CriminalRecord = () => {
                 onClick={() =>
                   append({
                     related_to: "",
+                    dependent_id: "",
                     name: "",
                     type_of_record: "",
                     date: "",

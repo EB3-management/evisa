@@ -2,7 +2,6 @@ import { memo, forwardRef } from "react";
 
 import SvgIcon from "@mui/material/SvgIcon";
 
-import { CONFIG } from "src/global-config";
 
 import { BackgroundShape } from "./background-shape";
 

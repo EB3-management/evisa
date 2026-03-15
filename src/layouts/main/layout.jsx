@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useBoolean } from "minimal-shared/hooks";
 
 import Box from "@mui/material/Box";

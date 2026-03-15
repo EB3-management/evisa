@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useSetState } from "minimal-shared/hooks";
 
 import { Box, Card, Table, TableBody, Button } from "@mui/material";

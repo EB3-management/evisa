@@ -36,6 +36,19 @@ export function NavMobile({
     <Drawer
       open={open}
       onClose={onClose}
+      anchor="left"
+      ModalProps={{
+        keepMounted: false,
+        disableEnforceFocus: true,
+        sx: {
+          "& .MuiBackdrop-root": {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+          },
+        },
+      }}
+      SlideProps={{
+        timeout: { enter: 225, exit: 195 },
+      }}
       PaperProps={{
         className: mergeClasses([
           layoutClasses.nav.root,
@@ -47,6 +60,10 @@ export function NavMobile({
             overflow: "unset",
             bgcolor: "var(--layout-nav-bg)",
             width: "var(--layout-nav-mobile-width)",
+            transition: theme.transitions.create("all", {
+              duration: theme.transitions.duration.shorter,
+              easing: theme.transitions.easing.easeInOut,
+            }),
           }),
           ...(Array.isArray(sx) ? sx : [sx]),
         ],

@@ -1,4 +1,3 @@
-import Grid from "@mui/material/Grid2";
 
 import { DashboardContent } from "src/layouts/dashboard";
 
@@ -7,7 +6,6 @@ import {
   Box,
   Chip,
   Step,
-  StepButton,
   StepConnector,
   StepLabel,
   Stepper,
@@ -15,7 +13,6 @@ import {
 } from "@mui/material";
 import { useRouter } from "src/routes/hooks";
 import { useState } from "react";
-import { paths } from "src/routes/paths";
 
 // ----------------------------------------------------------------------
 

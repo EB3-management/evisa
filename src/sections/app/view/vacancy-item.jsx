@@ -51,8 +51,7 @@ export function VacancyItem({
   };
 
   return (
-    <>
-      <Card sx={sx} {...other}>
+    <Card sx={sx} {...other}>
         <Box sx={{ p: 3, pb: 2 }}>
           <Box
             sx={{
@@ -221,6 +220,5 @@ export function VacancyItem({
           </Button>
         </Box>
       </Card>
-    </>
   );
 }

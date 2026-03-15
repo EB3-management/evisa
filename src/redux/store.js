@@ -1,7 +1,6 @@
 import storage from "redux-persist/lib/storage";
 import { configureStore } from "@reduxjs/toolkit";
-import { persistStore, persistReducer } from "redux-persist";
-import { PERSIST, REHYDRATE, REGISTER } from "redux-persist";
+import { persistStore, persistReducer , PERSIST, REHYDRATE, REGISTER } from "redux-persist";
 import createSagaMiddleware from "redux-saga";
 
 import { rootReducer } from "./reducer";

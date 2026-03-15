@@ -201,10 +201,14 @@ export const AcademicInformation = ({ country }) => {
         <Controller
           name={`${levelKey}_country`}
           control={control}
-          defaultValue=""
           render={({ field }) => (
             <FormControl fullWidth error={!!errors[`${levelKey}_country`]}>
-              <Select {...field} displayEmpty sx={{ backgroundColor: "#fff" }}>
+              <Select 
+                {...field} 
+                value={field.value || ""} 
+                displayEmpty 
+                sx={{ backgroundColor: "#fff" }}
+              >
                 <MenuItem value="">
                   <em>Select Country</em>
                 </MenuItem>

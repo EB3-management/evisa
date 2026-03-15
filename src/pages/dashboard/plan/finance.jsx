@@ -1,7 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { CONFIG } from "src/global-config";
 import { FinanceAssign } from "src/sections/app/plan/finance-assign";
-import { PlanList } from "src/sections/app/plan/plan-view";
 
 const metadata = { title: `Finance - ${CONFIG.appName}` };
 

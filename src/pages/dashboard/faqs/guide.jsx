@@ -1,7 +1,6 @@
 import { Helmet } from "react-helmet-async";
 
 import { CONFIG } from "src/global-config";
-import { FaqsView } from "src/sections/faqs/view/faqs-view";
 import { GuideView } from "src/sections/faqs/view/guide-view";
 
 // ----------------------------------------------------------------------

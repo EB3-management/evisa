@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
 import { MainLayout } from "src/layouts/main";
 

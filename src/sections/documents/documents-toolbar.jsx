@@ -1,7 +1,7 @@
 import { TextField, Box, MenuItem, CircularProgress } from "@mui/material";
 
 import { useCallback } from "react";
-import { useGetAppliedVacancy, useGetVacancy } from "src/api/vacancy";
+import { useGetAppliedVacancy } from "src/api/vacancy";
 
 export function DocumentsTableToolbar({ filters, onResetPage }) {
   const { state: currentFilters, setState: updateFilters } = filters;

@@ -1,10 +1,6 @@
 import {
   Box,
-  Step,
-  StepLabel,
-  Stepper,
   Typography,
-  StepConnector,
   CircularProgress,
 } from "@mui/material";
 import { useGetPlan } from "src/api/plan";
@@ -29,8 +25,7 @@ export function PlanList({ id }) {
   const hasAssignedPlan = hasPlans && plan.some((p) => p.assigned === true);
 
   return (
-    <>
-      <DashboardContent>
+    <DashboardContent>
         <CustomBreadcrumbs
           links={[
             { name: "Dashboard", href: paths.dashboard.root },
@@ -99,6 +94,5 @@ export function PlanList({ id }) {
           </Box>
         )}
       </DashboardContent>
-    </>
   );
 }

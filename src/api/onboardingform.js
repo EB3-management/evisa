@@ -234,17 +234,29 @@ export const fetchOnBoardingStatus = async () => {
 
 export function useGetImmigrationTypes(id) {
   const url = endpoints.form.immigrationType(id);
-  console.log("thisis is endpoint id", id);
+  console.log("🔍 Immigration Types - Fetching for vacancy ID:", id);
   const { data, isLoading, error, mutate } = useSWR(url, fetcher);
+
+  const immigrationTypes = data?.data || [];
+  
+  // Log available immigration type IDs when data loads
+  if (immigrationTypes.length > 0) {
+    console.log("✅ Immigration Types loaded:", {
+      count: immigrationTypes.length,
+      ids: immigrationTypes.map(t => t.id),
+      minId: Math.min(...immigrationTypes.map(t => t.id)),
+      maxId: Math.max(...immigrationTypes.map(t => t.id)),
+    });
+  }
 
   const memoizedValue = useMemo(
     () => ({
-      immigrationType: data?.data || [],
+      immigrationType: immigrationTypes,
       immigrationTypeLoading: isLoading,
       immigrationTypeError: error,
       mutateImmigrationType: mutate,
     }),
-    [data?.data, isLoading, error]
+    [immigrationTypes, isLoading, error, mutate]
   );
 
   return memoizedValue;

@@ -1,4 +1,4 @@
-import { z as zod, ZodUndefined } from "zod";
+import { z as zod } from "zod";
 
 export const OnboardingSchema = zod.object({
   // ─── Main Applicant ───

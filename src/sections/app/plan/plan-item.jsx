@@ -1,7 +1,5 @@
-import { usePopover } from "minimal-shared/hooks";
 
 import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";

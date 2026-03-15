@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useSetState } from "minimal-shared/hooks";
+import { useEffect } from "react";
 
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -16,7 +15,6 @@ import {
   useTable,
   emptyRows,
   TableNoData,
-  getComparator,
   TableEmptyRows,
   TableHeadCustom,
   TableSelectedAction,

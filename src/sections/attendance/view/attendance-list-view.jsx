@@ -7,8 +7,7 @@ import { DashboardContent } from "src/layouts/dashboard";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
 import { Button, Stack, Typography } from "@mui/material";
 import { AttendanceTable } from "../attendance-table-rw";
-import { toast } from "src/components/snackbar";
-import { fetchAttendanceData, fetchDateInNepali } from "src/api/hr-attendance";
+import { fetchAttendanceData } from "src/api/hr-attendance";
 import { useState } from "react";
 import NepaliDateDialog from "../nepali-date";
 

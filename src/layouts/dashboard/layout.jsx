@@ -7,20 +7,14 @@ import { useTheme } from "@mui/material/styles";
 import { iconButtonClasses } from "@mui/material/IconButton";
 
 import { useAppDispatch, useAppSelector } from "src/redux/hooks";
-import {
-  fetchProfileRequest,
-  fetchAllPermissionsRequest,
-  fetchCurrentUserPermissionsRequest,
-  fetchSiteSettingRequest,
-} from "src/redux/actions";
+
+
 import {
   selectAuthState,
   selectPermissionState,
   selectProfileState,
 } from "src/redux/selectors";
 
-import { Label } from "src/components/label";
-import { Iconify } from "src/components/iconify";
 import { useSettingsContext } from "src/components/settings";
 
 import { NavMobile } from "./nav-mobile";
@@ -38,7 +32,7 @@ import {
   // formatNavData,
 } from "../nav-config-dashboard";
 import { dashboardLayoutVars, dashboardNavColorVars } from "./css-vars";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 
 // ----------------------------------------------------------------------
 
@@ -79,6 +73,18 @@ export function DashboardLayout({
   );
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
+
+  // Close drawer on window resize to prevent backdrop stuck issue
+  useEffect(() => {
+    const handleResize = () => {
+      if (open && window.innerWidth >= theme.breakpoints.values[layoutQuery]) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [open, onClose, layoutQuery, theme.breakpoints.values]);
 
   const navData = slotProps?.nav?.data ?? dashboardNavData;
 

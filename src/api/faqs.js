@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useMemo } from "react";
 
-import { fetcher, poster } from "src/lib";
+import { fetcher } from "src/lib";
 
 import { endpoints } from "./endpoints";
 

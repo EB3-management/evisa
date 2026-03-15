@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { DashboardContent } from "src/layouts/dashboard";
-import { useGetContractDetail } from "src/api/document";
+import { useGetContractDetail , signContract } from "src/api/document";
 import { Iconify } from "src/components/iconify";
 import { fDateTime } from "src/utils/format-time";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
@@ -23,7 +23,6 @@ import Grid from "@mui/material/Grid2";
 import { Markdown } from "src/components/markdown";
 import { ContractSigningDialog } from "../dialog/contract-signing-dialog";
 import { toast } from "sonner";
-import { signContract } from "src/api/document";
 
 export function ContractDetailView({ id }) {
   const { contractDetail, contractDetailLoading, contractDetailError, refetch } =
