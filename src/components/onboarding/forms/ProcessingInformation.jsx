@@ -35,7 +35,9 @@ export const processingInformationSchema = z
     visa_records: z
       .array(
         z.object({
-          fullname: z.string().min(1, "Name is required"),
+          visa_first_name: z.string().min(1, "First name is required"),
+          visa_middle_name: z.string().optional().default(""),
+          visa_last_name: z.string().optional().default(""),
           type: z
             .union([z.string(), z.number()])
             .refine((val) => val !== "" && val !== null && val !== undefined, {
@@ -303,29 +305,77 @@ const VisaRecordsSection = ({
 
         <Grid container spacing={3}>
           {includeFullname && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name={`${fieldPrefix}.${index}.fullname`}
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Name"
-                    fullWidth
-                    required
-                    placeholder="Enter name"
-                    error={!!errors?.[fieldPrefix]?.[index]?.fullname?.message}
-                    helperText={
-                      errors?.[fieldPrefix]?.[index]?.fullname?.message
-                    }
-                  />
-                )}
-              />
-            </Grid>
+            <>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name={`${fieldPrefix}.${index}.visa_first_name`}
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="First Name"
+                      fullWidth
+                      required
+                      placeholder="Enter first name"
+                      error={
+                        !!errors?.[fieldPrefix]?.[index]?.visa_first_name?.message
+                      }
+                      helperText={
+                        errors?.[fieldPrefix]?.[index]?.visa_first_name?.message
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name={`${fieldPrefix}.${index}.visa_middle_name`}
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Middle Name"
+                      fullWidth
+                      placeholder="Enter middle name"
+                      error={
+                        !!errors?.[fieldPrefix]?.[index]?.visa_middle_name?.message
+                      }
+                      helperText={
+                        errors?.[fieldPrefix]?.[index]?.visa_middle_name?.message
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Controller
+                  name={`${fieldPrefix}.${index}.visa_last_name`}
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Last Name"
+                      fullWidth
+                      placeholder="Enter last name"
+                      error={
+                        !!errors?.[fieldPrefix]?.[index]?.visa_last_name?.message
+                      }
+                      helperText={
+                        errors?.[fieldPrefix]?.[index]?.visa_last_name?.message
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+            </>
           )}
 
-          <Grid size={{ xs: 12, sm: includeFullname ? 6 : 12 }}>
+          <Grid size={{ xs: 12, sm: includeFullname ? 12 : 12 }}>
             <FormControl
               fullWidth
               error={!!errors?.[fieldPrefix]?.[index]?.type?.message}
@@ -420,7 +470,9 @@ const VisaRecordsSection = ({
       onClick={() => {
         const newRecord = includeFullname
           ? {
-              fullname: "",
+              first_name: "",
+              middle_name: "",
+              last_name: "",
               type: "",
               expedition_date: "",
               expiration_date: "",
@@ -692,7 +744,9 @@ function ProcessingInformation({ vacancyData }) {
       ) {
         console.log("➕ Adding empty applicant visa record");
         appendApplicantVisa({
-          fullname: "",
+          visa_first_name: "",
+          visa_middle_name: "",
+          visa_last_name: "",
           type: "",
           expedition_date: "",
           expiration_date: "",
@@ -1778,7 +1832,7 @@ function ProcessingInformation({ vacancyData }) {
                               />
                             </Grid>
 
-                            <Grid size={{ xs: 12 }}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                               <Controller
                                 name={`dependents.${depIndex}.academic_records.address`}
                                 control={control}
@@ -1790,7 +1844,6 @@ function ProcessingInformation({ vacancyData }) {
                                     fullWidth
                                     size="small"
                                     multiline
-                                    rows={2}
                                     placeholder="Enter full address"
                                     error={
                                       !!errors?.dependents?.[depIndex]

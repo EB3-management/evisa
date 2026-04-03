@@ -23,9 +23,10 @@ export const inadmissibilitySchema = z
     inadmissibility_records: z
       .array(
         z.object({
-          name: z.string().min(1, "Name is required"),
           condition: z.string().min(1, "Condition is required"),
-          doctor: z.string().min(1, "Doctor name is required"),
+          doctor_first_name: z.string().min(1, "Doctor first name is required"),
+          doctor_middle_name: z.string().optional().default(""),
+          doctor_last_name: z.string().min(1, "Doctor last name is required"),
           procedure: z.string().min(1, "Procedure is required"),
           date: z.string().min(1, "Date is required"),
         }),
@@ -46,13 +47,6 @@ export const inadmissibilitySchema = z
         });
       } else {
         data.inadmissibility_records.forEach((record, index) => {
-          if (!record.name?.trim()) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Name is required",
-              path: ["inadmissibility_records", index, "name"],
-            });
-          }
           if (!record.condition?.trim()) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
@@ -60,11 +54,18 @@ export const inadmissibilitySchema = z
               path: ["inadmissibility_records", index, "condition"],
             });
           }
-          if (!record.doctor?.trim()) {
+          if (!record.doctor_first_name?.trim()) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: "Doctor name is required",
-              path: ["inadmissibility_records", index, "doctor"],
+              message: "Doctor first name is required",
+              path: ["inadmissibility_records", index, "doctor_first_name"],
+            });
+          }
+          if (!record.doctor_last_name?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Doctor last name is required",
+              path: ["inadmissibility_records", index, "doctor_last_name"],
             });
           }
           if (!record.procedure?.trim()) {
@@ -113,7 +114,9 @@ export const Inadmissibility = () => {
     if (showForm && inadmissibilityRecords.length === 0) {
       // Add first inadmissibility record when "Yes" is selected
       append({
-        name: "",
+        first_name: "",
+        middle_name: "",
+        last_name: "",
         condition: "",
         doctor: "",
         procedure: "",
@@ -228,25 +231,87 @@ export const Inadmissibility = () => {
                   </Stack>
 
                   <Grid container spacing={3}>
-                    {/* Name */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    {/* Doctor First Name */}
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Controller
-                        name={`inadmissibility_records.${index}.name`}
+                        name={`inadmissibility_records.${index}.doctor_first_name`}
                         control={control}
                         defaultValue=""
                         render={({ field }) => (
                           <TextField
                             {...field}
-                            label="Name"
+                            label="First Name"
                             fullWidth
                             required
-                            placeholder="Enter name"
+                            placeholder="Enter first name"
                             error={
-                              !!errors.inadmissibility_records?.[index]?.name
+                              !!errors.inadmissibility_records?.[index]
+                                ?.doctor_first_name
                             }
                             helperText={
-                              errors.inadmissibility_records?.[index]?.name
-                                ?.message
+                              errors.inadmissibility_records?.[index]
+                                ?.doctor_first_name?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Doctor Middle Name */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Controller
+                        name={`inadmissibility_records.${index}.doctor_middle_name`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Middle Name"
+                            fullWidth
+                            placeholder="Enter middle name"
+                            error={
+                              !!errors.inadmissibility_records?.[index]
+                                ?.doctor_middle_name
+                            }
+                            helperText={
+                              errors.inadmissibility_records?.[index]
+                                ?.doctor_middle_name?.message
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                backgroundColor: "#fff",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Doctor Last Name */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Controller
+                        name={`inadmissibility_records.${index}.doctor_last_name`}
+                        control={control}
+                        defaultValue=""
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Last Name"
+                            fullWidth
+                            required
+                            placeholder="Enter last name"
+                            error={
+                              !!errors.inadmissibility_records?.[index]
+                                ?.doctor_last_name
+                            }
+                            helperText={
+                              errors.inadmissibility_records?.[index]
+                                ?.doctor_last_name?.message
                             }
                             sx={{
                               "& .MuiOutlinedInput-root": {
@@ -259,7 +324,7 @@ export const Inadmissibility = () => {
                     </Grid>
 
                     {/* Condition */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Controller
                         name={`inadmissibility_records.${index}.condition`}
                         control={control}
@@ -289,38 +354,8 @@ export const Inadmissibility = () => {
                       />
                     </Grid>
 
-                    {/* Doctor Name */}
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Controller
-                        name={`inadmissibility_records.${index}.doctor`}
-                        control={control}
-                        defaultValue=""
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            label="Doctor Name"
-                            fullWidth
-                            required
-                            placeholder="Enter doctor name"
-                            error={
-                              !!errors.inadmissibility_records?.[index]?.doctor
-                            }
-                            helperText={
-                              errors.inadmissibility_records?.[index]?.doctor
-                                ?.message
-                            }
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                backgroundColor: "#fff",
-                              },
-                            }}
-                          />
-                        )}
-                      />
-                    </Grid>
-
                     {/* Procedure */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Controller
                         name={`inadmissibility_records.${index}.procedure`}
                         control={control}
@@ -351,7 +386,7 @@ export const Inadmissibility = () => {
                     </Grid>
 
                     {/* Date */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12, md: 4 }}>
                       <Controller
                         name={`inadmissibility_records.${index}.date`}
                         control={control}
@@ -391,9 +426,10 @@ export const Inadmissibility = () => {
                 startIcon={<Icon icon="mdi:plus" />}
                 onClick={() =>
                   append({
-                    name: "",
                     condition: "",
-                    doctor: "",
+                    doctor_first_name: "",
+                    doctor_middle_name: "",
+                    doctor_last_name: "",
                     procedure: "",
                     date: "",
                   })

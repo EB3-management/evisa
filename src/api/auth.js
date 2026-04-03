@@ -48,7 +48,7 @@ export function useGetEligibilityData() {
       eligibilityLoading: isLoading,
       eligibilityError: error,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -75,7 +75,7 @@ export function useGetCountryCode() {
       countryLoading: isLoading,
       countryError: error,
     }),
-    [data?.data, isLoading, error]
+    [data?.data, isLoading, error],
   );
 
   return memoizedValue;
@@ -96,6 +96,18 @@ export const emailLinkSend = async () => {
 export const emailVerify = async (data) => {
   try {
     const response = await poster(endpoints.auth.emailVerify, data);
+
+    return response;
+  } catch (error) {
+    console.error(error);
+
+    throw error;
+  }
+};
+
+export const resetPassword = async (data) => {
+  try {
+    const response = await poster(endpoints.auth.resetPassword, data);
 
     return response;
   } catch (error) {

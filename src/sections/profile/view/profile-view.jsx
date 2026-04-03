@@ -17,7 +17,6 @@ import { toast } from "src/components/snackbar";
 import { signOut } from "src/api";
 import { ProfileGeneral } from "./profile-general";
 
-
 // ----------------------------------------------------------------------
 
 export function ProfileView() {
@@ -47,7 +46,7 @@ export function ProfileView() {
         heading="Profile"
         links={[
           { name: "Dashboard", href: paths.dashboard.root },
-          { name: "Profilefff" },
+          { name: "Profile" },
         ]}
         action={
           <Button

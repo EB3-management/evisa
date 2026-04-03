@@ -1,4 +1,3 @@
-
 const ROOTS = {
   AUTH: "/auth",
   AUTH_DEMO: "/auth-demo",
@@ -15,6 +14,7 @@ export const paths = {
     signUp: `${ROOTS.AUTH}/sign-up`,
     termsAndConditions: `${ROOTS.AUTH}/terms-and-conditions`,
     verifyEmailSuccess: `${ROOTS.AUTH}/verify-email-success`,
+    resetPassword: `${ROOTS.AUTH}/reset-password`,
   },
   // eligibility: "/register-step-form",
 

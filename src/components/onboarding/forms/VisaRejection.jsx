@@ -20,13 +20,17 @@ import { useGetVacancyDetail } from "src/api/vacancy";
 export const visaRejectionSchema = z
   .object({
     employee_visa_rejected: z.enum(["Yes", "No"]).default("No"),
-    employee_fullname: z.string().optional(),
+    visa_rejections_employee_first_name: z.string().optional(),
+    visa_rejections_employee_middle_name: z.string().optional(),
+    visa_rejections_employee_last_name: z.string().optional(),
     employee_visa_type: z.string().optional(),
     employee_rejection_reason: z.string().optional(),
     employee_rejection_date: z.string().optional(),
 
     dependents_visa_rejected: z.enum(["Yes", "No"]).default("No"),
-    dependent_fullname: z.string().optional(),
+    visa_rejections_dependent_first_name: z.string().optional(),
+    visa_rejections_dependent_middle_name: z.string().optional(),
+    visa_rejections_dependent_last_name: z.string().optional(),
     dependent_visa_type: z.string().optional(),
     dependent_rejection_reason: z.string().optional(),
     dependent_rejection_date: z.string().optional(),
@@ -34,11 +38,18 @@ export const visaRejectionSchema = z
   .superRefine((data, ctx) => {
     // Employee rejection details required if "Yes"
     if (data.employee_visa_rejected === "Yes") {
-      if (!data.employee_fullname?.trim()) {
+      if (!data.visa_rejections_employee_first_name?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please enter full name",
-          path: ["employee_fullname"],
+          message: "Please enter first name",
+          path: ["visa_rejections_employee_first_name"],
+        });
+      }
+      if (!data.visa_rejections_employee_last_name?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter last name",
+          path: ["visa_rejections_employee_last_name"],
         });
       }
       if (!data.employee_visa_type?.trim()) {
@@ -66,11 +77,18 @@ export const visaRejectionSchema = z
 
     // Dependent rejection details required if "Yes"
     if (data.dependents_visa_rejected === "Yes") {
-      if (!data.dependent_fullname?.trim()) {
+      if (!data.visa_rejections_dependent_first_name?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please enter full name",
-          path: ["dependent_fullname"],
+          message: "Please enter first name",
+          path: ["visa_rejections_dependent_first_name"],
+        });
+      }
+      if (!data.visa_rejections_dependent_last_name?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter last name",
+          path: ["visa_rejections_dependent_last_name"],
         });
       }
       if (!data.dependent_visa_type?.trim()) {
@@ -177,29 +195,77 @@ export const VisaRejection = ({ vacancyId }) => {
         {/* Employee Details - Show if rejected */}
         {employee_visa_rejected === "Yes" && (
           <>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>Full Name</Typography>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography sx={{ mb: 1 }}>
+                First Name <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
-                name="employee_fullname"
+                name="visa_rejections_employee_first_name"
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    placeholder="Enter full name"
+                    placeholder="Enter first name"
                     fullWidth
                     sx={{
                       "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                     }}
-                    error={!!errors.employee_fullname}
-                    helperText={errors.employee_fullname?.message}
+                    error={!!errors.visa_rejections_employee_first_name}
+                    helperText={errors.visa_rejections_employee_first_name?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography sx={{ mb: 1 }}>Middle Name</Typography>
+              <Controller
+                name="visa_rejections_employee_middle_name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    placeholder="Enter middle name"
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                    }}
+                    error={!!errors.visa_rejections_employee_middle_name}
+                    helperText={errors.visa_rejections_employee_middle_name?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography sx={{ mb: 1 }}>
+                Last Name <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
+              <Controller
+                name="visa_rejections_employee_last_name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    placeholder="Enter last name"
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                    }}
+                    error={!!errors.visa_rejections_employee_last_name}
+                    helperText={errors.visa_rejections_employee_last_name?.message}
                   />
                 )}
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>Visa Type</Typography>
+              <Typography sx={{ mb: 1 }}>
+                Visa Type <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
                 name="employee_visa_type"
                 control={control}
@@ -264,7 +330,9 @@ export const VisaRejection = ({ vacancyId }) => {
             </Grid>
 
             <Grid size={{ xs: 12 }}>
-              <Typography sx={{ mb: 1 }}>Reason for Rejection</Typography>
+              <Typography sx={{ mb: 1 }}>
+                Reason for Rejection <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
                 name="employee_rejection_reason"
                 control={control}
@@ -287,7 +355,9 @@ export const VisaRejection = ({ vacancyId }) => {
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>Date of Rejection</Typography>
+              <Typography sx={{ mb: 1 }}>
+                Date of Rejection <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
                 name="employee_rejection_date"
                 control={control}
@@ -319,7 +389,9 @@ export const VisaRejection = ({ vacancyId }) => {
 
         {/* Dependent */}
         <Grid size={{ xs: 12 }}>
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500, mt: 4 }}>Dependents</Typography>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 500, mt: 4 }}>
+            Dependents
+          </Typography>
           <Controller
             name="dependents_visa_rejected"
             control={control}
@@ -369,29 +441,77 @@ export const VisaRejection = ({ vacancyId }) => {
         {/* Dependent Details - Show if rejected */}
         {dependents_visa_rejected === "Yes" && (
           <>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>Full Name</Typography>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography sx={{ mb: 1 }}>
+                First Name <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
-                name="dependent_fullname"
+                name="visa_rejections_dependent_first_name"
                 control={control}
                 defaultValue=""
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    placeholder="Enter full name"
+                    placeholder="Enter first name"
                     fullWidth
                     sx={{
                       "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                     }}
-                    error={!!errors.dependent_fullname}
-                    helperText={errors.dependent_fullname?.message}
+                    error={!!errors.visa_rejections_dependent_first_name}
+                    helperText={errors.visa_rejections_dependent_first_name?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography sx={{ mb: 1 }}>Middle Name</Typography>
+              <Controller
+                name="visa_rejections_dependent_middle_name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    placeholder="Enter middle name"
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                    }}
+                    error={!!errors.visa_rejections_dependent_middle_name}
+                    helperText={errors.visa_rejections_dependent_middle_name?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography sx={{ mb: 1 }}>
+                Last Name <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
+              <Controller
+                name="visa_rejections_dependent_last_name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    placeholder="Enter last name"
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                    }}
+                    error={!!errors.visa_rejections_dependent_last_name}
+                    helperText={errors.visa_rejections_dependent_last_name?.message}
                   />
                 )}
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>Visa Type</Typography>
+              <Typography sx={{ mb: 1 }}>
+                Visa Type <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
                 name="dependent_visa_type"
                 control={control}
@@ -456,7 +576,9 @@ export const VisaRejection = ({ vacancyId }) => {
             </Grid>
 
             <Grid size={{ xs: 12 }}>
-              <Typography sx={{ mb: 1 }}>Reason for Rejection</Typography>
+              <Typography sx={{ mb: 1 }}>
+                Reason for Rejection <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
                 name="dependent_rejection_reason"
                 control={control}
@@ -479,7 +601,9 @@ export const VisaRejection = ({ vacancyId }) => {
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              <Typography sx={{ mb: 1 }}>Date of Rejection</Typography>
+              <Typography sx={{ mb: 1 }}>
+                Date of Rejection <span style={{ color: "#f44336" }}>*</span>
+              </Typography>
               <Controller
                 name="dependent_rejection_date"
                 control={control}

@@ -72,6 +72,16 @@ export const authRoutes = [
           </GuestGuard>
         ),
       },
+      {
+        path: "reset-password",
+        element: (
+          <GuestGuard>
+            <FormCenteredLayout>
+              <TermsAndConditionPage />
+            </FormCenteredLayout>
+          </GuestGuard>
+        ),
+      },
 
       {
         path: "register-step-form",

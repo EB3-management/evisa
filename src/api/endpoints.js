@@ -1,4 +1,3 @@
-
 export const endpoints = {
   auth: {
     signIn: "login",
@@ -7,6 +6,7 @@ export const endpoints = {
     country: "country",
     emailLink: "email/verification-notification",
     emailVerify: "email/change",
+    resetPassword: "reset-password",
   },
 
   vacancy: {

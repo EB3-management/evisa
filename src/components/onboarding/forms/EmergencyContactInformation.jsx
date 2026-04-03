@@ -6,14 +6,16 @@ import { z } from "zod";
 /* ---------------------- ✅ ZOD SCHEMA ---------------------- */
 export const emergencyContactSchema = z
   .object({
-    emergencyFullName: z.string().min(1, "Full name is required"),
+    emergencyFirstName: z.string().min(1, "First name is required"),
+    emergencyMiddleName: z.string().optional(),
+    emergencyLastName: z.string().min(1, "Last name is required"),
     emergencyPhone: z
       .string()
       .min(1, "Phone number is required")
       .regex(/^[0-9+\-\s()]+$/, "Invalid phone number format"),
     degreeOfKinship: z.string().min(1, "Degree of kinship is required"),
     degreeOfKinshipOther: z.string().optional(),
-    emergencyAddress: z.string().optional(),
+    emergencyAddress: z.string().min(1, "Please enter the emergency contact's address."),
   })
   .superRefine((data, ctx) => {
     // If "Other" is selected, require clarification
@@ -60,21 +62,67 @@ export const EmergencyContactInformation = () => {
       </Typography> */}
 
       <Grid container spacing={3}>
-        {/* Full Name */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        {/* First Name */}
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography sx={{ mb: 1, fontSize: 14, color: "#ffffff" }}>
-            Full Name <span style={{ color: "#f44336" }}>*</span>
+            First Name <span style={{ color: "#f44336" }}>*</span>
           </Typography>
           <Controller
-            name="emergencyFullName"
+            name="emergencyFirstName"
             control={control}
             defaultValue=""
             render={({ field }) => (
               <TextField
                 {...field}
                 fullWidth
-                error={!!errors.emergencyFullName}
-                helperText={errors.emergencyFullName?.message}
+                error={!!errors.emergencyFirstName}
+                helperText={errors.emergencyFirstName?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                }}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* Middle Name */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Typography sx={{ mb: 1, fontSize: 14, color: "#ffffff" }}>
+            Middle Name
+          </Typography>
+          <Controller
+            name="emergencyMiddleName"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                error={!!errors.emergencyMiddleName}
+                helperText={errors.emergencyMiddleName?.message}
+                sx={{
+                  "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
+                }}
+              />
+            )}
+          />
+        </Grid>
+
+        {/* Last Name */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Typography sx={{ mb: 1, fontSize: 14, color: "#ffffff" }}>
+            Last Name <span style={{ color: "#f44336" }}>*</span>
+          </Typography>
+          <Controller
+            name="emergencyLastName"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                error={!!errors.emergencyLastName}
+                helperText={errors.emergencyLastName?.message}
                 sx={{
                   "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                 }}
@@ -139,7 +187,7 @@ export const EmergencyContactInformation = () => {
         {/* Address */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography sx={{ mb: 1, fontSize: 14, color: "#ffffff" }}>
-            Address
+            Address <span style={{ color: "#f44336" }}>*</span>
           </Typography>
           <Controller
             name="emergencyAddress"
@@ -149,6 +197,8 @@ export const EmergencyContactInformation = () => {
               <TextField
                 {...field}
                 fullWidth
+                error={!!errors.emergencyAddress}
+                helperText={errors.emergencyAddress?.message}
                 sx={{
                   "& .MuiOutlinedInput-root": { backgroundColor: "#fff" },
                 }}

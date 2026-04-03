@@ -7,7 +7,6 @@ import {
   Button,
   Divider,
   Stack,
-  Avatar,
   Paper,
   CircularProgress,
   Alert,
@@ -161,7 +160,7 @@ export function ContractDetailView({ id }) {
                   startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
                   onClick={() => handleViewPdf(contractDetail.signed_pdf_url)}
                 >
-                  Signed PDF
+                  Signed PDF  
                 </Button>
               )}
               {contractDetail?.status !== "signed" && (
@@ -326,13 +325,21 @@ export function ContractDetailView({ id }) {
                       sx={{
                         display: "flex",
                         justifyContent: "center",
+                        alignItems: "center",
                         mb: 2,
                       }}
                     >
-                      <Avatar
+                      <Box
+                        component="img"
                         src={contractDetail.vacancy.employer.logo}
-                        variant="rounded"
-                        sx={{ width: 120, height: 120 }}
+                        alt={`${contractDetail?.vacancy?.employer?.company_name || "Employer"} logo`}
+                        sx={{
+                          width: 180,
+                          height: 100,
+                          objectFit: "contain",
+                          objectPosition: "center",
+                          display: "block",
+                        }}
                       />
                     </Box>
                   )}
