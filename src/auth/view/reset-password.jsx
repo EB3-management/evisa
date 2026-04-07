@@ -14,13 +14,12 @@ import {
 import { Iconify } from "src/components/iconify";
 import { useRouter } from "src/routes/hooks";
 import { resetPassword } from "src/api/auth";
-import { useSnackbar } from "src/components/snackbar";
+import { toast } from "src/components/snackbar";
 
 // ----------------------------------------------------------------------
 
 export function ResetPassword() {
   const router = useRouter();
-  const { enqueueSnackbar } = useSnackbar();
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -62,24 +61,27 @@ export function ResetPassword() {
     setLoading(true);
     try {
       const response = await resetPassword(formData);
-      
+
       if (response.success) {
-        enqueueSnackbar(response.message || "Password changed successfully", {
-          variant: "success",
-        });
+        toast.success(response.message || "Password changed successfully");
+
         // Clear form
         setFormData({
           old_password: "",
           new_password: "",
           new_password_confirmation: "",
         });
-        // Optionally redirect after success
-        // router.push('/dashboard');
+
+        // Redirect to eligibility form after success
+        setTimeout(() => {
+          router.push("/auth/register-step-form");
+        }, 1500);
       }
     } catch (err) {
-      const errorMessage = err?.message || "Failed to change password. Please try again.";
+      const errorMessage =
+        err?.message || "Failed to change password. Please try again.";
       setError(errorMessage);
-      enqueueSnackbar(errorMessage, { variant: "error" });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -106,7 +108,7 @@ export function ResetPassword() {
             variant="h3"
             component="h1"
             sx={{
-              color: "secondary.main",
+              color: "primary.main",
               fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
               fontWeight: 600,
               textAlign: { xs: "center", sm: "left" },
@@ -132,7 +134,7 @@ export function ResetPassword() {
                   {error}
                 </Alert>
               )}
-              
+
               <TextField
                 fullWidth
                 name="old_password"
@@ -229,7 +231,7 @@ export function ResetPassword() {
                 size="large"
                 type="submit"
                 variant="contained"
-                color="secondary"
+                color="primary"
                 disabled={loading}
                 sx={{
                   mt: 2,

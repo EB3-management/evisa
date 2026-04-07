@@ -15,6 +15,7 @@ import {
   getAccessReason,
 } from "src/hooks/useOnBoardingAccess";
 import { Iconify } from "src/components/iconify";
+import { paths } from "src/routes/paths";
 
 export function PermissionGuard({
   children,
@@ -97,6 +98,11 @@ export function PermissionGuard({
         </Paper>
       </Container>
     );
+  }
+
+  // Check if password reset is required (NEW)
+  if (onboardingAccess?.show_reset_password === true) {
+    return <Navigate to={paths.auth.resetPassword} replace />;
   }
 
   // Check feature permission

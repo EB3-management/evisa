@@ -3,6 +3,7 @@ import { useRouter } from "src/routes/hooks";
 import { LoadingScreen } from "src/components/loading-screen";
 import { Alert, Container, Typography } from "@mui/material";
 import { useOnboardingAccess } from "src/api/onboardingaccess";
+import { paths } from "src/routes/paths";
 
 // ----------------------------------------------------------------------
 
@@ -20,19 +21,26 @@ export function OnboardingGuard({ children }) {
         return;
       }
 
-      // Check 2: Admin approval (lead must exist and be sent to onboarding)
+      // Check 2: Password reset required (using useState)
+      if (data.show_reset_password === true) {
+        console.warn("Password reset required");
+        router.replace(paths.auth.resetPassword);
+        return;
+      }
+
+      // Check 3: Admin approval (lead must exist and be sent to onboarding)
       const isApproved =
         data.lead_exists && data.lead_status === "Sent_to_Onboarding";
 
       if (!isApproved) {
         console.warn(
-          "User not approved by admin, redirecting to thank you page"
+          "User not approved by admin, redirecting to thank you page",
         );
         router.replace("/dashboard/thank-you");
         return;
       }
 
-      // Check 3: If blocked for any reason
+      // Check 4: If blocked for any reason
       if (data.blocked_reason) {
         console.warn("User blocked:", data.blocked_reason);
         router.replace("/dashboard/blocked");

@@ -13,19 +13,19 @@ import { PermissionGuard } from "src/components/onboarding/permission-guard";
 
 const SignInPage = lazy(() => import("src/pages/auth/sign-in"));
 const SignUpPage = lazy(() => import("src/pages/auth/sign-up"));
-const EligibilityPage = lazy(() =>
-  import("src/pages/auth/eligibility-form/eligibility-form")
+const EligibilityPage = lazy(
+  () => import("src/pages/auth/eligibility-form/eligibility-form"),
 );
-const VerifyEmailPage = lazy(() =>
-  import("src/pages/auth/verify-email")
-);
-const VerifyEmailSuccessPage = lazy(() =>
-  import("src/pages/auth/verify-email-success")
+const VerifyEmailPage = lazy(() => import("src/pages/auth/verify-email"));
+const VerifyEmailSuccessPage = lazy(
+  () => import("src/pages/auth/verify-email-success"),
 );
 
-const TermsAndConditionPage = lazy(() =>
-  import("src/pages/auth/term-and-condition")
+const TermsAndConditionPage = lazy(
+  () => import("src/pages/auth/term-and-condition"),
 );
+
+const ResetPassword = lazy(() => import("src/pages/auth/reset-password"));
 
 // ----------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ export const authRoutes = [
         element: (
           <GuestGuard>
             <FormCenteredLayout>
-              <TermsAndConditionPage />
+              <ResetPassword />
             </FormCenteredLayout>
           </GuestGuard>
         ),
@@ -96,7 +96,7 @@ export const authRoutes = [
         ),
       },
 
-       {
+      {
         path: "verify-email",
         element: (
           <AuthGuard>
