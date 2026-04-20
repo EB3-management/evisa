@@ -28,7 +28,7 @@ export const OnboardingStepRenderer = ({
 }) => {
   switch (currentStep) {
     case 0:
-      return <ProcessingInformation vacancyData={vacancyDetail} />;
+      return <ProcessingInformation vacancyData={vacancyDetail} vacancyId={selectedVacancyId} />;
     case 1:
       return <MainApplicantDetails country={country} />;
     case 2:

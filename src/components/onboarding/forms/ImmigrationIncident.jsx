@@ -210,7 +210,7 @@ export const ImmigrationIncident = ({ vacancyId }) => {
     formState: { errors },
     watch,
   } = useFormContext();
-
+  console.log("this is vacancy id", vacancyId);
   const overstayedEmployee = watch("e_overstayed_usa_visa_i94_employee");
   const overstayedDependent = watch("e_overstayed_usa_visa_i94_dependents");
   const unLawfulEmployee = watch("eb_unlawfully_present_usa_employee");

@@ -8,7 +8,6 @@ import { iconButtonClasses } from "@mui/material/IconButton";
 
 import { useAppDispatch, useAppSelector } from "src/redux/hooks";
 
-
 import {
   selectAuthState,
   selectPermissionState,
@@ -69,7 +68,7 @@ export function DashboardLayout({
   const navVars = dashboardNavColorVars(
     theme,
     settings.state.navColor,
-    settings.state.navLayout
+    settings.state.navLayout,
   );
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
@@ -180,15 +179,8 @@ export function DashboardLayout({
   const renderSidebar = () => (
     <NavVertical
       data={navData}
-      isNavMini={isNavMini}
       layoutQuery={layoutQuery}
       cssVars={navVars.section}
-      onToggleNav={() =>
-        settings.setField(
-          "navLayout",
-          settings.state.navLayout === "vertical" ? "mini" : "vertical"
-        )
-      }
     />
   );
 
@@ -220,13 +212,7 @@ export function DashboardLayout({
         {
           [`& .${layoutClasses.sidebarContainer}`]: {
             [theme.breakpoints.up(layoutQuery)]: {
-              pl: isNavMini
-                ? "var(--layout-nav-mini-width)"
-                : "var(--layout-nav-vertical-width)",
-              transition: theme.transitions.create(["padding-left"], {
-                easing: "var(--layout-transition-easing)",
-                duration: "var(--layout-transition-duration)",
-              }),
+              pl: "var(--layout-nav-vertical-width)",
             },
           },
         },

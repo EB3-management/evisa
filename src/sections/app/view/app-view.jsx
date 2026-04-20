@@ -1337,6 +1337,7 @@ export function AppView() {
                     py: { xs: 1, md: 1.5 },
                     fontSize: { xs: "0.8rem", sm: "0.875rem", md: "1rem" },
                     whiteSpace: "nowrap",
+                    width: { xs: "100%", sm: "auto" },
                   }}
                 >
                   View Jobs

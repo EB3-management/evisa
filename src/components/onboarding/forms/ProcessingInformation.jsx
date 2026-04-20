@@ -21,6 +21,7 @@ import Grid from "@mui/material/Grid2";
 import { Icon } from "@iconify/react";
 import { useGetImmigrationTypes } from "src/api/onboardingform";
 import { useGetCountryCode } from "src/api";
+import { useGetVacancyDetail } from "src/api/vacancy";
 
 // ------------------ Validation Schema ------------------
 export const processingInformationSchema = z
@@ -30,6 +31,7 @@ export const processingInformationSchema = z
     i944_number: z.string().optional(),
     embassy_name: z.string().optional(),
     embassy_location: z.string().optional(),
+    embassy_country_id: z.union([z.string(), z.number()]).optional(),
     visa_records_applicant: z.enum(["yes", "no"]).optional().default("no"),
     visa_records_dependents: z.enum(["yes", "no"]).optional().default("no"),
     visa_records: z
@@ -319,7 +321,8 @@ const VisaRecordsSection = ({
                       required
                       placeholder="Enter first name"
                       error={
-                        !!errors?.[fieldPrefix]?.[index]?.visa_first_name?.message
+                        !!errors?.[fieldPrefix]?.[index]?.visa_first_name
+                          ?.message
                       }
                       helperText={
                         errors?.[fieldPrefix]?.[index]?.visa_first_name?.message
@@ -341,10 +344,12 @@ const VisaRecordsSection = ({
                       fullWidth
                       placeholder="Enter middle name"
                       error={
-                        !!errors?.[fieldPrefix]?.[index]?.visa_middle_name?.message
+                        !!errors?.[fieldPrefix]?.[index]?.visa_middle_name
+                          ?.message
                       }
                       helperText={
-                        errors?.[fieldPrefix]?.[index]?.visa_middle_name?.message
+                        errors?.[fieldPrefix]?.[index]?.visa_middle_name
+                          ?.message
                       }
                     />
                   )}
@@ -363,7 +368,8 @@ const VisaRecordsSection = ({
                       fullWidth
                       placeholder="Enter last name"
                       error={
-                        !!errors?.[fieldPrefix]?.[index]?.visa_last_name?.message
+                        !!errors?.[fieldPrefix]?.[index]?.visa_last_name
+                          ?.message
                       }
                       helperText={
                         errors?.[fieldPrefix]?.[index]?.visa_last_name?.message
@@ -687,7 +693,7 @@ const DependentVisaRecordsField = ({
 };
 
 // ------------------ Main Component ------------------
-function ProcessingInformation({ vacancyData }) {
+function ProcessingInformation({ vacancyData, vacancyId }) {
   const {
     control,
     formState: { errors },
@@ -699,13 +705,13 @@ function ProcessingInformation({ vacancyData }) {
   const adjustmentOfStatus = watch("adjustment_of_status");
   const visaRecordsApplicant = watch("visa_records_applicant");
   const visaRecordsDependents = watch("visa_records_dependents");
-
+  const { vacancyDetail } = useGetVacancyDetail(vacancyId);
   const { immigrationType, immigrationTypeLoading } = useGetImmigrationTypes(
     vacancyData?.id,
   );
   const { country: countryCode, countryLoading: countryCodeLoading } =
     useGetCountryCode();
-
+  console.log("this is vacancy id", vacancyId);
   // Field arrays for applicant visa records
   const {
     fields: applicantVisaRecords,
@@ -837,7 +843,11 @@ function ProcessingInformation({ vacancyData }) {
         </Typography>
         <FormControl component="fieldset" error={!!errors.adjustment_of_status}>
           <Typography variant="body2" sx={{ mb: 1 }}>
-            Are you currently in the United States?
+            {/* Are you currently in the United States? */}
+            Are you currently in{" "}
+            {vacancyDetail?.visa_category?.country?.name ||
+              "the United States of America"}{" "}
+            ?
           </Typography>
           <Controller
             name="adjustment_of_status"
@@ -966,6 +976,50 @@ function ProcessingInformation({ vacancyData }) {
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
             Consular Processing Information
           </Typography>
+
+          {/* Embassy Country */}
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ mb: 1, color: "#fff" }}>
+              Embassy Country
+            </Typography>
+            <FormControl fullWidth error={!!errors.embassy_country_id}>
+              <Controller
+                name="embassy_country_id"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    displayEmpty
+                    disabled={countryCodeLoading}
+                    sx={{ backgroundColor: "#fff" }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: "#fff",
+                          "& .MuiMenuItem-root": { color: "#000" },
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="" disabled>
+                      Select country
+                    </MenuItem>
+                    {countryCode?.map((country) => (
+                      <MenuItem key={country.id} value={country.id}>
+                        {country.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
+              {errors.embassy_country_id && (
+                <FormHelperText>
+                  {errors.embassy_country_id?.message}
+                </FormHelperText>
+              )}
+            </FormControl>
+          </Box>
 
           <Grid container spacing={3}>
             {/* Embassy Name */}
