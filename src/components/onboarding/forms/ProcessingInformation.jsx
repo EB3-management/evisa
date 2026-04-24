@@ -978,7 +978,7 @@ function ProcessingInformation({ vacancyData, vacancyId }) {
           </Typography>
 
           {/* Embassy Country */}
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3, width: { xs: "100%", sm: "50%" } }}>
             <Typography sx={{ mb: 1, color: "#fff" }}>
               Embassy Country
             </Typography>

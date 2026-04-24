@@ -5,6 +5,7 @@ import Link from "@mui/material/Link";
 import Divider from "@mui/material/Divider";
 import MenuList from "@mui/material/MenuList";
 import MenuItem from "@mui/material/MenuItem";
+import Typography from "@mui/material/Typography";
 
 import { paths } from "src/routes/paths";
 import { usePathname } from "src/routes/hooks";
@@ -19,7 +20,7 @@ import { Button } from "@mui/material";
 import { AppointmentTimeSlotNewEditForm } from "src/sections/appointment-time-slot/appointment-time-slot-new-edit-form";
 import { useState } from "react";
 
-export function AccountPopover({ data = [], sx, ...other }) {
+export function AccountPopover({ data = [], profile, sx, ...other }) {
   const pathname = usePathname();
 
   const { open, anchorEl, onClose, onOpen } = usePopover();
@@ -37,9 +38,11 @@ export function AccountPopover({ data = [], sx, ...other }) {
     setSelectedTimeSlot();
   };
 
-  // const { profile } = useAppSelector(selectProfileState);
-
-  // const { name, email } = profile || {};
+  const name =
+    profile?.first_name && profile?.last_name
+      ? `${profile.first_name} ${profile.last_name}`
+      : profile?.email || "User";
+  const email = profile?.email || "";
 
   const renderMenuActions = () => (
     <CustomPopover
@@ -48,7 +51,7 @@ export function AccountPopover({ data = [], sx, ...other }) {
       onClose={onClose}
       slotProps={{ paper: { sx: { p: 0, width: 230 } }, arrow: { offset: 20 } }}
     >
-      {/* <Box sx={{ p: 2, pb: 1.5 }}>
+      <Box sx={{ p: 2, pb: 1.5 }}>
         <Typography variant="subtitle2" noWrap>
           {name}
         </Typography>
@@ -56,19 +59,9 @@ export function AccountPopover({ data = [], sx, ...other }) {
         <Typography variant="body2" sx={{ color: "text.secondary" }} noWrap>
           {email}
         </Typography>
-      </Box> */}
+      </Box>
 
-      {/* <Box sx={{ p: 2 }}>
-        <CreditCard
-          name={name}
-          email={email}
-          creditAmount={profile?.credit || 0}
-        />
-      </Box> */}
-
-      {/* <Divider sx={{ borderStyle: "dashed" }} /> */}
-
-      {/* <Divider sx={{ borderStyle: "dashed" }} /> */}
+      <Divider sx={{ borderStyle: "dashed" }} />
 
       <MenuList sx={{ p: 1, my: 1, "& li": { p: 0 } }}>
         {data.map((option) => {
@@ -143,8 +136,9 @@ export function AccountPopover({ data = [], sx, ...other }) {
 
       <AccountButton
         onClick={onOpen}
-        photoURL=""
+        photoURL={profile?.profile_image || ""}
         displayName={name}
+        profile={profile}
         sx={sx}
         {...other}
       />

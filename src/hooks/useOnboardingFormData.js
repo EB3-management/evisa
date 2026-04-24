@@ -68,7 +68,7 @@ export const useOnboardingFormData = (
           academicFields[`${level}_instituteName`] =
             record.institution_name || "";
           academicFields[`${level}_graduationYear`] =
-            record.graduation_year || "";
+            record.graduation_year ? String(record.graduation_year) : "";
           academicFields[`${level}_country`] =
             record.country?.id || record.country || "";
           academicFields[`${level}_state`] = record.state || "";
@@ -150,6 +150,7 @@ export const useOnboardingFormData = (
           ? processingInformation.date_of_last_entry.split("T")[0]
           : "",
         i944_number: processingInformation?.i944_number || "",
+        embassy_country_id: processingInformation?.country?.id || "",
         embassy_name: processingInformation?.embassy_name || "",
         embassy_location: processingInformation?.embassy_location || "",
 

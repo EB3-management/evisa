@@ -18,6 +18,7 @@ import { useGetVisaStatus, useGetVisaStatusLog } from "src/api";
 import { DashboardContent } from "src/layouts/dashboard";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
 import { paths } from "src/routes/paths";
+import { useSearchParams } from "react-router";
 
 // Map visa status names to icons
 const statusIcons = {
@@ -54,26 +55,94 @@ const formatDate = (dateString) => {
 };
 
 export function VisaStatusTimeline() {
+  const [searchParams] = useSearchParams();
+  const vacancyIdFromUrl = searchParams.get("vacancyId");
   const [selectedVacancyId, setSelectedVacancyId] = useState("");
-  
-  const { visaStatus, visaStatusLoading, visaStatusError } = useGetVisaStatus();
 
+  const { visaStatus, visaStatusLoading, visaStatusError } = useGetVisaStatus();
   const { visaStatusLogs, visaStatusLogsLoading, visaStatusLogsError } =
     useGetVisaStatusLog();
 
-  // All applied vacancies
+  console.log("this is vacancy param id", vacancyIdFromUrl);
+  // All applied vacancies (these are visa status log entries)
   const allAppliedVacancies = visaStatusLogs || [];
 
-  // Set default selected vacancy when data loads
+  console.log(
+    "📊 All Available Entries:",
+    allAppliedVacancies.map((e) => ({
+      entryId: e.id,
+      vacancyId: e.applied_vacancy?.vacancy?.id,
+      title: e.applied_vacancy?.vacancy?.title,
+    })),
+  );
+  console.log("🔍 Current selectedVacancyId:", selectedVacancyId);
+  console.log("🔍 Loading state:", visaStatusLogsLoading);
+
+  // Initialize selected vacancy when data loads
   useEffect(() => {
-    if (allAppliedVacancies.length > 0 && !selectedVacancyId) {
-      setSelectedVacancyId(allAppliedVacancies[0].id);
+    console.log(
+      "🔄 Effect running - Data length:",
+      allAppliedVacancies.length,
+      "Selected:",
+      selectedVacancyId,
+      "Loading:",
+      visaStatusLogsLoading,
+    );
+
+    // Check if current selectedVacancyId is valid for the current data
+    const isValidSelection =
+      selectedVacancyId &&
+      allAppliedVacancies.some((v) => v.id === selectedVacancyId);
+
+    // Only run when data is available, not loading, and (nothing is selected OR invalid selection)
+    if (
+      allAppliedVacancies.length > 0 &&
+      !visaStatusLogsLoading &&
+      (!selectedVacancyId || !isValidSelection)
+    ) {
+      let targetId = null;
+
+      if (vacancyIdFromUrl) {
+        const numericVacancyId = parseInt(vacancyIdFromUrl, 10);
+
+        // Find the visa status log entry that matches the vacancy ID from URL
+        const matchingEntry = allAppliedVacancies.find((entry) => {
+          const vacancyId = entry.applied_vacancy?.vacancy?.id;
+          return vacancyId === numericVacancyId;
+        });
+
+        if (matchingEntry) {
+          targetId = matchingEntry.id;
+          console.log(
+            `✅ Vacancy ID ${numericVacancyId} matched → Entry ID ${targetId} - "${matchingEntry.applied_vacancy?.vacancy?.title}"`,
+          );
+        } else {
+          console.warn(`⚠️ Vacancy ID ${numericVacancyId} not found`);
+          targetId = allAppliedVacancies[0].id;
+        }
+      } else {
+        // No URL parameter, select first entry
+        targetId = allAppliedVacancies[0].id;
+        console.log(
+          `📍 No URL parameter. Selected: "${allAppliedVacancies[0].applied_vacancy?.vacancy?.title}" (Entry ID: ${targetId})`,
+        );
+      }
+
+      if (targetId) {
+        console.log("✨ Setting selectedVacancyId to:", targetId);
+        setSelectedVacancyId(targetId);
+      }
     }
-  }, [allAppliedVacancies, selectedVacancyId]);
+  }, [
+    allAppliedVacancies,
+    vacancyIdFromUrl,
+    selectedVacancyId,
+    visaStatusLogsLoading,
+  ]);
 
   // Find selected vacancy data
   const selectedVacancyData = allAppliedVacancies.find(
-    (v) => v.id === selectedVacancyId
+    (v) => v.id === selectedVacancyId,
   );
 
   // Use selected vacancy data or sample data
@@ -89,11 +158,26 @@ export function VisaStatusTimeline() {
 
   // Create a Set of completed status names from logs (including current_visa_status)
   const completedStatuses = new Set(
-    logs.map((log) => log.current_visa_status?.name)
+    logs.map((log) => log.current_visa_status?.name),
   );
 
   // ✅ DRAFT is always completed
   completedStatuses.add("DRAFT");
+
+  // ✅ Add current status as completed
+  if (currentStatus) {
+    completedStatuses.add(currentStatus.name);
+  }
+
+  // ✅ Mark all statuses before the current one as completed
+  if (currentStatus && statuses.length > 0) {
+    const currentIndex = statuses.findIndex((s) => s.id === currentStatus.id);
+    if (currentIndex !== -1) {
+      statuses.slice(0, currentIndex).forEach((status) => {
+        completedStatuses.add(status.name);
+      });
+    }
+  }
 
   // Find the log for each status if it exists
   const getLogForStatus = (statusName) =>

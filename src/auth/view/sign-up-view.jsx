@@ -40,7 +40,7 @@ export const SignUpSchema = zod
       .string()
       .min(1, { message: "User email is required!" })
       .email({ message: "Email must be a valid email address!" }),
-    country_code: zod.number().min(1, { message: "Country code is required!" }),
+    country_code: zod.number().min(1, { message: "Country is required!" }),
     phone: zod
       .string()
       .min(1, { message: "Contact number is required!" })
@@ -159,7 +159,7 @@ export function SignUpView() {
       >
         <Field.Select
           name="country_code"
-          label="Country Code"
+          label="Country"
           slotProps={{ inputLabel: { shrink: true } }}
         >
           {country.map((option) => (

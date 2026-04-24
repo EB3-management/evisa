@@ -3,6 +3,8 @@
  * Converts form data to API-compatible format
  */
 
+import { form } from "src/theme/core/components/form";
+
 /**
  * Transform Processing Information data
  */
@@ -19,6 +21,7 @@ export const transformProcessingInformationData = (formData) => {
     data.i944_number = formData.i944_number;
   } else {
     // If adjustment of status is false (consular processing)
+    data.embassy_country_id = formData.embassy_country_id;
     data.embassy_name = formData.embassy_name;
     data.embassy_location = formData.embassy_location;
   }

@@ -99,6 +99,7 @@ export default function OnboardingLayout() {
       adjustment_of_status: true,
       date_of_last_entry: "",
       i944_number: "",
+      embassy_country_id: "",
       embassy_name: "",
       embassy_location: "",
 

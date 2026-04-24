@@ -35,7 +35,7 @@ export const pastWorkExperiencesSchema = z
           zip_code: z.string().optional(),
           supervisor_name: z.string().optional(),
           job_duty: z.string().optional(),
-        })
+        }),
       )
       .optional()
       .default([]),
@@ -358,7 +358,7 @@ export const PastWorkExperiences = () => {
                             type="date"
                             fullWidth
                             disabled={watch(
-                              `work_experiences.${index}.currently_employed`
+                              `work_experiences.${index}.currently_employed`,
                             )}
                             InputLabelProps={{ shrink: true }}
                             inputProps={{ max: today }}
@@ -394,7 +394,7 @@ export const PastWorkExperiences = () => {
                                   if (e.target.checked) {
                                     setValue(
                                       `work_experiences.${index}.end_date`,
-                                      ""
+                                      "",
                                     );
                                   }
                                 }}

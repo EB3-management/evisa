@@ -25,6 +25,30 @@ export const useOnboardingNavigation = (
   onSubmit,
 ) => {
   /**
+   * Scroll to the first error field
+   */
+  const scrollToFirstError = () => {
+    // Get all error fields
+    const firstErrorField = document.querySelector(
+      '[aria-invalid="true"], .Mui-error input, .Mui-error textarea, .Mui-error [role="button"]'
+    );
+
+    if (firstErrorField) {
+      // Scroll to the error field with smooth behavior
+      firstErrorField.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+
+      // Focus the field after scrolling
+      setTimeout(() => {
+        firstErrorField.focus();
+      }, 500);
+    }
+  };
+
+  /**
    * Navigate to next step
    */
   const goNext = async () => {
@@ -38,6 +62,9 @@ export const useOnboardingNavigation = (
       console.log("❌ Validation failed for current step");
       console.log("❌ Validation errors:", methods.formState.errors);
       console.log("❌ Current form values:", methods.getValues());
+      
+      // Scroll to the first error
+      scrollToFirstError();
       return;
     }
 

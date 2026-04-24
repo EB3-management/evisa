@@ -40,7 +40,7 @@ const LINKS = [
   },
   {
     headline: "Contact",
-    children: [{ name: "info@smartpipeline.com", href: "#" }],
+    children: [{ name: "support@eb3visa.com", href: "#" }],
   },
 ];
 

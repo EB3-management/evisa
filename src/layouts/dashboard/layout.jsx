@@ -159,7 +159,7 @@ export function DashboardLayout({
           </Box> */}
 
           {/* Account Popover */}
-          <AccountPopover data={accountNavData} />
+          <AccountPopover data={accountNavData} profile={profile} />
         </Box>
       ),
     };

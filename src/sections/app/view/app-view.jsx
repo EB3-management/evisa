@@ -20,6 +20,8 @@ import {
   InputLabel,
   AlertTitle,
   Alert,
+  Avatar,
+  Chip,
 } from "@mui/material";
 import { useGetVacancy, useGetAppliedVacancy } from "src/api/vacancy";
 import { useRouter } from "src/routes/hooks";
@@ -31,6 +33,201 @@ import { useGetDashboard } from "src/api";
 import { useNavigate } from "react-router";
 
 // ----------------------------------------------------------------------
+
+// Map visa status names to icons
+const statusIcons = {
+  DRAFT: "mdi:file-document-edit-outline",
+  PERM_FILED: "mdi:file-send-outline",
+  PERM_APPROVED: "mdi:file-check-outline",
+  I140_FILED: "mdi:file-upload-outline",
+  I140_APPROVED: "mdi:shield-check-outline",
+  NVC_CASE_CREATED: "mdi:briefcase-outline",
+  DOCUMENTARILY_QUALIFIED: "mdi:file-certificate-outline",
+  INTERVIEW_SCHEDULED: "mdi:calendar-clock",
+  VISA_APPROVED: "mdi:check-decagram",
+  VISA_ISSUED: "mdi:passport",
+  GREEN_CARD_ISSUED: "mdi:card-account-details",
+};
+
+// Format status name for display
+const formatStatusName = (name) =>
+  name
+    .split("_")
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(" ");
+
+// Visa Status Mini Timeline Component (shows 3 statuses at a time)
+const VisaStatusMiniTimeline = ({
+  visaStatusList,
+  currentVisaStatus,
+  selectedVacancyId,
+}) => {
+  const theme = useTheme();
+  const navigate = useNavigate();
+
+  if (!visaStatusList || visaStatusList.length === 0) {
+    return (
+      <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+        <Typography variant="body2">No visa status data available</Typography>
+      </Box>
+    );
+  }
+
+  // Find current status index
+  const currentIndex = visaStatusList.findIndex(
+    (status) => status.id === currentVisaStatus?.id,
+  );
+
+  // Get 3 statuses: previous, current, next
+  const startIndex = Math.max(0, currentIndex - 1);
+  const displayStatuses = visaStatusList.slice(startIndex, startIndex + 3);
+
+  return (
+    <Box sx={{ minWidth: { xs: 600, sm: "auto" } }}>
+      <Stepper
+        alternativeLabel
+        activeStep={displayStatuses.findIndex(
+          (s) => s.id === currentVisaStatus?.id,
+        )}
+        connector={
+          <StepConnector
+            sx={{
+              "& .MuiStepConnector-line": {
+                borderColor: theme.palette.primary.main,
+                borderTopWidth: 3,
+              },
+            }}
+          />
+        }
+        sx={{
+          "& .MuiStepLabel-label": {
+            color: theme.palette.text.secondary,
+            fontSize: { xs: 11, sm: 12, md: 14 },
+            fontWeight: 500,
+            mt: 1,
+          },
+          "& .MuiStepLabel-label.Mui-active": {
+            color: theme.palette.primary.dark,
+            fontWeight: 600,
+            fontSize: { xs: 13, sm: 14, md: 16 },
+          },
+          "& .MuiStepLabel-label.Mui-completed": {
+            color: theme.palette.success.main,
+          },
+        }}
+      >
+        {displayStatuses.map((status, index) => {
+          const isCurrent = status.id === currentVisaStatus?.id;
+          const isCompleted =
+            visaStatusList.findIndex((s) => s.id === status.id) < currentIndex;
+          const icon = statusIcons[status.name] || "mdi:check-circle";
+
+          return (
+            <Step key={status.id} completed={isCompleted}>
+              <StepLabel
+                StepIconComponent={() => (
+                  <Box
+                    onClick={() => {
+                      if (isCurrent) {
+                        navigate(
+                          `${paths.dashboard.visaStatus.root}?vacancyId=${selectedVacancyId}`,
+                        );
+                      }
+                    }}
+                    sx={{
+                      width: isCurrent
+                        ? { xs: 56, sm: 64 }
+                        : { xs: 40, sm: 48 },
+                      height: isCurrent
+                        ? { xs: 56, sm: 64 }
+                        : { xs: 40, sm: 48 },
+                      borderRadius: "50%",
+                      bgcolor: isCompleted
+                        ? theme.palette.success.main
+                        : isCurrent
+                          ? theme.palette.primary.main
+                          : "transparent",
+                      border:
+                        !isCompleted && !isCurrent
+                          ? `3px solid ${theme.palette.divider}`
+                          : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.3s",
+                      boxShadow: isCompleted || isCurrent ? 3 : 0,
+                      transform: isCurrent ? "scale(1.1)" : "scale(1)",
+                      cursor: isCurrent ? "pointer" : "default",
+                      "&:hover": isCurrent
+                        ? {
+                            transform: "scale(1.15)",
+                            boxShadow: 4,
+                          }
+                        : {},
+                    }}
+                  >
+                    {isCompleted ? (
+                      <Iconify
+                        icon="mdi:check-bold"
+                        width={
+                          isCurrent ? { xs: 28, sm: 32 } : { xs: 20, sm: 24 }
+                        }
+                        height={
+                          isCurrent ? { xs: 28, sm: 32 } : { xs: 20, sm: 24 }
+                        }
+                        color={theme.palette.common.white}
+                        sx={{ display: "flex" }}
+                      />
+                    ) : (
+                      <Iconify
+                        icon={icon}
+                        width={
+                          isCurrent ? { xs: 28, sm: 32 } : { xs: 20, sm: 24 }
+                        }
+                        height={
+                          isCurrent ? { xs: 28, sm: 32 } : { xs: 20, sm: 24 }
+                        }
+                        color={
+                          isCurrent
+                            ? theme.palette.common.white
+                            : theme.palette.text.disabled
+                        }
+                        sx={{ display: "flex" }}
+                      />
+                    )}
+                  </Box>
+                )}
+              >
+                <Box>{formatStatusName(status.name)}</Box>
+              </StepLabel>
+            </Step>
+          );
+        })}
+      </Stepper>
+
+      {/* View All Button */}
+      <Box sx={{ textAlign: "center", mt: 3 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => {
+            console.log(
+              "🔗 Navigating to Visa Status with Vacancy ID:",
+              selectedVacancyId,
+            );
+            navigate(
+              `${paths.dashboard.visaStatus.root}?vacancyId=${selectedVacancyId}`,
+            );
+          }}
+          endIcon={<Iconify icon="mdi:arrow-right" />}
+          sx={{ borderRadius: 2 }}
+        >
+          View Full Timeline
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 const steps = [
   {
@@ -57,8 +254,12 @@ const steps = [
 const getStepIndexFromStatus = (status) => {
   if (!status) return 0;
 
+  // Normalize the status - Map "Visa" to "visa_wait"
+  const normalizedStatus =
+    status.toLowerCase() === "visa" ? "visa_wait" : status.toLowerCase();
+
   const stepIndex = steps.findIndex(
-    (step) => step.status.toLowerCase() === status.toLowerCase(),
+    (step) => step.status.toLowerCase() === normalizedStatus,
   );
 
   return stepIndex !== -1 ? stepIndex : 0;
@@ -74,6 +275,7 @@ export function AppView() {
   const router = useRouter();
   const [selectedVacancyId, setSelectedVacancyId] = useState("");
   const [activeStep, setActiveStep] = useState(0);
+  const [selectedVacancyData, setSelectedVacancyData] = useState(null);
   const navigate = useNavigate();
 
   // Get user profile from Redux
@@ -108,7 +310,9 @@ export function AppView() {
   useEffect(() => {
     if (appliedVacancy && appliedVacancy.length > 0) {
       const firstVacancy = appliedVacancy[0];
+      console.log("🎯 First Vacancy ID:", firstVacancy.id);
       setSelectedVacancyId(firstVacancy.id); // Select the first vacancy by default
+      setSelectedVacancyData(firstVacancy);
 
       // Set the stepper to match the status of the first vacancy
       if (
@@ -124,6 +328,7 @@ export function AppView() {
     } else {
       // If there are no applied vacancies, reset everything
       setSelectedVacancyId("");
+      setSelectedVacancyData(null);
       setActiveStep(0);
     }
   }, [appliedVacancy]);
@@ -136,11 +341,13 @@ export function AppView() {
     // If no vacancy selected, default to Eligibility (step 0)
     if (!vacancyId) {
       setActiveStep(0);
+      setSelectedVacancyData(null);
       return;
     }
 
     // Find selected vacancy and update active step based on its status
     const selectedVacancy = appliedVacancy.find((v) => v.id === vacancyId);
+    setSelectedVacancyData(selectedVacancy);
 
     if (
       selectedVacancy?.employee_applied_vacancy &&
@@ -150,7 +357,7 @@ export function AppView() {
       const stepIndex = getStepIndexFromStatus(status);
       setActiveStep(stepIndex);
 
-      console.log("✅ Selected Vacancy:", selectedVacancy.title);
+      console.log("✅ Selected Vacancy:", selectedVacancy.id);
       console.log("✅ Current Status:", status);
       console.log("✅ Step Index:", stepIndex);
     } else {
@@ -510,7 +717,7 @@ export function AppView() {
           </Grid>
         </Grid>
 
-        {/* Progress Stepper */}
+        {/* Progress Stepper / Visa Status Timeline */}
         <Card
           sx={{
             p: { xs: 2, sm: 3, md: 4 },
@@ -533,7 +740,9 @@ export function AppView() {
                 fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" },
               }}
             >
-              Your Application Journey
+              {activeStep === 5
+                ? "Visa Status Timeline"
+                : "Your Application Journey"}
             </Typography>
 
             {/* Vacancy Dropdown */}
@@ -569,110 +778,126 @@ export function AppView() {
             )}
           </Stack>
 
-          <Box sx={{ minWidth: { xs: 600, sm: "auto" } }}>
-            <Stepper
-              alternativeLabel
-              activeStep={activeStep}
-              connector={
-                <StepConnector
-                  sx={{
-                    "& .MuiStepConnector-line": {
-                      borderColor: theme.palette.primary.main,
-                      borderTopWidth: 3,
-                    },
-                  }}
-                />
+          {/* Show Visa Status Timeline if in Visa stage */}
+          {activeStep === 5 &&
+          selectedVacancyData?.employee_applied_vacancy?.[0]
+            ?.visa_status_list ? (
+            <VisaStatusMiniTimeline
+              visaStatusList={
+                selectedVacancyData.employee_applied_vacancy[0].visa_status_list
               }
-              sx={{
-                "& .MuiStepLabel-label": {
-                  color: theme.palette.text.secondary,
-                  fontSize: { xs: 11, sm: 12, md: 14 },
-                  fontWeight: 500,
-                  mt: 1,
-                },
-                "& .MuiStepLabel-label.Mui-active": {
-                  color: theme.palette.primary.dark,
-                  fontWeight: 600,
-                },
-                "& .MuiStepLabel-label.Mui-completed": {
-                  color: theme.palette.success.main,
-                },
-              }}
-            >
-              {steps.map((step, index) => {
-                const isCompleted = index < activeStep;
-                const isReached = isCompleted || index === activeStep;
-                const isClickable =
-                  isReached &&
-                  (step.status === "contract" ||
-                    step.status === "payment" ||
-                    step.status === "visa_wait");
+              currentVisaStatus={
+                selectedVacancyData.employee_applied_vacancy[0]
+                  .current_visa_status
+              }
+              selectedVacancyId={selectedVacancyId}
+            />
+          ) : (
+            <Box sx={{ minWidth: { xs: 600, sm: "auto" } }}>
+              <Stepper
+                alternativeLabel
+                activeStep={activeStep}
+                connector={
+                  <StepConnector
+                    sx={{
+                      "& .MuiStepConnector-line": {
+                        borderColor: theme.palette.primary.main,
+                        borderTopWidth: 3,
+                      },
+                    }}
+                  />
+                }
+                sx={{
+                  "& .MuiStepLabel-label": {
+                    color: theme.palette.text.secondary,
+                    fontSize: { xs: 11, sm: 12, md: 14 },
+                    fontWeight: 500,
+                    mt: 1,
+                  },
+                  "& .MuiStepLabel-label.Mui-active": {
+                    color: theme.palette.primary.dark,
+                    fontWeight: 600,
+                  },
+                  "& .MuiStepLabel-label.Mui-completed": {
+                    color: theme.palette.success.main,
+                  },
+                }}
+              >
+                {steps.map((step, index) => {
+                  const isCompleted = index < activeStep;
+                  const isReached = isCompleted || index === activeStep;
+                  const isClickable =
+                    isReached &&
+                    (step.status === "contract" ||
+                      step.status === "payment" ||
+                      step.status === "visa_wait");
 
-                return (
-                  <Step key={index} completed={isCompleted}>
-                    <StepLabel
-                      StepIconComponent={() => (
-                        <Box
-                          onClick={() =>
-                            isClickable && handleStepClick(step.status)
-                          }
-                          sx={{
-                            width: { xs: 40, sm: 48 },
-                            height: { xs: 40, sm: 48 },
-                            borderRadius: "50%",
-                            bgcolor: isCompleted
-                              ? theme.palette.success.main
-                              : index === activeStep
-                                ? theme.palette.primary.main
-                                : "transparent",
-                            border:
-                              !isCompleted && index !== activeStep
-                                ? `3px solid ${theme.palette.divider}`
-                                : "none",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "all 0.3s",
-                            boxShadow:
-                              isCompleted || index === activeStep ? 3 : 0,
-                            cursor: isClickable ? "pointer" : "default",
-                            "&:hover": isClickable
-                              ? {
-                                  transform: "scale(1.1)",
-                                  boxShadow: 4,
+                  return (
+                    <Step key={index} completed={isCompleted}>
+                      <StepLabel
+                        StepIconComponent={() => (
+                          <Box
+                            onClick={() =>
+                              isClickable && handleStepClick(step.status)
+                            }
+                            sx={{
+                              width: { xs: 40, sm: 48 },
+                              height: { xs: 40, sm: 48 },
+                              borderRadius: "50%",
+                              bgcolor: isCompleted
+                                ? theme.palette.success.main
+                                : index === activeStep
+                                  ? theme.palette.primary.main
+                                  : "transparent",
+                              border:
+                                !isCompleted && index !== activeStep
+                                  ? `3px solid ${theme.palette.divider}`
+                                  : "none",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "all 0.3s",
+                              boxShadow:
+                                isCompleted || index === activeStep ? 3 : 0,
+                              cursor: isClickable ? "pointer" : "default",
+                              "&:hover": isClickable
+                                ? {
+                                    transform: "scale(1.1)",
+                                    boxShadow: 4,
+                                  }
+                                : {},
+                            }}
+                          >
+                            {isCompleted ? (
+                              <Iconify
+                                icon="mdi:check-bold"
+                                width={{ xs: 20, sm: 24 }}
+                                height={{ xs: 20, sm: 24 }}
+                                color={theme.palette.common.white}
+                              />
+                            ) : (
+                              <Iconify
+                                icon={step.icon}
+                                width={{ xs: 20, sm: 24 }}
+                                height={{ xs: 20, sm: 24 }}
+                                color={
+                                  index === activeStep
+                                    ? theme.palette.common.white
+                                    : theme.palette.text.disabled
                                 }
-                              : {},
-                          }}
-                        >
-                          {isCompleted ? (
-                            <Iconify
-                              icon="mdi:check-bold"
-                              width={{ xs: 20, sm: 24 }}
-                              height={{ xs: 20, sm: 24 }}
-                              color={theme.palette.common.white}
-                            />
-                          ) : (
-                            <Iconify
-                              icon={step.icon}
-                              width={{ xs: 20, sm: 24 }}
-                              height={{ xs: 20, sm: 24 }}
-                              color={
-                                index === activeStep
-                                  ? theme.palette.common.white
-                                  : theme.palette.text.disabled
-                              }
-                            />
-                          )}
-                        </Box>
-                      )}
-                    >
-                      {step.label}
-                    </StepLabel>
-                  </Step>
-                );
-              })}
-            </Stepper>
-          </Box>
+                              />
+                            )}
+                          </Box>
+                        )}
+                      >
+                        {step.label}
+                      </StepLabel>
+                    </Step>
+                  );
+                })}
+              </Stepper>
+            </Box>
+          )}
         </Card>
 
         {/* Finance Plan & Payment Details */}

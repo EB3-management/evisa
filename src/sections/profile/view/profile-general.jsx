@@ -21,24 +21,13 @@ import { fetchProfileRequest } from "src/redux/actions";
 export function ProfileGeneral() {
   const dispatch = useAppDispatch();
   const { profile, loading } = useAppSelector(
-    (state) => state.profile || { profile: null, loading: false }
+    (state) => state.profile || { profile: null, loading: false },
   );
 
   useEffect(() => {
     console.log("Dispatching fetchProfileRequest...");
     dispatch(fetchProfileRequest());
   }, [dispatch]);
-
-  const getStatusColor = (status) => {
-    const statusColors = {
-      Eligibility: "info",
-      "In Progress": "warning",
-      Approved: "success",
-      Rejected: "error",
-      Onboarding: "info",
-    };
-    return statusColors[status] || "default";
-  };
 
   if (loading) {
     return (
@@ -110,7 +99,7 @@ export function ProfileGeneral() {
               </Avatar>
             </Box>
 
-            {/* Name & Status */}
+            {/* Name */}
             <Stack spacing={0.75} alignItems="center">
               <Typography
                 variant="h6"
@@ -121,12 +110,6 @@ export function ProfileGeneral() {
               >
                 {profile.first_name} {profile.last_name}
               </Typography>
-              <Chip
-                label={profile.status}
-                color={getStatusColor(profile.status)}
-                size="small"
-                sx={{ fontWeight: 600, fontSize: "0.75rem", height: 24 }}
-              />
             </Stack>
 
             <Divider sx={{ width: "100%", borderStyle: "dashed" }} />
