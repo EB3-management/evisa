@@ -1559,7 +1559,7 @@ function ProcessingInformation({ vacancyData, vacancyId }) {
                               }}
                             />
                             <FormControlLabel
-                              value="bachelors"
+                              value="bachelor"
                               control={
                                 <Radio
                                   sx={{
@@ -1579,7 +1579,7 @@ function ProcessingInformation({ vacancyData, vacancyId }) {
                               }}
                             />
                             <FormControlLabel
-                              value="masters"
+                              value="graduate"
                               control={
                                 <Radio
                                   sx={{
@@ -1590,7 +1590,7 @@ function ProcessingInformation({ vacancyData, vacancyId }) {
                                   }}
                                 />
                               }
-                              label="Master's Degree"
+                              label="Graduate"
                               sx={{
                                 "& .MuiFormControlLabel-label": {
                                   color: "text.primary",
@@ -1599,7 +1599,7 @@ function ProcessingInformation({ vacancyData, vacancyId }) {
                               }}
                             />
                             <FormControlLabel
-                              value="phd"
+                              value="doctorate"
                               control={
                                 <Radio
                                   sx={{
@@ -1610,7 +1610,7 @@ function ProcessingInformation({ vacancyData, vacancyId }) {
                                   }}
                                 />
                               }
-                              label="PhD"
+                              label="Doctorate"
                               sx={{
                                 "& .MuiFormControlLabel-label": {
                                   color: "text.primary",
